@@ -91,17 +91,18 @@ export default function PromotionPage() {
     return <div className="w-full px-6 py-6"><div className="card p-10 text-center text-sm text-ink-mute">正在加载晋级赛信息…</div></div>
   }
 
+  const ratio = (done: number, total: number) => (total > 0 ? (done / total) * 100 : 0)
   const values = {
     prep: { done: progress.prepDone, text: '已完成', progress: undefined as undefined },
     trial: {
-      done: progress.trialDone >= progress.trialTotal,
+      done: progress.trialTotal > 0 && progress.trialDone >= progress.trialTotal,
       text: `${progress.trialDone} / ${progress.trialTotal}`,
-      progress: (progress.trialDone / progress.trialTotal) * 100,
+      progress: ratio(progress.trialDone, progress.trialTotal),
     },
     points: {
       done: progress.points >= progress.pointsTarget,
       text: `${progress.points} / ${progress.pointsTarget}`,
-      progress: (progress.points / progress.pointsTarget) * 100,
+      progress: ratio(progress.points, progress.pointsTarget),
     },
   }
   const allDone = Object.values(values).every((v) => v.done)

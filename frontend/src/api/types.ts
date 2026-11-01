@@ -129,12 +129,6 @@ export interface PlanCard {
   tail: string
 }
 
-/** AI 聊天回复 */
-export interface ChatReply {
-  reply: string
-  planCard?: PlanCard
-}
-
 /** 学习助手引用 */
 export interface AssistantCitation {
   chunk_id: string
@@ -304,46 +298,66 @@ export interface ReviewStats {
   total_cards: number
 }
 
-/** 思维导图 */
-export interface MindMapBranch {
-  id: string
-  label: string
-  /** 主题色 hex */
-  color: string
-  leaves: string[]
-}
-
-export interface MindMapData {
-  title: string
-  center: string
-  branches: MindMapBranch[]
-}
-
 /* ========== 赛题试炼 ========== */
 
-export interface TrialQuestion {
+export interface TrialExamQuestion {
   id: string
   /** 显示编号从 1 开始 */
   no: number
+  /** 后端把 short_answer 映射为 blank */
   type: 'choice' | 'blank' | 'multiple' | 'judge'
   score: number
   stem: string
   options?: WrongOption[]
-  /** 填空题输入框占位 */
-  placeholder?: string
-  answer: string
-  analysis: string
+  answered: boolean
 }
 
 export interface TrialExam {
-  title: string
-  level: string
-  cover: CoverVariant
-  questionTotal: number
-  fullScore: number
-  /** 剩余秒数 */
-  durationLeft: number
-  questions: TrialQuestion[]
+  examId: string
+  /** 服务端 ISO-8601 过期时间 */
+  expiresAt: string
+  total: number
+  questions: TrialExamQuestion[]
+}
+
+export interface TrialSourceChunk {
+  content: string
+  page?: number | null
+  heading?: string | null
+}
+
+export interface TrialAnswerResult {
+  question_id: string
+  correct: boolean
+  my_answer: string
+  correct_answer: string
+  explanation: string
+  source_chunk?: TrialSourceChunk | null
+}
+
+export interface TrialSubmission {
+  exam_id: string
+  /** 服务端判分：答对题数 */
+  score: number
+  total: number
+  submitted_at: string
+  results: TrialAnswerResult[]
+}
+
+export interface TrialExamState {
+  exam_id: string
+  status: 'in_progress' | 'submitted' | 'expired' | string
+  score?: number | null
+  total: number
+  expires_at: string
+  remaining_seconds: number
+  questions: TrialExamQuestion[]
+  results?: TrialAnswerResult[] | null
+}
+
+export interface StartTrialExamPayload {
+  competitionId?: string
+  count?: number
 }
 
 /* ========== 晋级赛 / 个人中心 ========== */
@@ -422,7 +436,7 @@ export interface LeaderboardEntry {
   avatarHue: number
 }
 
-/** 前端 API 契约 —— mock 实现与真实后端实现共用同一套签名 */
+/** 前端 API 契约 —— 全部由 FastAPI 实现 */
 export interface LearnRiseApi {
   listCompetitions(): Promise<Competition[]>
   getCompetition(id: string): Promise<Competition | undefined>
@@ -436,15 +450,11 @@ export interface LearnRiseApi {
   getJob(jobId: string): Promise<JobStatus>
   /** 上传奖励图片，返回可公开访问的 url */
   uploadRewardImage(file: File): Promise<{ url: string; key: string }>
-  previewRoadmap(payload: CreateCompetitionPayload): Promise<PlanStage[]>
   findByInviteCode(code: string): Promise<Competition | undefined>
   /** 用邀请码加入竞赛；失败时抛出带 code 的 ApiError */
   joinCompetition(code: string): Promise<Competition>
 
   /* 备赛区 */
-  getChatHistory(): Promise<ChatItem[]>
-  getChatSuggestions(batch: number): Promise<{ questions: string[] }>
-  sendChatMessage(text: string): Promise<ChatReply>
   /** 不传参数时保持旧的「取回全部」语义 */
   listWrongQuestions(params?: WrongQuestionQuery): Promise<WrongQuestion[]>
   /** 同上，并暴露 X-Total-Count 里的总数（服务端分页用） */
@@ -462,12 +472,10 @@ export interface LearnRiseApi {
   /** 提交一次复习评分（1-5），返回下次复习日期 */
   submitReview(cardId: string, rating: number): Promise<ReviewSubmitResult>
   getReviewStats(): Promise<ReviewStats>
-  getDefaultMindMap(): Promise<MindMapData>
-  generateMindMap(topic: string): Promise<MindMapData>
-
   /* 赛题试炼 / 晋级赛 / 个人中心 */
-  getTrialExam(): Promise<TrialExam>
-  submitExam(): Promise<UserProgress>
+  startTrialExam(payload?: StartTrialExamPayload): Promise<TrialExam>
+  submitTrialExam(examId: string, answers: Record<string, string>): Promise<TrialSubmission>
+  getTrialExam(examId: string): Promise<TrialExamState>
   getUserProgress(): Promise<UserProgress>
   getProfileInfo(): Promise<ProfileInfo>
   getProfileStats(): Promise<ProfileStat[]>

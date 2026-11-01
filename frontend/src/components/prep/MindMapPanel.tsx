@@ -11,8 +11,7 @@ import {
   Save,
   Sparkles,
 } from 'lucide-react'
-import { api } from '@/api/client'
-import type { MindMapBranch, MindMapData } from '@/api/types'
+import { buildMindMapTemplate, defaultMindMap, type MindMapBranch, type MindMapData } from '@/assets/mindmapData'
 import { useToast } from '../ui/Toast'
 
 /** 分支锚点按数组索引分配（任意分支 id 均适用），与 SVG 连线共用同一百分比坐标系 */
@@ -131,9 +130,7 @@ export function MindMapPanel() {
   const { showToast } = useToast()
 
   useEffect(() => {
-    void (async () => {
-      setData(await api.getDefaultMindMap())
-    })()
+    setData(defaultMindMap)
   }, [])
 
   const generate = async () => {
@@ -144,7 +141,7 @@ export function MindMapPanel() {
     }
     setGenerating(true)
     try {
-      setData(await api.generateMindMap(topic))
+      setData(buildMindMapTemplate(topic))
       setCleared(false)
       showToast('思维导图已生成')
     } finally {

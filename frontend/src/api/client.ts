@@ -1,8 +1,4 @@
-import { isMockDomain, type ApiDomain } from './domains'
-import { mockApi } from './mock/mockApi'
 import type {
-  ChatItem,
-  ChatReply,
   Competition,
   CompetitionPlan,
   CompetitionRecord,
@@ -12,8 +8,6 @@ import type {
   LearnRiseApi,
   LeaderboardEntry,
   Member,
-  MindMapData,
-  PlanStage,
   ProfileInfo,
   ProfileStat,
   RemediationPayload,
@@ -22,7 +16,10 @@ import type {
   ReviewSubmitResult,
   SettingGroup,
   StudyProgressItem,
+  StartTrialExamPayload,
   TrialExam,
+  TrialExamState,
+  TrialSubmission,
   JobStatus,
   UploadDocResult,
   UserProgress,
@@ -32,11 +29,10 @@ import type {
 } from './types'
 
 /**
- * 数据访问统一入口。
+ * 数据访问统一入口：所有方法都走 FastAPI。
  *
- * 每个方法按 `domains.ts` 声明的域选择真实后端或 mock，因此切片迁移期间不同域
- * 可以处于不同状态。真实后端契约由 `openapi.json` 生成到
- * `src/api/generated/schema.d.ts`，FastAPI 是唯一真源。
+ * 真实后端契约由 `openapi.json` 生成到 `src/api/generated/schema.d.ts`，
+ * FastAPI 是唯一真源。
  */
 const BASE = '/api'
 const DEFAULT_TIMEOUT_MS = 15_000
@@ -207,6 +203,32 @@ async function fetchWrongQuestionsPage(
   return { items, total: Number.isFinite(parsed) ? parsed : items.length }
 }
 
+interface TrialExamStartResponse {
+  exam_id: string
+  expires_at: string
+  total: number
+  questions: TrialExam['questions']
+}
+
+interface TrialSubmissionResponse {
+  exam_id: string
+  score: number
+  total: number
+  submitted_at: string
+  results: TrialSubmission['results']
+}
+
+interface TrialExamStateResponse {
+  exam_id: string
+  status: string
+  score?: number | null
+  total: number
+  expires_at: string
+  remaining_seconds: number
+  questions: TrialExam['questions']
+  results?: TrialSubmission['results'] | null
+}
+
 const realApi: LearnRiseApi = {
   listCompetitions: () => request<Competition[]>('/competitions'),
   getCompetition: (id) => request<Competition>(`/competitions/${id}`),
@@ -250,8 +272,6 @@ const realApi: LearnRiseApi = {
       { timeoutMs: 60_000 },
     )
   },
-  previewRoadmap: (payload) =>
-    request<PlanStage[]>('/roadmap/preview', { method: 'POST', body: JSON.stringify(payload) }),
   findByInviteCode: (code) => request<Competition>(`/invite/${encodeURIComponent(code)}`),
   joinCompetition: (code) =>
     request<Competition>('/competitions/join', {
@@ -259,11 +279,6 @@ const realApi: LearnRiseApi = {
       body: JSON.stringify({ invite_code: code }),
     }),
 
-  getChatHistory: () => request<ChatItem[]>('/chat/history'),
-  getChatSuggestions: (batch) =>
-    request<{ questions: string[] }>(`/chat/suggestions${query({ batch })}`),
-  sendChatMessage: (text) =>
-    request<ChatReply>('/chat/messages', { method: 'POST', body: JSON.stringify({ text }) }),
   listWrongQuestions: (params) => fetchWrongQuestions(params),
   listWrongQuestionsPage: (params) => fetchWrongQuestionsPage(params),
   removeWrongQuestion: async (id) => {
@@ -284,13 +299,55 @@ const realApi: LearnRiseApi = {
       body: JSON.stringify({ rating }),
     }),
   getReviewStats: () => request<ReviewStats>('/review/stats'),
-  getDefaultMindMap: () => request<MindMapData>('/mindmap/default'),
-  generateMindMap: (topic) =>
-    request<MindMapData>('/mindmap/generate', { method: 'POST', body: JSON.stringify({ topic }) }),
-
-  getTrialExam: () => request<TrialExam>('/trial/exam'),
-  submitExam: () => request<UserProgress>('/trial/submit', { method: 'POST' }),
-  getUserProgress: () => request<UserProgress>('/progress'),
+  startTrialExam: (payload: StartTrialExamPayload = {}) =>
+    request<TrialExamStartResponse>('/trial/exams', {
+      method: 'POST',
+      body: JSON.stringify({ competition_id: payload.competitionId, count: payload.count }),
+    }).then((body) => ({
+      examId: body.exam_id,
+      expiresAt: body.expires_at,
+      total: body.total,
+      questions: body.questions,
+    })),
+  submitTrialExam: (examId, answers) =>
+    request<TrialSubmissionResponse>(`/trial/exams/${examId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ answers }),
+    }).then((body) => ({
+      exam_id: body.exam_id,
+      score: body.score,
+      total: body.total,
+      submitted_at: body.submitted_at,
+      results: body.results,
+    })),
+  getTrialExam: (examId) =>
+    request<TrialExamStateResponse>(`/trial/exams/${examId}`).then((body) => ({
+      exam_id: body.exam_id,
+      status: body.status,
+      score: body.score,
+      total: body.total,
+      expires_at: body.expires_at,
+      remaining_seconds: body.remaining_seconds,
+      questions: body.questions,
+      results: body.results,
+    })),
+  getUserProgress: async () => {
+    const [study, stats] = await Promise.all([
+      request<StudyProgressItem[]>('/profile/study-progress'),
+      request<ProfileStat[]>('/profile/stats'),
+    ])
+    const pointProgress = study.find((item) => item.label === '知识点掌握')
+    const trialProgress = study.find((item) => item.label === '试炼完成')
+    const reviewItem = stats.find((item) => item.key === 'reviews')
+    const reviews = Number(reviewItem?.value ?? 0) || 0
+    return {
+      prepDone: (pointProgress?.percent ?? 0) >= 80,
+      trialDone: trialProgress?.value ?? 0,
+      trialTotal: trialProgress?.total ?? 0,
+      points: reviews * 4,
+      pointsTarget: 100,
+    }
+  },
   getProfileInfo: () => request<ProfileInfo>('/profile/info'),
   getProfileStats: () => request<ProfileStat[]>('/profile/stats'),
   getCompetitionRecords: () => request<CompetitionRecord[]>('/profile/competition-records'),
@@ -300,87 +357,6 @@ const realApi: LearnRiseApi = {
     request<LeaderboardEntry[]>(`/leaderboard/${encodeURIComponent(competitionId)}`),
 }
 
-const methodDomains: Record<keyof LearnRiseApi, ApiDomain> = {
-  listCompetitions: 'competitions',
-  getCompetition: 'competitions',
-  listMembers: 'competitions',
-  removeMember: 'competitions',
-  getPlan: 'competitions',
-  createCompetition: 'competitions',
-  uploadDocument: 'competitions',
-  getJob: 'competitions',
-  uploadRewardImage: 'competitions',
-  previewRoadmap: 'competitions',
-  findByInviteCode: 'competitions',
-  joinCompetition: 'competitions',
+export const api: LearnRiseApi = realApi
 
-  getChatHistory: 'assistant',
-  getChatSuggestions: 'assistant',
-  sendChatMessage: 'assistant',
-  listWrongQuestions: 'diagnostics',
-  listWrongQuestionsPage: 'diagnostics',
-  removeWrongQuestion: 'diagnostics',
-  getWeakPoints: 'diagnostics',
-  createRemediationPlan: 'diagnostics',
-  getDueCards: 'diagnostics',
-  submitReview: 'diagnostics',
-  getReviewStats: 'diagnostics',
-  getDefaultMindMap: 'mindmap',
-  generateMindMap: 'mindmap',
-
-  getTrialExam: 'trial',
-  submitExam: 'trial',
-  getUserProgress: 'trial',
-  getProfileInfo: 'profile',
-  getProfileStats: 'profile',
-  getCompetitionRecords: 'profile',
-  getStudyProgress: 'profile',
-  getSettingGroups: 'profile',
-  getLeaderboard: 'leaderboard',
-}
-
-function pick<K extends keyof LearnRiseApi>(name: K): LearnRiseApi[K] {
-  const source = isMockDomain(methodDomains[name]) ? mockApi : realApi
-  return source[name]
-}
-
-export const api: LearnRiseApi = {
-  listCompetitions: pick('listCompetitions'),
-  getCompetition: pick('getCompetition'),
-  listMembers: pick('listMembers'),
-  removeMember: pick('removeMember'),
-  getPlan: pick('getPlan'),
-  createCompetition: pick('createCompetition'),
-  uploadDocument: pick('uploadDocument'),
-  getJob: pick('getJob'),
-  uploadRewardImage: pick('uploadRewardImage'),
-  previewRoadmap: pick('previewRoadmap'),
-  findByInviteCode: pick('findByInviteCode'),
-  joinCompetition: pick('joinCompetition'),
-
-  getChatHistory: pick('getChatHistory'),
-  getChatSuggestions: pick('getChatSuggestions'),
-  sendChatMessage: pick('sendChatMessage'),
-  listWrongQuestions: pick('listWrongQuestions'),
-  listWrongQuestionsPage: pick('listWrongQuestionsPage'),
-  removeWrongQuestion: pick('removeWrongQuestion'),
-  getWeakPoints: pick('getWeakPoints'),
-  createRemediationPlan: pick('createRemediationPlan'),
-  getDueCards: pick('getDueCards'),
-  submitReview: pick('submitReview'),
-  getReviewStats: pick('getReviewStats'),
-  getDefaultMindMap: pick('getDefaultMindMap'),
-  generateMindMap: pick('generateMindMap'),
-
-  getTrialExam: pick('getTrialExam'),
-  submitExam: pick('submitExam'),
-  getUserProgress: pick('getUserProgress'),
-  getProfileInfo: pick('getProfileInfo'),
-  getProfileStats: pick('getProfileStats'),
-  getCompetitionRecords: pick('getCompetitionRecords'),
-  getStudyProgress: pick('getStudyProgress'),
-  getSettingGroups: pick('getSettingGroups'),
-  getLeaderboard: pick('getLeaderboard'),
-}
-
-export type { Competition, Member, CompetitionPlan, PlanStage, CreateCompetitionPayload }
+export type { Competition, Member, CompetitionPlan, CreateCompetitionPayload }

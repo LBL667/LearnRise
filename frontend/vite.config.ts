@@ -17,7 +17,7 @@ export default defineConfig({
     // 端口被占用时直接失败，避免 vite 悄悄换端口导致 nginx 反代打到空处。
     strictPort: true,
     proxy: {
-      // 预留：关闭 mock（VITE_USE_MOCK=false）后，前端 API 走 FastAPI 后端
+      // 前端所有请求都走 FastAPI 后端，不做本地假数据。
       '/api': {
         target: apiProxyTarget,
         changeOrigin: true,
