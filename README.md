@@ -13,11 +13,12 @@
 
 | 部分 | 状态 |
 |---|---|
-| 后端（FastAPI） | ✅ 已并入本仓库；容器内测试全绿：**360 collected / 352 passed / 8 skipped / 0 failed** |
+| 后端（FastAPI） | ✅ 全部纵向切片已并入；容器内测试全绿：**459 collected / 451 passed / 8 skipped / 0 failed** |
 | 编排（Docker Compose / nginx） | ✅ 单套 compose，6 个服务全部 healthy；SSE 已确认不被缓冲 |
-| API 契约与文档 | ✅ `openapi.json` + `docs/api/` 由脚本生成，可零漂移复现（27 个 path / 33 个 operation） |
-| 前端（React） | 🚧 页面骨架与交互已就绪，**部分页面仍在读 mock 数据**，正按纵向切片逐个切换到真实接口 |
-| 竞赛域 / 学习助手 / 试炼 / 诊断 | 🚧 设计已定稿，接口按切片逐个落地（尚未全部上线） |
+| API 契约与文档 | ✅ `openapi.json` + `docs/api/` 由脚本生成，可零漂移复现（61 个 path / 69 个 operation） |
+| 前端（React） | ✅ 所有页面都读 FastAPI；本地 mock 层（`src/api/mock/`）已删除 |
+| 竞赛 / 学习助手 / 试炼 / 诊断 / 个人中心 / 排行榜 | ✅ 接口与页面均已落地并接通真实数据 |
+| 演示数据 | ✅ `backend/scripts/seed_demo.py` 幂等写入 2 场竞赛、题目、错题与复习卡片 |
 | 华为云适配器 | ⛔ **未实现**，仅保留 `ports/` 抽象与 `PROVIDER_PROFILE` 开关位 |
 
 没有「已上线」的部署：本仓库当前只保证**本地 Docker 全链路可运行**。
@@ -109,7 +110,8 @@ backend/            FastAPI 应用（Python 3.11，容器内运行）
   tests/            unit / services / api / contracts 四层
   scripts/          种子数据与运维脚本
 frontend/           React 19 + Vite 单页应用
-  src/api/          请求层与域注册（真实接口 / mock）
+  src/api/          请求层（全部走 FastAPI）
+  src/assets/       静态演示数据（思维导图等非接口内容）
   src/pages/        页面
   src/components/   组件（layout / competition / create / plan / prep / ui）
 ocr-service/        RapidOCR HTTP 服务（独立镜像）
@@ -157,6 +159,29 @@ docker compose exec -T backend python scripts/seed_demo.py
 
 演示账号：`demo@example.com` / `demo1234`（仅本地，由种子脚本写入）。
 
+### 演示数据与端到端测试
+
+`seed_demo.py` 是**唯一的幂等种子入口**：重复执行不会新增重复行。它写入演示用户、
+Agent、2 场演示竞赛（一场归演示用户所有并带邀请码，一场以 `member` 身份加入）、
+6 个知识点、8 道题目、若干错题尝试与到期复习卡片，使 `/api/wrong-questions`、
+`/api/review/due` 与 `/api/trial/exams` 开箱即有内容。
+
+```bash
+# 幂等种子（连跑两次，用户/竞赛/题目数量不变）
+docker compose exec -T backend python scripts/seed_demo.py
+
+# 前端端到端冒烟（需要 nginx :8080 + backend :8000 已启动）
+cd frontend
+E2E_CHROMIUM_PATH=/path/to/chrome \
+E2E_BASE_URL=http://localhost:8080 \
+E2E_API_URL=http://127.0.0.1:8080 \
+npx playwright test e2e/smoke.spec.ts
+```
+
+冒烟用例以演示用户登录，依次访问首页、竞赛详情、`/prep`、`/trial`、`/rank`、
+`/profile`、`/review`，断言页面不再停留骨架屏、控制台没有未捕获异常；试炼页还会
+提交一次答案以验证服务端判分与逐题解析。设置 `EVIDENCE_DIR` 可把截图写到仓库外。
+
 ---
 
 ## 常用命令
@@ -168,7 +193,7 @@ make logs          # 跟随日志
 make test          # 容器内跑后端全量 pytest
 make lint          # 容器内跑 ruff + mypy
 make migrate       # alembic upgrade head
-make demo          # 种子数据 + 端到端冒烟
+make demo          # 幂等写入演示用户、竞赛、错题与复习卡片
 make compose-check # 校验 compose 文件可解析
 ```
 
@@ -181,6 +206,16 @@ make compose-check # 校验 compose 文件可解析
 
 测试基线记录在 `scripts/test-baseline.json`：`passed` 只允许增加，`skipped` 只允许减少，
 `failed` / `errors` 必须为 0。任何存量断言的变更都要在任务行与提交正文里登记理由。
+
+手工复核命令：
+
+```bash
+cd frontend && npm run typecheck && npm run build
+docker compose run --rm -T backend ruff check app tests alembic
+docker compose run --rm -T backend mypy app
+docker compose run --rm -T -v /tmp:/out backend pytest -q --junitxml=/out/junit.xml
+bash scripts/compare_test_baseline.sh /tmp/junit.xml
+```
 
 ---
 
@@ -199,6 +234,22 @@ docker compose run --rm -v "$PWD:/repo" -w /repo backend python scripts/gen_api_
 - 新端点的统一规范见 [`docs/api/conventions.md`](docs/api/conventions.md)：错误体 `{code, detail}`、
   分页 `limit`/`offset` + `X-Total-Count`、时间 ISO-8601、越权一律返回 404 而非 403。
 - 存量端点保持路径、状态码与 `detail` 文案逐字不变（`code` 只作为新增字段出现在新端点上）。
+
+### 接口分组
+
+| 分组 | 路径前缀 | 主要内容 |
+|---|---|---|
+| 竞赛 | `/api/competitions` | 列表 / 详情 / 成员 / 邀请码 / 学习规划 / 计划生成 |
+| 学习助手 | `/api/assistant` | 会话、RAG 流式回复、引用揭示、薄弱点与补强计划、苏格拉底模式 |
+| 试炼 | `/api/trial` | 开始考试、提交答案、读取考试状态（服务端判分） |
+| 诊断 | `/api/wrong-questions`、`/api/dashboard` | 错题分页筛选、仪表盘汇总 |
+| 个人中心 | `/api/profile` | 资料、统计、参赛记录、学习进度、设置项 |
+| 排行榜 | `/api/leaderboard/{competition_id}` | 竞赛内连续名次与积分 |
+| 上传与资料 | `/api/sources`、`/api/uploads`、`/api/jobs` | 文档上传 / 解析任务、奖励图片上传 |
+| 复习 / 练习 / 计划 | `/api/review`、`/api/practice`、`/api/exam-plan` | DSR 到期队列与评分、自适应练习、备考计划 |
+
+以上接口全部由 FastAPI 唯一实现；前端不再有按域切换的 mock 注册表。华为云适配器仍未实现，
+当前可运行的只有本地 Docker profile。
 
 ---
 
