@@ -22,13 +22,13 @@ from app.models import (
     AssistantConversation,
     AssistantMessage,
     Chunk,
-    CompetitionMember,
     KnowledgePoint,
     KnowledgeSource,
 )
 from app.ports import ChatMessage
 from app.ports.types import ChatRole
 from app.services.agent_resolver import resolve_agent
+from app.services.scope import resolve_scope
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 
@@ -113,18 +113,6 @@ def _load_conversation(db: Session, conversation_id: str, user_id: str) -> Assis
     return conversation
 
 
-def _member_of(db: Session, competition_id: str, user_id: str) -> bool:
-    return (
-        db.scalar(
-            select(CompetitionMember.id).where(
-                CompetitionMember.competition_id == competition_id,
-                CompetitionMember.user_id == user_id,
-            )
-        )
-        is not None
-    )
-
-
 def _scope_source_ids(db: Session, conversation: AssistantConversation, user_id: str) -> list[str]:
     if conversation.competition_id is None:
         return list(
@@ -132,8 +120,7 @@ def _scope_source_ids(db: Session, conversation: AssistantConversation, user_id:
                 select(KnowledgeSource.id).where(KnowledgeSource.user_id == user_id)
             ).all()
         )
-    if not _member_of(db, conversation.competition_id, user_id):
-        raise _not_found()
+    resolve_scope(db, user_id, conversation.competition_id).require_read()
     return list(
         db.scalars(
             select(KnowledgeSource.id).where(
@@ -143,14 +130,25 @@ def _scope_source_ids(db: Session, conversation: AssistantConversation, user_id:
     )
 
 
-def _retrieve(db: Session, source_ids: list[str], question: str) -> list[Citation]:
+def _retrieve(
+    db: Session,
+    source_ids: list[str],
+    question: str,
+    *,
+    competition_id: str | None = None,
+) -> list[Citation]:
     if not source_ids:
         return []
     embedder = build_embedding()
     store = build_vector_store()
     try:
         vector = embedder.embed([question]).vectors[0]
-        hits = store.search(vector, top_k=TOP_K, source_ids=source_ids)
+        hits = store.search(
+            vector,
+            top_k=TOP_K,
+            source_ids=source_ids,
+            competition_id=competition_id,
+        )
     except Exception:  # noqa: BLE001 - a provider outage must surface as NO_CONTEXT, not a 500
         return []
 
@@ -250,10 +248,7 @@ SSE_HEADERS = {
 def create_conversation(
     payload: ConversationCreate, db: DbSession, user: CurrentUser
 ) -> ConversationOut:
-    if payload.competition_id is not None and not _member_of(
-        db, payload.competition_id, user.id
-    ):
-        raise _not_found()
+    resolve_scope(db, user, payload.competition_id).require_read()
     conversation = AssistantConversation(
         user_id=user.id,
         competition_id=payload.competition_id,
@@ -318,7 +313,9 @@ def send_message(
         conversation.mode = payload.mode
 
     source_ids = _scope_source_ids(db, conversation, user.id)
-    citations = _retrieve(db, source_ids, payload.content)
+    citations = _retrieve(
+        db, source_ids, payload.content, competition_id=conversation.competition_id
+    )
     if not citations:
         raise CodedHTTPException(
             status_code=409, detail=NO_CONTEXT_DETAIL, code="NO_CONTEXT"
@@ -352,7 +349,9 @@ def stream_message(
         conversation.mode = payload.mode
 
     source_ids = _scope_source_ids(db, conversation, user.id)
-    citations = _retrieve(db, source_ids, payload.content)
+    citations = _retrieve(
+        db, source_ids, payload.content, competition_id=conversation.competition_id
+    )
     if not citations:
         raise CodedHTTPException(
             status_code=409, detail=NO_CONTEXT_DETAIL, code="NO_CONTEXT"

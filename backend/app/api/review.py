@@ -20,7 +20,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.deps import CurrentUser, DbSession, require_owner
-from app.models import KnowledgePoint, ReviewCard, User
+from app.models import KnowledgePoint, KnowledgeSource, ReviewCard, User
 from app.services.cards import create_manual_card, list_cards
 from app.services.review import (
     DUE_LIMIT_DEFAULT,
@@ -29,6 +29,7 @@ from app.services.review import (
     submit_review,
     today_local,
 )
+from app.services.scope import authorize_resource
 
 router = APIRouter(prefix="/api/review", tags=["review"])
 
@@ -77,7 +78,13 @@ def _load_point(db: DbSession, point_id: str, user: User) -> KnowledgePoint:
     point = db.get(KnowledgePoint, point_id)
     if point is None:
         raise _not_found()
-    require_owner(point.user_id, user)
+    source = db.get(KnowledgeSource, point.source_id) if point.source_id else None
+    authorize_resource(
+        db,
+        user,
+        resource_user_id=point.user_id,
+        competition_id=source.competition_id if source is not None else None,
+    )
     return point
 
 

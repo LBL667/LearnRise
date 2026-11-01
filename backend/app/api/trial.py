@@ -22,12 +22,12 @@ from sqlalchemy.orm import Session
 from app.api.errors import CodedHTTPException
 from app.deps import CurrentUser, DbSession
 from app.models import (
-    CompetitionMember,
     QuizQuestion,
     TrialAnswer,
     TrialExam,
 )
 from app.services.answer import grade
+from app.services.scope import resolve_scope
 
 router = APIRouter(prefix="/api/trial", tags=["trial"])
 
@@ -190,14 +190,7 @@ def _visible_questions(
             QuizQuestion.user_id == user_id,
         )
     else:
-        member = db.scalar(
-            select(CompetitionMember.id).where(
-                CompetitionMember.competition_id == competition_id,
-                CompetitionMember.user_id == user_id,
-            )
-        )
-        if member is None:
-            raise _not_found()
+        resolve_scope(db, user_id, competition_id).require_read()
         stmt = stmt.where(QuizQuestion.competition_id == competition_id)
     stmt = stmt.order_by(QuizQuestion.created_at, QuizQuestion.id).limit(count)
     return list(db.scalars(stmt).all())

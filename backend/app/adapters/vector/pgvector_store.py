@@ -57,7 +57,20 @@ _REQUIRED_COLUMNS = (
     "embedding_dim",
     "embedding_version",
 )
-_OPTIONAL_COLUMNS = ("content", "page", "heading", "token_count", "embedding")
+_OPTIONAL_COLUMNS = (
+    "content",
+    "page",
+    "heading",
+    "token_count",
+    "embedding",
+    "competition_id",
+)
+
+#: HNSW scan budget used for filtered searches. Iterative scan lets pgvector
+#: keep walking the graph when a metadata filter rejects the first candidates.
+FILTERED_EF_SEARCH = 400
+SET_EF_SEARCH_SQL = f"SET LOCAL hnsw.ef_search = {FILTERED_EF_SEARCH}"
+SET_ITERATIVE_SCAN_SQL = "SET LOCAL hnsw.iterative_scan = relaxed_order"
 
 _SQLALCHEMY_PREFIXES = ("postgresql+psycopg://", "postgresql+psycopg2://")
 
@@ -68,7 +81,8 @@ WHERE table_schema = current_schema() AND table_name = 'chunks'
 """
 
 _SOURCE_OWNERS_SQL = """
-SELECT id::text AS id, user_id::text AS user_id
+SELECT id::text AS id, user_id::text AS user_id,
+       competition_id::text AS competition_id
 FROM knowledge_sources
 WHERE id = ANY(%s::uuid[])
 """
@@ -170,7 +184,11 @@ class PgVectorStore:
             if chunk_index is None:
                 chunk_index = counters.get(record.source_id, 0)
                 counters[record.source_id] = chunk_index + 1
-            user_id = getattr(record, "user_id", None) or owners[record.source_id]
+            owner_id, owner_competition_id = owners[record.source_id]
+            user_id = getattr(record, "user_id", None) or owner_id
+            competition_id = (
+                getattr(record, "competition_id", None) or owner_competition_id
+            )
             identity = (
                 record.source_id,
                 int(chunk_index),
@@ -182,6 +200,7 @@ class PgVectorStore:
                 "id": record.chunk_id,
                 "source_id": record.source_id,
                 "user_id": user_id,
+                "competition_id": competition_id,
                 "chunk_index": int(chunk_index),
                 "content": record.content,
                 "page": record.page,
@@ -220,6 +239,8 @@ class PgVectorStore:
         *,
         top_k: int = 5,
         source_ids: list[str] | None = None,
+        competition_id: str | None = None,
+        user_id: str | None = None,
     ) -> list[SearchHit]:
         _validate_vector(query_vector, what="search")
         if top_k <= 0:
@@ -236,12 +257,21 @@ class PgVectorStore:
                 return []
             sql += " AND source_id = ANY(%s::uuid[])"
             params.append(source_ids)
+        if competition_id is not None:
+            sql += " AND competition_id = %s::uuid"
+            params.append(competition_id)
+        if user_id is not None:
+            sql += " AND user_id = %s::uuid"
+            params.append(user_id)
         sql += " ORDER BY embedding <=> %s::vector LIMIT %s"
         params.extend([query_vector, top_k])
 
-        with self._cursor() as cur:
-            cur.execute(sql, params)
-            rows = cur.fetchall()
+        connection = self.connection()
+        with connection.transaction():
+            with connection.cursor() as cur:
+                self._apply_ann_tuning(connection, cur)
+                cur.execute(sql, params)
+                rows = cur.fetchall()
 
         return [
             SearchHit(
@@ -270,12 +300,26 @@ class PgVectorStore:
             self.index_kind = "ivfflat"
         return self.index_kind
 
-    def _source_owners(self, source_ids: set[str]) -> dict[str, str]:
+    def _apply_ann_tuning(self, connection: Connection[Any], cur: Cursor[Any]) -> None:
+        for statement in (SET_EF_SEARCH_SQL, SET_ITERATIVE_SCAN_SQL):
+            try:
+                with connection.transaction():
+                    cur.execute(statement)
+            except psycopg.Error:
+                continue
+
+    def _source_owners(self, source_ids: set[str]) -> dict[str, tuple[str, str | None]]:
         if not source_ids:
             return {}
         with self._cursor() as cur:
             cur.execute(_SOURCE_OWNERS_SQL, [sorted(source_ids)])
-            owners = {str(row[0]): str(row[1]) for row in cur.fetchall()}
+            owners = {
+                str(row[0]): (
+                    str(row[1]),
+                    str(row[2]) if row[2] is not None else None,
+                )
+                for row in cur.fetchall()
+            }
         missing = sorted(source_ids - owners.keys())
         if missing:
             raise ProviderError(f"unknown knowledge source: {missing[0]}")

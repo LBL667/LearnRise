@@ -54,6 +54,7 @@ class ChunkRecord:
     embedding_model: str = ""
     embedding_dim: int = 1024
     embedding_version: str = "1"
+    competition_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

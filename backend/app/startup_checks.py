@@ -261,6 +261,24 @@ def collect_problems(engine: Engine | None = None) -> list[str]:
     return problems
 
 
+def _ensure_vector_index_problems() -> list[str]:
+    """Build the pgvector ANN index; report a failure instead of crashing raw."""
+    from app.adapters.vector import build_vector_store
+
+    store = build_vector_store()
+    try:
+        ensure_index = getattr(store, "ensure_index", None)
+        if ensure_index is not None:
+            ensure_index()
+    except Exception as exc:  # connection/SQL failure, type only
+        return [f"db: unable to ensure vector index ({type(exc).__name__})"]
+    finally:
+        close = getattr(store, "close", None)
+        if close is not None:
+            close()
+    return []
+
+
 def assert_runtime_contract(
     engine: Engine | None = None, *, strict: bool | None = None
 ) -> list[str]:
@@ -272,6 +290,8 @@ def assert_runtime_contract(
     """
 
     problems = collect_problems(engine)
+    if strict and not problems:
+        problems = _ensure_vector_index_problems()
     if strict and problems:
         raise RuntimeError("runtime contract violated:\n" + "\n".join(problems))
     return problems

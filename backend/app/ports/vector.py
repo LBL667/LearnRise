@@ -21,8 +21,16 @@ class VectorStore(Protocol):
         *,
         top_k: int = 5,
         source_ids: list[str] | None = None,
+        competition_id: str | None = None,
+        user_id: str | None = None,
     ) -> list[SearchHit]:
-        """Return the ``top_k`` nearest chunks, optionally limited by source."""
+        """Return the ``top_k`` nearest chunks, optionally limited by scope.
+
+        ``source_ids`` restricts by source, ``competition_id``/``user_id``
+        restrict by the denormalised ownership columns. Every new keyword is
+        optional and defaults to ``None`` so existing call sites keep their
+        current behaviour.
+        """
         ...
 
     def delete_by_source(self, source_id: str) -> int:

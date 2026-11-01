@@ -23,7 +23,7 @@ from starlette.responses import StreamingResponse
 from app.api.agents import get_agent_semaphore
 from app.db import SessionLocal
 from app.deps import CurrentUser, DbSession
-from app.models import AgentConfig, ExplanationLog, KnowledgePoint
+from app.models import AgentConfig, ExplanationLog, KnowledgePoint, KnowledgeSource, User
 from app.ports import ChatMessage, LLMProvider
 from app.ports.errors import (
     ProviderAuthError,
@@ -31,6 +31,7 @@ from app.ports.errors import (
     UpstreamTimeoutError,
 )
 from app.services.agent_resolver import resolve_agent
+from app.services.scope import authorize_resource
 
 router = APIRouter(prefix="/api/knowledge-points", tags=["explain"])
 
@@ -69,7 +70,7 @@ def _sse(event: str, data: dict[str, Any]) -> str:
 
 
 def _load_knowledge_point(
-    db: Session, knowledge_point_id: str, user_id: str
+    db: Session, knowledge_point_id: str, user: User
 ) -> KnowledgePoint:
     try:
         UUID(knowledge_point_id)
@@ -78,8 +79,15 @@ def _load_knowledge_point(
             status_code=status.HTTP_404_NOT_FOUND, detail=_NOT_FOUND
         ) from None
     point = db.get(KnowledgePoint, knowledge_point_id)
-    if point is None or str(point.user_id) != str(user_id):
+    if point is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=_NOT_FOUND)
+    source = db.get(KnowledgeSource, point.source_id) if point.source_id else None
+    authorize_resource(
+        db,
+        user,
+        resource_user_id=point.user_id,
+        competition_id=source.competition_id if source is not None else None,
+    )
     return point
 
 
@@ -160,7 +168,7 @@ def explain_knowledge_point(
     user: CurrentUser,
     payload: ExplainRequest | None = None,
 ) -> StreamingResponse:
-    point = _load_knowledge_point(db, knowledge_point_id, user.id)
+    point = _load_knowledge_point(db, knowledge_point_id, user)
     request_body = payload or ExplainRequest()
 
     llm, agent = _resolve(db, user.id, request_body.agent_id)

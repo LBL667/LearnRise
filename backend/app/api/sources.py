@@ -25,7 +25,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.deps import CurrentUser, DbSession, require_owner
+from app.deps import CurrentUser, DbSession
 from app.models import Chunk, IngestionJob, KnowledgeSource, User, new_uuid
 from app.services import ingest as ingest_service
 from app.services.ingest import (
@@ -36,6 +36,7 @@ from app.services.ingest import (
     save_upload,
     title_from_filename,
 )
+from app.services.scope import authorize_resource
 
 router = APIRouter(prefix="/api", tags=["sources"])
 
@@ -89,7 +90,9 @@ def _not_found() -> HTTPException:
     )
 
 
-def _load_source(db: Session, source_id: str, user: User) -> KnowledgeSource:
+def _load_source(
+    db: Session, source_id: str, user: User, *, write: bool = False
+) -> KnowledgeSource:
     try:
         UUID(source_id)
     except ValueError:
@@ -97,7 +100,13 @@ def _load_source(db: Session, source_id: str, user: User) -> KnowledgeSource:
     source = db.get(KnowledgeSource, source_id)
     if source is None:
         raise _not_found()
-    require_owner(source.user_id, user)
+    authorize_resource(
+        db,
+        user,
+        resource_user_id=source.user_id,
+        competition_id=source.competition_id,
+        write=write,
+    )
     return source
 
 
@@ -109,7 +118,13 @@ def _load_job(db: Session, job_id: str, user: User) -> IngestionJob:
     job = db.get(IngestionJob, job_id)
     if job is None:
         raise _not_found()
-    require_owner(job.user_id, user)
+    source = db.get(KnowledgeSource, job.source_id)
+    authorize_resource(
+        db,
+        user,
+        resource_user_id=job.user_id,
+        competition_id=source.competition_id if source is not None else None,
+    )
     return job
 
 
@@ -226,7 +241,7 @@ def reprocess_source(
     user: CurrentUser,
     background_tasks: BackgroundTasks,
 ) -> UploadAccepted:
-    source = _load_source(db, source_id, user)
+    source = _load_source(db, source_id, user, write=True)
 
     # The chunks table is the vector store's own persistence, so deleting the
     # rows removes the old embeddings before the new job re-writes them.

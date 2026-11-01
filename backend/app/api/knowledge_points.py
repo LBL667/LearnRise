@@ -17,9 +17,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import case, delete, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.deps import CurrentUser, DbSession, require_owner
+from app.deps import CurrentUser, DbSession
 from app.models import KnowledgePoint, KnowledgeSource, User
 from app.services.knowledge_tree import build_tree
+from app.services.scope import authorize_resource
 
 router = APIRouter(prefix="/api", tags=["knowledge-points"])
 
@@ -76,19 +77,42 @@ def _valid_uuid(value: str) -> str:
     return value
 
 
-def _load_source(db: Session, source_id: str, user: User) -> KnowledgeSource:
+def _load_source(
+    db: Session, source_id: str, user: User, *, write: bool = False
+) -> KnowledgeSource:
     source = db.get(KnowledgeSource, _valid_uuid(source_id))
     if source is None:
         raise _not_found()
-    require_owner(source.user_id, user)
+    authorize_resource(
+        db,
+        user,
+        resource_user_id=source.user_id,
+        competition_id=source.competition_id,
+        write=write,
+    )
     return source
 
 
-def _load_point(db: Session, point_id: str, user: User) -> KnowledgePoint:
+def _point_competition_id(db: Session, point: KnowledgePoint) -> str | None:
+    if point.source_id is None:
+        return None
+    source = db.get(KnowledgeSource, point.source_id)
+    return source.competition_id if source is not None else None
+
+
+def _load_point(
+    db: Session, point_id: str, user: User, *, write: bool = False
+) -> KnowledgePoint:
     point = db.get(KnowledgePoint, _valid_uuid(point_id))
     if point is None:
         raise _not_found()
-    require_owner(point.user_id, user)
+    authorize_resource(
+        db,
+        user,
+        resource_user_id=point.user_id,
+        competition_id=_point_competition_id(db, point),
+        write=write,
+    )
     return point
 
 
@@ -123,15 +147,11 @@ def get_source_tree(
     source_id: str, db: DbSession, user: CurrentUser
 ) -> list[dict[str, object]]:
     source = _load_source(db, source_id, user)
+    statement = select(KnowledgePoint).where(KnowledgePoint.source_id == source.id)
+    if source.competition_id is None:
+        statement = statement.where(KnowledgePoint.user_id == user.id)
     rows = list(
-        db.execute(
-            select(KnowledgePoint)
-            .where(
-                KnowledgePoint.user_id == user.id,
-                KnowledgePoint.source_id == source.id,
-            )
-            .order_by(KnowledgePoint.sort_order, KnowledgePoint.title)
-        )
+        db.execute(statement.order_by(KnowledgePoint.sort_order, KnowledgePoint.title))
         .scalars()
         .all()
     )
@@ -208,7 +228,7 @@ def update_knowledge_point(
     db: DbSession,
     user: CurrentUser,
 ) -> KnowledgePoint:
-    point = _load_point(db, knowledge_point_id, user)
+    point = _load_point(db, knowledge_point_id, user, write=True)
     changes = payload.model_dump(exclude_unset=True)
     for field_name in ("title", "content", "sort_order"):
         value = changes.get(field_name)
@@ -226,12 +246,12 @@ def update_knowledge_point(
 def delete_knowledge_point(
     knowledge_point_id: str, db: DbSession, user: CurrentUser
 ) -> Response:
-    point = _load_point(db, knowledge_point_id, user)
+    point = _load_point(db, knowledge_point_id, user, write=True)
     doomed = _descendant_ids(db, point)
     if doomed:
         db.execute(
             delete(KnowledgePoint).where(
-                KnowledgePoint.user_id == user.id,
+                KnowledgePoint.user_id == point.user_id,
                 KnowledgePoint.id.in_(doomed),
             )
         )
