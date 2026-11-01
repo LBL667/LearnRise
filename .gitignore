@@ -29,3 +29,20 @@ Thumbs.db
 
 # playwright-cli 会话日志
 .playwright-cli/
+
+# 编排与证据（不参与运行）
+.sisyphus/
+
+# 日志
+*.log
+
+# 运行时数据
+var/
+ocr-service/**/__pycache__/
+
+# 生成物缓存
+frontend/src/api/generated/.cache/
+
+# 测试证据
+test-results/
+playwright-report/
