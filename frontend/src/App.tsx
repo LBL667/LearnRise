@@ -3,6 +3,7 @@ import { RequireAuth } from './auth/RequireAuth'
 import { AppLayout } from './components/layout/AppLayout'
 import CommunityPage from './pages/CommunityPage'
 import CompetitionDetailPage from './pages/CompetitionDetailPage'
+import KnowledgePointPage from './pages/KnowledgePointPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import LoginPage from './pages/LoginPage'
 import PrepPage from './pages/PrepPage'
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/promo" element={<PromotionPage />} />
         <Route path="/rank" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/kp/:id" element={<KnowledgePointPage />} />
       </Route>
     </Routes>
   )

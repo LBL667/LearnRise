@@ -135,6 +135,35 @@ export interface ChatReply {
   planCard?: PlanCard
 }
 
+/** 学习助手引用 */
+export interface AssistantCitation {
+  chunk_id: string
+  source_id: string
+  knowledge_point_id?: string | null
+  page?: number | null
+  heading?: string | null
+  snippet: string
+  score: number
+}
+
+export interface AssistantConversation {
+  id: string
+  title: string
+  mode: string
+  competition_id?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AssistantMessageDto {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  citations: AssistantCitation[]
+  mode?: string | null
+  created_at: string
+}
+
 /** 聊天消息（含初始历史） */
 export interface ChatItem {
   id: string
@@ -143,6 +172,8 @@ export interface ChatItem {
   planCard?: PlanCard
   /** 'HH:mm' */
   time: string
+  /** 学习助手引用（真实后端返回） */
+  citations?: AssistantCitation[]
 }
 
 export type WrongSeverity = 'repeat' | 'general'

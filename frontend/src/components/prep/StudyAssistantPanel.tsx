@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   BarChart3,
   Bot,
@@ -12,13 +13,24 @@ import {
   Sparkles,
   ThumbsUp,
 } from 'lucide-react'
-import { api } from '@/api/client'
-import type { ChatItem, PlanCard } from '@/api/types'
+import {
+  createConversation,
+  getConversation,
+  listConversations,
+  streamMessage,
+} from '@/api/assistant'
+import type { AssistantCitation, ChatItem, PlanCard } from '@/api/types'
 import { useToast } from '../ui/Toast'
 
 function nowTime(): string {
   const d = new Date()
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function formatClock(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
 /** 计划卡片 */
@@ -90,49 +102,113 @@ export function StudyAssistantPanel() {
   const [messages, setMessages] = useState<ChatItem[]>([])
   const [input, setInput] = useState('')
   const [thinking, setThinking] = useState(false)
-  const [suggestions, setSuggestions] = useState<string[]>([])
-  const [suggestBatch, setSuggestBatch] = useState(0)
+  const [suggestions, setSuggestions] = useState<string[]>(() =>
+    ASSISTANT_FEATURES.map((feature) => feature.question),
+  )
+  const conversationRef = useRef<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const [liked, setLiked] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const seq = useRef(0)
 
   useEffect(() => {
+    let cancelled = false
     void (async () => {
-      const [history, sugg] = await Promise.all([
-        api.getChatHistory(),
-        api.getChatSuggestions(0),
-      ])
-      setMessages(history)
-      setSuggestions(sugg.questions)
+      try {
+        const conversations = await listConversations()
+        const conversation =
+          conversations.length > 0 ? conversations[0] : await createConversation({ title: '学习助手' })
+        if (cancelled) return
+        conversationRef.current = conversation.id
+        const detail = await getConversation(conversation.id)
+        if (cancelled) return
+        setMessages(
+          detail.messages.map((message) => ({
+            id: message.id,
+            role: message.role === 'assistant' ? 'ai' : 'user',
+            text: message.content,
+            time: formatClock(message.created_at),
+            citations: message.citations,
+          })),
+        )
+      } catch {
+        if (!cancelled) showToast('学习助手暂时不可用', 'error')
+      }
     })()
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [showToast])
 
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, thinking])
 
-  /** 发送一条用户消息并获取 AI 回复 */
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim()
       if (!trimmed || thinking) return
+      const conversationId = conversationRef.current
+      if (conversationId === null) {
+        showToast('学习助手尚未就绪，请稍后重试', 'error')
+        return
+      }
+
       const userMsg: ChatItem = { id: `u-${++seq.current}`, role: 'user', text: trimmed, time: nowTime() }
-      setMessages((prev) => [...prev, userMsg])
+      const assistantId = `a-${++seq.current}`
+      setMessages((prev) => [
+        ...prev,
+        userMsg,
+        { id: assistantId, role: 'ai', text: '', time: nowTime() },
+      ])
       setInput('')
       setThinking(true)
+
+      const controller = new AbortController()
+      abortRef.current?.abort()
+      abortRef.current = controller
+      let citations: AssistantCitation[] = []
+
       try {
-        const reply = await api.sendChatMessage(trimmed)
-        setMessages((prev) => [
-          ...prev,
-          { id: `a-${++seq.current}`, role: 'ai', text: reply.reply, planCard: reply.planCard, time: nowTime() },
-        ])
+        await streamMessage(
+          conversationId,
+          trimmed,
+          {
+            onCitations: (next) => {
+              citations = next
+            },
+            onToken: (delta) => {
+              setMessages((prev) =>
+                prev.map((message) =>
+                  message.id === assistantId ? { ...message, text: message.text + delta } : message,
+                ),
+              )
+            },
+            onDone: () => {
+              setMessages((prev) =>
+                prev.map((message) =>
+                  message.id === assistantId ? { ...message, citations } : message,
+                ),
+              )
+            },
+          },
+          controller.signal,
+        )
+      } catch (caught) {
+        const message = caught instanceof Error ? caught.message : '回答生成失败'
+        setMessages((prev) =>
+          prev.map((item) =>
+            item.id === assistantId ? { ...item, text: item.text || `（${message}）` } : item,
+          ),
+        )
       } finally {
         setThinking(false)
       }
     },
-    [thinking],
+    [thinking, showToast],
   )
 
   const regenerate = async (msg: ChatItem) => {
@@ -166,11 +242,8 @@ export function StudyAssistantPanel() {
     })
   }
 
-  const refreshSuggestions = async () => {
-    const next = suggestBatch + 1
-    setSuggestBatch(next)
-    const sugg = await api.getChatSuggestions(next)
-    setSuggestions(sugg.questions)
+  const refreshSuggestions = () => {
+    setSuggestions((prev) => [...prev.slice(1), ...prev.slice(0, 1)])
   }
 
   return (
@@ -203,6 +276,32 @@ export function StudyAssistantPanel() {
                   <div className="rounded-2xl rounded-tl-sm bg-page px-4 py-3 text-[13.5px] leading-6 text-ink">
                     <p className="whitespace-pre-wrap">{m.text}</p>
                     {m.planCard && <PlanCardView card={m.planCard} />}
+                    {m.citations && m.citations.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {m.citations.map((citation, index) =>
+                          citation.knowledge_point_id ? (
+                            <button
+                              key={citation.chunk_id}
+                              data-testid={`citation-${index}`}
+                              onClick={() => navigate(`/kp/${citation.knowledge_point_id}`)}
+                              className="rounded-md bg-primary-soft px-2 py-1 text-[11.5px] text-primary hover:underline"
+                              title={citation.snippet}
+                            >
+                              [{index + 1}] 第 {citation.page ?? '-'} 页 · {citation.heading ?? '资料'}
+                            </button>
+                          ) : (
+                            <span
+                              key={citation.chunk_id}
+                              data-testid={`citation-${index}`}
+                              className="rounded-md bg-page px-2 py-1 text-[11.5px] text-ink-mute"
+                              title={citation.snippet}
+                            >
+                              [{index + 1}] 第 {citation.page ?? '-'} 页 · {citation.heading ?? '资料'}
+                            </span>
+                          ),
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="mt-1.5 flex items-center gap-4 text-[12px] text-ink-mute">
                     <span>{m.time}</span>
