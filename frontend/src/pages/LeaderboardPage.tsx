@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, Crown } from 'lucide-react'
 import { api } from '@/api/client'
-import { tierLogos } from '@/api/mock/mockData'
+import { tierLogos } from '@/assets/tierLogos'
 import type { Competition, LeaderboardEntry } from '@/api/types'
 import { useToast } from '@/components/ui/Toast'
 

@@ -1,3 +1,4 @@
+import { tierLogos } from '@/assets/tierLogos'
 import type {
   ChatItem,
   ChatReply,
@@ -39,7 +40,6 @@ import {
   profileStats,
   settingGroups,
   studyProgress,
-  tierLogos,
   trialExam,
   userProgress as seedProgress,
   wrongQuestions,
