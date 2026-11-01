@@ -955,6 +955,129 @@
         "title": "DueListOut",
         "type": "object"
       },
+      "ExamStartRequest": {
+        "properties": {
+          "competition_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition Id"
+          },
+          "count": {
+            "default": 10,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "title": "ExamStartRequest",
+        "type": "object"
+      },
+      "ExamStartResponse": {
+        "properties": {
+          "exam_id": {
+            "title": "Exam Id",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "exam_id",
+          "expires_at",
+          "total",
+          "questions"
+        ],
+        "title": "ExamStartResponse",
+        "type": "object"
+      },
+      "ExamStateResponse": {
+        "properties": {
+          "exam_id": {
+            "title": "Exam Id",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "remaining_seconds": {
+            "title": "Remaining Seconds",
+            "type": "integer"
+          },
+          "results": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ResultOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Results"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "exam_id",
+          "status",
+          "total",
+          "expires_at",
+          "remaining_seconds",
+          "questions"
+        ],
+        "title": "ExamStateResponse",
+        "type": "object"
+      },
       "ExplainRequest": {
         "properties": {
           "agent_id": {
@@ -1439,6 +1562,24 @@
         "title": "NotesResponse",
         "type": "object"
       },
+      "OptionOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "text"
+        ],
+        "title": "OptionOut",
+        "type": "object"
+      },
       "PlanOut": {
         "properties": {
           "intro": {
@@ -1473,6 +1614,58 @@
           "stages"
         ],
         "title": "PlanOut",
+        "type": "object"
+      },
+      "QuestionOut": {
+        "properties": {
+          "answered": {
+            "default": false,
+            "title": "Answered",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "no": {
+            "title": "No",
+            "type": "integer"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OptionOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "no",
+          "type",
+          "score",
+          "stem"
+        ],
+        "title": "QuestionOut",
         "type": "object"
       },
       "QuizGenerateRequest": {
@@ -1671,6 +1864,49 @@
           "failed"
         ],
         "title": "ReminderRunOut",
+        "type": "object"
+      },
+      "ResultOut": {
+        "properties": {
+          "correct": {
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "correct_answer": {
+            "title": "Correct Answer",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "my_answer": {
+            "title": "My Answer",
+            "type": "string"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "source_chunk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrialSourceChunkOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "question_id",
+          "correct",
+          "my_answer",
+          "correct_answer",
+          "explanation"
+        ],
+        "title": "ResultOut",
         "type": "object"
       },
       "ReviewCardCreate": {
@@ -2151,6 +2387,56 @@
         "title": "SourceOut",
         "type": "object"
       },
+      "SubmitRequest": {
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Answers",
+            "type": "object"
+          }
+        },
+        "title": "SubmitRequest",
+        "type": "object"
+      },
+      "SubmitResponse": {
+        "properties": {
+          "exam_id": {
+            "title": "Exam Id",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ResultOut"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "exam_id",
+          "score",
+          "total",
+          "submitted_at",
+          "results"
+        ],
+        "title": "SubmitResponse",
+        "type": "object"
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -2211,6 +2497,41 @@
           "mastery_score"
         ],
         "title": "TreeNode",
+        "type": "object"
+      },
+      "TrialSourceChunkOut": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "heading": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "TrialSourceChunkOut",
         "type": "object"
       },
       "UploadAccepted": {
@@ -4589,6 +4910,156 @@
         "summary": "Get Source Tree",
         "tags": [
           "knowledge-points"
+        ]
+      }
+    },
+    "/api/trial/exams": {
+      "post": {
+        "operationId": "start_exam_api_trial_exams_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExamStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamStartResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Start Exam",
+        "tags": [
+          "trial"
+        ]
+      }
+    },
+    "/api/trial/exams/{exam_id}": {
+      "get": {
+        "operationId": "read_exam_api_trial_exams__exam_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exam_id",
+            "required": true,
+            "schema": {
+              "title": "Exam Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Exam",
+        "tags": [
+          "trial"
+        ]
+      }
+    },
+    "/api/trial/exams/{exam_id}/submit": {
+      "post": {
+        "operationId": "submit_exam_api_trial_exams__exam_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exam_id",
+            "required": true,
+            "schema": {
+              "title": "Exam Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Submit Exam",
+        "tags": [
+          "trial"
         ]
       }
     },
