@@ -97,7 +97,7 @@ interface RequestOptions {
   timeoutMs?: number
 }
 
-async function request<T>(
+export async function request<T>(
   path: string,
   init: RequestInit = {},
   options: RequestOptions = {},

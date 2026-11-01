@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:8080'
+const executablePath = process.env.E2E_CHROMIUM_PATH
 
 export default defineConfig({
   testDir: './e2e',
@@ -16,5 +17,13 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'off',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: executablePath ? { executablePath } : {},
+      },
+    },
+  ],
 })
