@@ -3,7 +3,224 @@
 # assistant 学习助手
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：0。
+> 端点数量：5。
 
-尚无端点（后续切片引入）。
+## 端点总览
+
+| 方法 | 路径 | 摘要 |
+|---|---|---|
+| `GET` | `/api/assistant/conversations` | List Conversations |
+| `POST` | `/api/assistant/conversations` | Create Conversation |
+| `GET` | `/api/assistant/conversations/{conversation_id}` | Read Conversation |
+| `POST` | `/api/assistant/conversations/{conversation_id}/messages` | Send Message |
+| `POST` | `/api/assistant/conversations/{conversation_id}/stream` | Stream Message |
+
+## 端点详情
+
+### `GET /api/assistant/conversations`
+
+- **标签**: `assistant`
+- **摘要**: List Conversations
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `limit` | `query` | `integer` | 否 | 20 |
+| `offset` | `query` | `integer` | 否 | 0 |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `id` | `string` | 是 |
+| `title` | `string` | 是 |
+| `mode` | `string` | 是 |
+| `competition_id` | `string \| null` | 否 |
+| `created_at` | `string(date-time)` | 是 |
+| `updated_at` | `string(date-time)` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X GET 'http://localhost:8000/api/assistant/conversations?limit=20&offset=0' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `POST /api/assistant/conversations`
+
+- **标签**: `assistant`
+- **摘要**: Create Conversation
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `competition_id` | `string \| null` | 否 | — |
+| `title` | `string` | 否 | "" |
+| `mode` | `string` | 否 | "concise" |
+
+#### 响应字段（201）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `id` | `string` | 是 |
+| `title` | `string` | 是 |
+| `mode` | `string` | 是 |
+| `competition_id` | `string \| null` | 否 |
+| `created_at` | `string(date-time)` | 是 |
+| `updated_at` | `string(date-time)` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/assistant/conversations' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"competition_id": "string", "mode": "string", "title": "string"}'
+```
+
+### `GET /api/assistant/conversations/{conversation_id}`
+
+- **标签**: `assistant`
+- **摘要**: Read Conversation
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `conversation_id` | `path` | `string` | 是 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `conversation` | `ConversationOut` | 是 |
+| `conversation.id` | `string` | 是 |
+| `conversation.title` | `string` | 是 |
+| `conversation.mode` | `string` | 是 |
+| `conversation.competition_id` | `string \| null` | 否 |
+| `conversation.created_at` | `string(date-time)` | 是 |
+| `conversation.updated_at` | `string(date-time)` | 是 |
+| `messages` | `array<MessageOut>` | 是 |
+| `messages[].id` | `string` | 是 |
+| `messages[].role` | `string` | 是 |
+| `messages[].content` | `string` | 是 |
+| `messages[].citations` | `array<Citation>` | 否 |
+| `messages[].citations[].chunk_id` | `string` | 是 |
+| `messages[].citations[].source_id` | `string` | 是 |
+| `messages[].citations[].page` | `integer \| null` | 否 |
+| `messages[].citations[].heading` | `string \| null` | 否 |
+| `messages[].citations[].snippet` | `string` | 是 |
+| `messages[].citations[].score` | `number` | 是 |
+| `messages[].mode` | `string \| null` | 否 |
+| `messages[].created_at` | `string(date-time)` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X GET 'http://localhost:8000/api/assistant/conversations/{conversation_id}' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `POST /api/assistant/conversations/{conversation_id}/messages`
+
+- **标签**: `assistant`
+- **摘要**: Send Message
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `conversation_id` | `path` | `string` | 是 | — |
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `content` | `string` | 是 | — |
+| `mode` | `string \| null` | 否 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `message_id` | `string` | 是 |
+| `role` | `string` | 否 |
+| `content` | `string` | 是 |
+| `citations` | `array<Citation>` | 否 |
+| `citations[].chunk_id` | `string` | 是 |
+| `citations[].source_id` | `string` | 是 |
+| `citations[].page` | `integer \| null` | 否 |
+| `citations[].heading` | `string \| null` | 否 |
+| `citations[].snippet` | `string` | 是 |
+| `citations[].score` | `number` | 是 |
+| `created_at` | `string(date-time)` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/assistant/conversations/{conversation_id}/messages' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"content": "string", "mode": "string"}'
+```
+
+### `POST /api/assistant/conversations/{conversation_id}/stream`
+
+- **标签**: `assistant`
+- **摘要**: Stream Message
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `conversation_id` | `path` | `string` | 是 | — |
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `content` | `string` | 是 | — |
+| `mode` | `string \| null` | 否 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| — | 无固定字段 | — |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/assistant/conversations/{conversation_id}/stream' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"content": "string", "mode": "string"}'
+```
 
