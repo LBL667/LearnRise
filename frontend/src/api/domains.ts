@@ -21,8 +21,8 @@ export const domainModes: Record<ApiDomain, DomainMode> = {
   diagnostics: 'real',
   mindmap: 'mock',
   trial: 'mock',
-  profile: 'mock',
-  leaderboard: 'mock',
+  profile: 'real',
+  leaderboard: 'real',
 }
 
 export function isMockDomain(domain: ApiDomain): boolean {

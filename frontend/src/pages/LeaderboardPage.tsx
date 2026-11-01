@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { ChevronDown, Crown } from 'lucide-react'
-import { api } from '@/api/client'
+import { useCallback, useEffect, useState } from 'react'
+import { ChevronDown, Crown, RefreshCw } from 'lucide-react'
+import { api, ApiError } from '@/api/client'
 import { tierLogos } from '@/assets/tierLogos'
 import type { Competition, LeaderboardEntry } from '@/api/types'
 import { useToast } from '@/components/ui/Toast'
@@ -87,13 +87,15 @@ function LaurelAvatar({ name, hue, rank, size = 108 }: { name: string; hue: numb
 function LaurelNumber({ rank, size = 96 }: { rank: number; size?: number }) {
   const color = LAUREL_COLOR[rank] ?? LAUREL_COLOR[2]
   return (
-    <span className="relative shrink-0" style={{ width: size, height: size }} aria-hidden="true">
+    <span className="relative shrink-0" style={{ width: size, height: size }}>
       <svg viewBox="0 0 120 120" width={size} height={size} className="absolute inset-0">
         <LaurelLeaves side="left" color={color} r={46} />
         <LaurelLeaves side="right" color={color} r={46} />
       </svg>
       <span
+        data-testid="rank-label"
         className="absolute inset-0 flex items-center justify-center font-black leading-none"
+        aria-label={`第 ${rank} 名`}
         style={{
           fontSize: size * 0.5,
           background: `linear-gradient(to bottom, ${color.light}, ${color.main})`,
@@ -149,26 +151,47 @@ function PlainAvatar({ name, hue, size = 44 }: { name: string; hue: number; size
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [competitions, setCompetitions] = useState<Competition[]>([])
-  const [competitionId, setCompetitionId] = useState('comp-001')
+  const [competitionId, setCompetitionId] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { showToast } = useToast()
 
   useEffect(() => {
     void (async () => {
-      const list = await api.listCompetitions()
-      setCompetitions(list)
-      if (list.length > 0) setCompetitionId(list[0].id)
+      try {
+        const list = await api.listCompetitions()
+        setCompetitions(list)
+        if (list.length > 0) setCompetitionId(list[0].id)
+        else setLoading(false)
+      } catch (err) {
+        setError(err instanceof ApiError ? err.detail : '竞赛列表加载失败')
+        setLoading(false)
+      }
     })()
   }, [])
 
-  useEffect(() => {
-    void (async () => {
-      setEntries(await api.getLeaderboard(competitionId))
-    })()
-  }, [competitionId])
+  const loadLeaderboard = useCallback(async (id: string) => {
+    if (!id) return
+    setLoading(true)
+    setError(null)
+    try {
+      setEntries(await api.getLeaderboard(id))
+    } catch (err) {
+      setEntries([])
+      setError(err instanceof ApiError ? err.detail : '排行榜加载失败，请稍后重试')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  const champion = entries[0]
-  const runnersUp = entries.slice(1, 3)
-  const rest = entries.slice(3)
+  useEffect(() => {
+    if (competitionId) void loadLeaderboard(competitionId)
+  }, [competitionId, loadLeaderboard])
+
+  const byRank = [...entries].sort((a, b) => a.rank - b.rank)
+  const champion = byRank.find((entry) => entry.rank === 1)
+  const runnersUp = byRank.filter((entry) => entry.rank === 2 || entry.rank === 3)
+  const rest = byRank.filter((entry) => entry.rank > 3)
 
   return (
     <div className="relative w-full px-6 py-6">
@@ -209,8 +232,30 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
+        {loading && (
+          <div className="card mt-5 p-10 text-center text-sm text-ink-mute" data-testid="leaderboard-loading">
+            正在加载排行榜…
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="card mt-5 flex flex-col items-center gap-3 p-10 text-center" data-testid="leaderboard-error">
+            <p className="text-sm text-ink-soft">{error}</p>
+            <button className="btn-ghost h-9 px-4" onClick={() => void loadLeaderboard(competitionId)}>
+              <RefreshCw size={14} />
+              重新加载
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && entries.length === 0 && (
+          <div className="card mt-5 p-10 text-center text-sm text-ink-mute" data-testid="leaderboard-empty">
+            该竞赛暂无榜单数据
+          </div>
+        )}
+
         {/* 榜首大卡 */}
-        {champion && (
+        {!loading && !error && champion && (
           <section className="relative mt-5 overflow-hidden rounded-[16px] border border-[#f0e0b8] bg-gradient-to-r from-[#fbf1d3] via-[#fdf8e9] to-[#f4f9ff]">
             <img
               src="/misty-mountains.jpg"
@@ -224,8 +269,8 @@ export default function LeaderboardPage() {
               draggable={false}
             />
             <div className="relative z-10 flex items-center gap-8 px-10 py-7">
-              <LaurelNumber rank={1} size={104} />
-              <LaurelAvatar name={champion.name} hue={champion.avatarHue} rank={1} size={112} />
+              <LaurelNumber rank={champion.rank} size={104} />
+              <LaurelAvatar name={champion.name} hue={champion.avatarHue} rank={champion.rank} size={112} />
               <div className="min-w-0">
                 <div className="truncate text-[19px] font-bold text-ink">{champion.name}</div>
                 <div className="mt-2">
@@ -244,7 +289,7 @@ export default function LeaderboardPage() {
         {/* 2 / 3 名 */}
         <div className="mt-4 grid grid-cols-2 gap-4">
           {runnersUp.map((e) => (
-            <div key={e.rank} className="card flex items-center gap-4 px-6 py-4">
+            <div key={e.userId} className="card flex items-center gap-4 px-6 py-4" data-testid="leaderboard-runner">
               <LaurelNumber rank={e.rank} size={64} />
               <LaurelAvatar name={e.name} hue={e.avatarHue} rank={e.rank} size={76} />
               <div className="min-w-0 flex-1">
@@ -264,8 +309,14 @@ export default function LeaderboardPage() {
         {/* 4-9 名 */}
         <div className="mt-4 grid grid-cols-2 gap-4">
           {rest.slice(0, 6).map((e) => (
-            <div key={e.rank} className="card flex items-center gap-4 px-6 py-3.5">
-              <span className="w-8 shrink-0 text-center text-[22px] font-bold text-ink-soft">{e.rank}</span>
+            <div key={e.userId} className="card flex items-center gap-4 px-6 py-3.5">
+              <span
+                data-testid="rank-label"
+                aria-label={`第 ${e.rank} 名`}
+                className="w-8 shrink-0 text-center text-[22px] font-bold text-ink-soft"
+              >
+                {e.rank}
+              </span>
               <PlainAvatar name={e.name} hue={e.avatarHue} size={44} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[14px] font-semibold text-ink">{e.name}</div>
@@ -282,9 +333,15 @@ export default function LeaderboardPage() {
         </div>
 
         {/* 第 10 名：通栏 */}
-        {rest[6] && (
+        {!loading && !error && rest[6] && (
           <div className="card mt-4 flex items-center gap-4 px-6 py-3.5">
-            <span className="w-8 shrink-0 text-center text-[22px] font-bold text-ink-soft">{rest[6].rank}</span>
+            <span
+              data-testid="rank-label"
+              aria-label={`第 ${rest[6].rank} 名`}
+              className="w-8 shrink-0 text-center text-[22px] font-bold text-ink-soft"
+            >
+              {rest[6].rank}
+            </span>
             <PlainAvatar name={rest[6].name} hue={rest[6].avatarHue} size={44} />
             <div className="min-w-0 flex-1">
               <div className="truncate text-[14px] font-semibold text-ink">{rest[6].name}</div>

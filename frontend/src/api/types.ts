@@ -357,48 +357,48 @@ export interface UserProgress {
 }
 
 export interface ProfileInfo {
+  id: string
   name: string
-  school: string
-  badge: string
-  motto: string
-  joinTime: string
-  grade: string
-  strengths: string[]
-  homepage: string
+  email: string
+  /** 由用户 id 派生的头像色相 0-360 */
+  avatarHue: number
+  /** 等级：初识 / 启行 / 明理 / 融会 / 贯通 / 卓越 */
+  level: string
+  /** 'YYYY-MM-DD' */
+  joinedAt: string
+  competitionCount: number
 }
 
 export interface ProfileStat {
   key: string
   label: string
   value: string
-  /** 较上月变化，如 +120 / -8 */
-  delta: string
-  tone: 'blue' | 'green' | 'violet' | 'red'
+  unit?: string | null
+  tone: 'primary' | 'success' | 'warning' | 'violet'
 }
 
 export interface CompetitionRecord {
   id: string
-  cover: CoverVariant
   title: string
-  level: string
-  timeRange: string
-  award: string
-  rankText: string
+  role: 'leader' | 'member' | 'viewer'
+  memberCount: number
+  /** 'YYYY-MM-DD' */
+  joinedAt: string
+  status: string
 }
 
 export interface StudyProgressItem {
-  id: string
-  cover: CoverVariant
-  title: string
-  level: string
-  lastLesson: string
+  label: string
+  value: number
+  total: number
   percent: number
 }
 
 export interface SettingItem {
   icon: 'user' | 'shield' | 'bell' | 'sliders' | 'monitor' | 'lock'
-  title: string
-  desc: string
+  label: string
+  description: string
+  value?: string | null
 }
 
 export interface SettingGroup {
@@ -409,7 +409,9 @@ export interface SettingGroup {
 /* ========== 排行榜 ========== */
 
 export interface LeaderboardEntry {
+  /** 服务端下发的连续名次，从 1 开始 */
   rank: number
+  userId: string
   name: string
   /** 段位名：初识 / 启行 / 明理 / 融会 / 贯通 / 卓越 */
   tier: string

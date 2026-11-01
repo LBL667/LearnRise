@@ -753,74 +753,71 @@ export const userProgress: UserProgress = {
 }
 
 export const profileInfo: ProfileInfo = {
+  id: 'demo-user',
   name: '林同学',
-  school: '南山大学',
-  badge: '钻石级',
-  motto: '每一次练习，都是向目标更近的一步。',
-  joinTime: '2024年3月',
-  grade: '大学二年级',
-  strengths: ['英语', '物理', '编程'],
-  homepage: '未设置',
+  email: 'demo@example.com',
+  avatarHue: 212,
+  level: '融会',
+  joinedAt: '2024-03-01',
+  competitionCount: 12,
 }
 
 export const profileStats: ProfileStat[] = [
-  { key: 'points', label: '我的积分', value: '1,280', delta: '+120', tone: 'blue' },
-  { key: 'joined', label: '已参加竞赛', value: '12', delta: '+3', tone: 'green' },
-  { key: 'favorites', label: '收藏题目', value: '86', delta: '+12', tone: 'violet' },
-  { key: 'wrong', label: '错题数量', value: '32', delta: '-8', tone: 'red' },
+  { key: 'competitions', label: '参赛数', value: '12', unit: '场', tone: 'primary' },
+  { key: 'reviews', label: '复习次数', value: '1,280', unit: '次', tone: 'success' },
+  { key: 'mastery', label: '平均掌握度', value: '86', unit: '%', tone: 'warning' },
+  { key: 'streak', label: '连续学习天数', value: '21', unit: '天', tone: 'violet' },
 ]
 
 export const competitionRecords: CompetitionRecord[] = [
   {
     id: 'cr-01',
-    cover: 'aurora',
     title: '2025 秋季学习挑战赛',
-    level: '高中',
-    timeRange: '2025-09-01 14:00 - 2025-09-15 23:59',
-    award: '全国三等奖',
-    rankText: '排名 3 / 856',
+    role: 'leader',
+    memberCount: 6,
+    joinedAt: '2025-09-01',
+    status: '已结束',
   },
   {
     id: 'cr-02',
-    cover: 'blackboard',
     title: '全科知识联赛模拟赛',
-    level: '高中',
-    timeRange: '2025-08-20 19:00 - 2025-09-05 22:00',
-    award: '省级一等奖',
-    rankText: '排名 5 / 1203',
+    role: 'member',
+    memberCount: 4,
+    joinedAt: '2025-08-20',
+    status: '已结束',
   },
   {
     id: 'cr-03',
-    cover: 'wave',
     title: '2025 跨学科研究挑战赛',
-    level: '大学',
-    timeRange: '2025-08-25 09:00 - 2025-09-12 18:00',
-    award: '全国二等奖',
-    rankText: '排名 12 / 642',
+    role: 'member',
+    memberCount: 5,
+    joinedAt: '2025-08-25',
+    status: '进行中',
   },
 ]
 
 export const studyProgress: StudyProgressItem[] = [
-  { id: 'sp-01', cover: 'geometry', title: '英语词汇冲顶营', level: '高中', lastLesson: '第 3 讲 词根词缀记忆法', percent: 72 },
-  { id: 'sp-02', cover: 'blackboard', title: '历史时间线专题', level: '高中', lastLesson: '第 2 讲 近代史框架梳理', percent: 45 },
-  { id: 'sp-03', cover: 'wave', title: '跨学科研究挑战赛', level: '大学', lastLesson: '第 1 讲 选题与研究思路', percent: 28 },
+  { label: '知识点掌握', value: 18, total: 25, percent: 72 },
+  { label: '复习卡片', value: 27, total: 60, percent: 45 },
+  { label: '试炼完成', value: 2, total: 5, percent: 40 },
+  { label: '今日复习', value: 9, total: 12, percent: 75 },
 ]
 
 export const settingGroups: SettingGroup[] = [
   {
     title: '账号设置',
     items: [
-      { icon: 'user', title: '基本信息', desc: '修改昵称、学校、年级等个人信息' },
-      { icon: 'shield', title: '安全设置', desc: '修改密码、绑定邮箱、账号安全' },
-      { icon: 'bell', title: '通知设置', desc: '管理系统通知、邮件提醒' },
+      { icon: 'user', label: '基本信息', description: '修改昵称、学校、年级等个人信息' },
+      { icon: 'shield', label: '安全设置', description: '修改密码、绑定邮箱、账号安全' },
+      { icon: 'bell', label: '通知设置', description: '管理系统通知、邮件提醒' },
     ],
   },
   {
     title: '偏好设置',
     items: [
-      { icon: 'sliders', title: '学习偏好', desc: '选择感兴趣的学科方向和难度范围' },
-      { icon: 'monitor', title: '界面设置', desc: '调整网站主题、显示偏好' },
-      { icon: 'lock', title: '隐私设置', desc: '管理个人资料的可见范围' },
+      { icon: 'sliders', label: '学习偏好', description: '选择感兴趣的学科方向和难度范围' },
+      { icon: 'monitor', label: '界面设置', description: '调整网站主题、显示偏好' },
+      { icon: 'lock', label: '隐私设置', description: '管理个人资料的可见范围' },
     ],
   },
 ]
@@ -839,14 +836,14 @@ export const tierLogos: Record<string, string> = {
 
 /** 排行榜名单（2025 秋季学习挑战赛） */
 export const leaderboard: LeaderboardEntry[] = [
-  { rank: 1, name: '流云逐梦者', tier: '卓越', division: 'I', points: 2860, avatarHue: 215 },
-  { rank: 2, name: '星云下的旅人', tier: '卓越', division: 'II', points: 2720, avatarHue: 330 },
-  { rank: 3, name: '风过山海', tier: '卓越', division: 'III', points: 2640, avatarHue: 20 },
-  { rank: 4, name: '追风少年', tier: '贯通', division: 'I', points: 2580, avatarHue: 150 },
-  { rank: 5, name: '云端的守望者', tier: '贯通', division: 'II', points: 2520, avatarHue: 205 },
-  { rank: 6, name: '知行者', tier: '贯通', division: 'III', points: 2480, avatarHue: 268 },
-  { rank: 7, name: '山海行者', tier: '贯通', division: 'IV', points: 2430, avatarHue: 350 },
-  { rank: 8, name: '书海逐光', tier: '明理', division: 'I', points: 2370, avatarHue: 190 },
-  { rank: 9, name: '青山之下', tier: '明理', division: 'II', points: 2320, avatarHue: 240 },
-  { rank: 10, name: '向光而行', tier: '明理', division: 'III', points: 2280, avatarHue: 95 },
+  { rank: 1, userId: 'mock-user-01', name: '流云逐梦者', tier: '卓越', division: 'I', points: 2860, avatarHue: 215 },
+  { rank: 2, userId: 'mock-user-02', name: '星云下的旅人', tier: '卓越', division: 'II', points: 2720, avatarHue: 330 },
+  { rank: 3, userId: 'mock-user-03', name: '风过山海', tier: '卓越', division: 'III', points: 2640, avatarHue: 20 },
+  { rank: 4, userId: 'mock-user-04', name: '追风少年', tier: '贯通', division: 'I', points: 2580, avatarHue: 150 },
+  { rank: 5, userId: 'mock-user-05', name: '云端的守望者', tier: '贯通', division: 'II', points: 2520, avatarHue: 205 },
+  { rank: 6, userId: 'mock-user-06', name: '知行者', tier: '贯通', division: 'III', points: 2480, avatarHue: 268 },
+  { rank: 7, userId: 'mock-user-07', name: '山海行者', tier: '贯通', division: 'IV', points: 2430, avatarHue: 350 },
+  { rank: 8, userId: 'mock-user-08', name: '书海逐光', tier: '明理', division: 'I', points: 2370, avatarHue: 190 },
+  { rank: 9, userId: 'mock-user-09', name: '青山之下', tier: '明理', division: 'II', points: 2320, avatarHue: 240 },
+  { rank: 10, userId: 'mock-user-10', name: '向光而行', tier: '明理', division: 'III', points: 2280, avatarHue: 95 },
 ]
