@@ -32,12 +32,18 @@ from app.ports.errors import (
 )
 from app.services.agent_resolver import resolve_agent
 from app.services.scope import authorize_resource
+from app.services.socratic import (
+    SOCRATIC_SYSTEM_GUIDANCE,
+    load_answers,
+    rewrite_leaks,
+    token_chunks,
+)
 
 router = APIRouter(prefix="/api/knowledge-points", tags=["explain"])
 
 EXPLAIN_TASK = "explain"
 
-ExplainStyle = Literal["concise", "detailed", "example"]
+ExplainStyle = Literal["concise", "detailed", "example", "socratic"]
 
 DEFAULT_SYSTEM_PROMPT = (
     "你是一位耐心的中文学习助教。请用中文讲解知识点，语言简洁清晰，"
@@ -48,6 +54,7 @@ _STYLE_HINTS: dict[str, str] = {
     "concise": "简明扼要，直接讲清核心要点。",
     "detailed": "详细展开，说明背景、原理和易错点。",
     "example": "给出一个具体例子帮助理解。",
+    "socratic": "不要直接给出结论，用递进的问题引导学生自己推导。",
 }
 
 _SSE_HEADERS = {
@@ -177,7 +184,11 @@ def explain_knowledge_point(
         if agent is not None and agent.system_prompt
         else DEFAULT_SYSTEM_PROMPT
     )
+    socratic = request_body.style == "socratic"
+    if socratic:
+        system_prompt = f"{system_prompt}\n\n{SOCRATIC_SYSTEM_GUIDANCE}"
     messages = _build_messages(point, request_body.style, system_prompt)
+    answers = load_answers(db, [point.id], user_id=user.id) if socratic else []
 
     agent_id = agent.id if agent is not None else None
     max_concurrency = agent.max_concurrency if agent is not None else None
@@ -198,11 +209,18 @@ def explain_knowledge_point(
                     if not delta:
                         continue
                     parts.append(delta)
-                    yield _sse("token", {"text": delta})
+                    if not socratic:
+                        yield _sse("token", {"text": delta})
         except Exception as exc:
             failure = exc
 
         content = "".join(parts)
+        rewritten = False
+        if socratic:
+            content, rewritten = rewrite_leaks(content, answers)
+            for piece in token_chunks(content):
+                yield _sse("token", {"text": piece})
+
         if failure is None:
             await run_in_threadpool(
                 _persist_explanation,
@@ -215,7 +233,10 @@ def explain_knowledge_point(
                 error_message=None,
                 model=model,
             )
-            yield _sse("done", {"chars": len(content)})
+            done_payload: dict[str, Any] = {"chars": len(content)}
+            if socratic:
+                done_payload["rewritten"] = rewritten
+            yield _sse("done", done_payload)
             return
 
         message = _error_message(failure)

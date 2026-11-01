@@ -6,6 +6,7 @@ import json
 from collections.abc import Iterator
 from datetime import datetime
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Query, Response, status
 from fastapi.concurrency import iterate_in_threadpool
@@ -24,11 +25,18 @@ from app.models import (
     Chunk,
     KnowledgePoint,
     KnowledgeSource,
+    QuizQuestion,
 )
 from app.ports import ChatMessage
 from app.ports.types import ChatRole
 from app.services.agent_resolver import resolve_agent
 from app.services.scope import resolve_scope
+from app.services.socratic import (
+    SOCRATIC_SYSTEM_GUIDANCE,
+    load_answers,
+    rewrite_leaks,
+    token_chunks,
+)
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 
@@ -53,6 +61,16 @@ class ConversationCreate(BaseModel):
 class MessageCreate(BaseModel):
     content: str = Field(min_length=1, max_length=4000)
     mode: str | None = None
+
+
+class RevealRequest(BaseModel):
+    question_id: str | None = None
+    chunk_id: str | None = None
+
+
+class RevealOut(BaseModel):
+    answer: str
+    explanation: str = ""
 
 
 class Citation(BaseModel):
@@ -98,12 +116,21 @@ class AnswerOut(BaseModel):
     content: str
     citations: list[Citation] = Field(default_factory=list)
     created_at: datetime
+    rewritten: bool = False
 
 
 def _not_found() -> CodedHTTPException:
     return CodedHTTPException(
         status_code=status.HTTP_404_NOT_FOUND, detail=NOT_FOUND_DETAIL, code="NOT_FOUND"
     )
+
+
+def _is_uuid(value: str) -> bool:
+    try:
+        UUID(value)
+    except (ValueError, TypeError, AttributeError):
+        return False
+    return True
 
 
 def _load_conversation(db: Session, conversation_id: str, user_id: str) -> AssistantConversation:
@@ -196,17 +223,134 @@ def _history(db: Session, conversation_id: str) -> list[ChatMessage]:
 
 
 def _build_messages(
-    history: list[ChatMessage], question: str, citations: list[Citation]
+    history: list[ChatMessage],
+    question: str,
+    citations: list[Citation],
+    *,
+    socratic: bool = False,
 ) -> list[ChatMessage]:
     context = "\n\n".join(
         f"[{index + 1}] {citation.snippet}" for index, citation in enumerate(citations)
     )
-    system = f"{DEFAULT_SYSTEM_PROMPT}\n\n资料片段：\n{context}"
+    system = DEFAULT_SYSTEM_PROMPT
+    if socratic:
+        system = f"{system}\n\n{SOCRATIC_SYSTEM_GUIDANCE}"
+    system = f"{system}\n\n资料片段：\n{context}"
     return [
         ChatMessage(role="system", content=system),
         *history,
         ChatMessage(role="user", content=question),
     ]
+
+
+def _answers_for_citations(
+    db: Session, citations: list[Citation], user_id: str
+) -> list[str]:
+    return load_answers(
+        db,
+        (citation.knowledge_point_id for citation in citations),
+        user_id=user_id,
+    )
+
+
+def _authorize_source(
+    db: Session, conversation: AssistantConversation, source: KnowledgeSource, user_id: str
+) -> None:
+    if source.user_id == user_id:
+        return
+    if (
+        conversation.competition_id is not None
+        and source.competition_id == conversation.competition_id
+    ):
+        resolve_scope(db, user_id, conversation.competition_id).require_read()
+        return
+    raise _not_found()
+
+
+def _authorize_question(
+    db: Session, conversation: AssistantConversation, question: QuizQuestion, user_id: str
+) -> None:
+    if question.user_id == user_id:
+        return
+    if (
+        conversation.competition_id is not None
+        and question.competition_id == conversation.competition_id
+    ):
+        resolve_scope(db, user_id, conversation.competition_id).require_read()
+        return
+    raise _not_found()
+
+
+def _question_for_chunk(
+    db: Session, conversation: AssistantConversation, chunk_id: str, user_id: str
+) -> QuizQuestion:
+    if not _is_uuid(chunk_id):
+        raise _not_found()
+    chunk = db.get(Chunk, chunk_id)
+    if chunk is None:
+        raise _not_found()
+    source = db.get(KnowledgeSource, chunk.source_id)
+    if source is None:
+        raise _not_found()
+    _authorize_source(db, conversation, source, user_id)
+
+    point_id = db.scalar(
+        select(KnowledgePoint.id).where(KnowledgePoint.chunk_id == chunk.id).limit(1)
+    )
+    if point_id is None:
+        point_id = db.scalar(
+            select(KnowledgePoint.id)
+            .where(KnowledgePoint.source_id == chunk.source_id)
+            .order_by(KnowledgePoint.level, KnowledgePoint.sort_order)
+            .limit(1)
+        )
+    if point_id is None:
+        raise _not_found()
+
+    question = db.scalars(
+        select(QuizQuestion)
+        .where(QuizQuestion.knowledge_point_id == point_id)
+        .order_by(QuizQuestion.created_at, QuizQuestion.id)
+        .limit(1)
+    ).first()
+    if question is None:
+        raise _not_found()
+    _authorize_question(db, conversation, question, user_id)
+    return question
+
+
+def _resolve_reveal(
+    db: Session,
+    conversation: AssistantConversation,
+    payload: RevealRequest,
+    user_id: str,
+) -> QuizQuestion:
+    if payload.question_id is not None:
+        if not _is_uuid(payload.question_id):
+            raise _not_found()
+        question = db.get(QuizQuestion, payload.question_id)
+        if question is None:
+            raise _not_found()
+        _authorize_question(db, conversation, question, user_id)
+        return question
+
+    chunk_id = payload.chunk_id
+    if chunk_id is None:
+        last = db.scalars(
+            select(AssistantMessage)
+            .where(
+                AssistantMessage.conversation_id == conversation.id,
+                AssistantMessage.role == "assistant",
+            )
+            .order_by(AssistantMessage.created_at.desc(), AssistantMessage.id.desc())
+            .limit(1)
+        ).first()
+        if last is not None and last.citations:
+            candidate = last.citations[0].get("chunk_id")
+            chunk_id = candidate if isinstance(candidate, str) else None
+    if chunk_id is None:
+        raise _not_found()
+    return _question_for_chunk(db, conversation, chunk_id, user_id)
 
 
 def _persist_message(
@@ -322,22 +466,42 @@ def send_message(
         )
 
     history = _history(db, conversation.id)
-    messages = _build_messages(history, payload.content, citations)
+    socratic = conversation.mode == "socratic"
+    messages = _build_messages(history, payload.content, citations, socratic=socratic)
+    answers = _answers_for_citations(db, citations, user.id) if socratic else []
     llm, _agent = resolve_agent(
         db, user_id=user.id, agent_id=None, task_type="assistant"
     )
     result = llm.chat(messages)
 
+    content = result.content
+    rewritten = False
+    if socratic:
+        content, rewritten = rewrite_leaks(content, answers)
+
     _persist_message(db, conversation, "user", payload.content, [], conversation.mode)
     stored = _persist_message(
-        db, conversation, "assistant", result.content, citations, conversation.mode
+        db, conversation, "assistant", content, citations, conversation.mode
     )
     return AnswerOut(
         message_id=stored.id,
         content=stored.content,
         citations=citations,
         created_at=stored.created_at,
+        rewritten=rewritten,
     )
+
+
+@router.post("/conversations/{conversation_id}/reveal", response_model=RevealOut)
+def reveal_answer(
+    conversation_id: str,
+    payload: RevealRequest,
+    db: DbSession,
+    user: CurrentUser,
+) -> RevealOut:
+    conversation = _load_conversation(db, conversation_id, user.id)
+    question = _resolve_reveal(db, conversation, payload, user.id)
+    return RevealOut(answer=question.answer, explanation=question.explanation or "")
 
 
 @router.post("/conversations/{conversation_id}/stream")
@@ -358,16 +522,40 @@ def stream_message(
         )
 
     history = _history(db, conversation.id)
-    messages = _build_messages(history, payload.content, citations)
+    mode = conversation.mode
+    socratic = mode == "socratic"
+    messages = _build_messages(history, payload.content, citations, socratic=socratic)
+    answers = _answers_for_citations(db, citations, user.id) if socratic else []
     llm, _agent = resolve_agent(
         db, user_id=user.id, agent_id=None, task_type="assistant"
     )
     question = payload.content
-    mode = conversation.mode
 
     def _generate() -> Iterator[str]:
-        parts: list[str] = []
         yield _sse("citations", {"citations": [c.model_dump() for c in citations]})
+        if socratic:
+            buffered: list[str] = []
+            for delta in llm.stream(messages):
+                if delta:
+                    buffered.append(delta)
+            content, rewritten = rewrite_leaks("".join(buffered), answers)
+            for piece in token_chunks(content):
+                yield _sse("token", {"text": piece})
+            _persist_message(db, conversation, "user", question, [], mode)
+            stored = _persist_message(
+                db, conversation, "assistant", content, citations, mode
+            )
+            yield _sse(
+                "done",
+                {
+                    "chars": len(content),
+                    "message_id": stored.id,
+                    "rewritten": rewritten,
+                },
+            )
+            return
+
+        parts: list[str] = []
         for delta in llm.stream(messages):
             if not delta:
                 continue
