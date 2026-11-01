@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChevronRight,
   Copy,
+  Eye,
   FileText,
   Lightbulb,
   RefreshCw,
@@ -17,8 +18,10 @@ import {
   createConversation,
   getConversation,
   listConversations,
+  revealAnswer,
   streamMessage,
 } from '@/api/assistant'
+import type { AssistantMode } from '@/api/assistant'
 import type { AssistantCitation, ChatItem, PlanCard } from '@/api/types'
 import { useToast } from '../ui/Toast'
 
@@ -71,8 +74,14 @@ function PlanCardView({ card }: { card: PlanCard }) {
   )
 }
 
-const ASSISTANT_FEATURES = [
-  {
+const MODE_OPTIONS: { value: AssistantMode; label: string }[] = [
+  { value: 'concise', label: '简洁' },
+  { value: 'detailed', label: '详细' },
+  { value: 'example', label: '举例' },
+  { value: 'socratic', label: '引导' },
+]
+
+const ASSISTANT_FEATURES = [  {
     icon: CalendarDays,
     title: '生成学习规划',
     desc: '根据你的目标和当前水平\n制定个性化的学习计划',
@@ -102,6 +111,8 @@ export function StudyAssistantPanel() {
   const [messages, setMessages] = useState<ChatItem[]>([])
   const [input, setInput] = useState('')
   const [thinking, setThinking] = useState(false)
+  const [revealing, setRevealing] = useState(false)
+  const [mode, setMode] = useState<AssistantMode>('concise')
   const [suggestions, setSuggestions] = useState<string[]>(() =>
     ASSISTANT_FEATURES.map((feature) => feature.question),
   )
@@ -176,6 +187,7 @@ export function StudyAssistantPanel() {
         await streamMessage(
           conversationId,
           trimmed,
+          mode,
           {
             onCitations: (next) => {
               citations = next
@@ -208,8 +220,31 @@ export function StudyAssistantPanel() {
         setThinking(false)
       }
     },
-    [thinking, showToast],
+    [thinking, showToast, mode],
   )
+
+  const reveal = useCallback(async () => {
+    const conversationId = conversationRef.current
+    if (conversationId === null || thinking || revealing) return
+    setRevealing(true)
+    try {
+      const result = await revealAnswer(conversationId)
+      const body = result.explanation ? `${result.answer}\n\n解析：${result.explanation}` : result.answer
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${++seq.current}`,
+          role: 'ai',
+          text: `参考答案：${body}`,
+          time: nowTime(),
+        },
+      ])
+    } catch {
+      showToast('暂无参考答案，请先生成讲解', 'error')
+    } finally {
+      setRevealing(false)
+    }
+  }, [thinking, revealing, showToast])
 
   const regenerate = async (msg: ChatItem) => {
     // 找到该 AI 消息对应的上一条用户消息，重新生成
@@ -349,6 +384,30 @@ export function StudyAssistantPanel() {
 
         {/* 输入区：发送按钮与输入框同行 */}
         <div className="border-t border-line p-4">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="text-[12px] font-medium text-ink-mute">回答模式</span>
+            <div
+              role="group"
+              aria-label="回答模式"
+              className="inline-flex rounded-lg border border-line bg-page p-0.5"
+            >
+              {MODE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={mode === option.value}
+                  onClick={() => setMode(option.value)}
+                  className={`rounded-md px-3 py-1 text-[12px] font-medium transition-colors ${
+                    mode === option.value
+                      ? 'bg-white text-primary shadow-[0_1px_3px_rgba(31,39,51,0.12)]'
+                      : 'text-ink-soft hover:text-ink'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="flex items-end gap-3">
             <textarea
               className="field-input h-11 max-w-[520px] flex-1 resize-none py-2.5 leading-5"
@@ -362,6 +421,17 @@ export function StudyAssistantPanel() {
                 }
               }}
             />
+            {mode === 'socratic' && (
+              <button
+                type="button"
+                className="btn-ghost shrink-0 px-5"
+                disabled={thinking || revealing}
+                onClick={() => void reveal()}
+              >
+                <Eye size={14} />
+                揭晓答案
+              </button>
+            )}
             <button className="btn-primary shrink-0 px-5" disabled={!input.trim() || thinking} onClick={() => void send(input)}>
               <Send size={14} />
               发送

@@ -7,6 +7,14 @@ import type {
 
 const BASE = '/api'
 
+/** 学习助手回答风格；与后端 `{content, mode}` 契约一致。 */
+export type AssistantMode = 'concise' | 'detailed' | 'example' | 'socratic'
+
+export interface RevealResult {
+  answer: string
+  explanation: string
+}
+
 export interface ConversationDetail {
   conversation: AssistantConversation
   messages: AssistantMessageDto[]
@@ -53,9 +61,20 @@ function parseFrames(buffer: string): { frames: { event: string; data: string }[
   return { frames, rest }
 }
 
+export async function revealAnswer(
+  conversationId: string,
+  payload: { question_id?: string; chunk_id?: string } = {},
+): Promise<RevealResult> {
+  return request<RevealResult>(`/assistant/conversations/${conversationId}/reveal`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function streamMessage(
   conversationId: string,
   content: string,
+  mode: AssistantMode,
   handlers: StreamHandlers,
   signal: AbortSignal,
 ): Promise<void> {
@@ -66,7 +85,7 @@ export async function streamMessage(
   const response = await fetch(`${BASE}/assistant/conversations/${conversationId}/stream`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, mode }),
     signal,
   })
   if (!response.ok || response.body === null) {

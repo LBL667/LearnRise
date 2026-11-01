@@ -13,7 +13,7 @@
 
 | 部分 | 状态 |
 |---|---|
-| 后端（FastAPI） | ✅ 全部纵向切片已并入；容器内测试全绿：**459 collected / 451 passed / 8 skipped / 0 failed** |
+| 后端（FastAPI） | ✅ 全部纵向切片已并入；容器内测试全绿：**468 collected / 460 passed / 8 skipped / 0 failed** |
 | 编排（Docker Compose / nginx） | ✅ 单套 compose，6 个服务全部 healthy；SSE 已确认不被缓冲 |
 | API 契约与文档 | ✅ `openapi.json` + `docs/api/` 由脚本生成，可零漂移复现（61 个 path / 69 个 operation） |
 | 前端（React） | ✅ 所有页面都读 FastAPI；本地 mock 层（`src/api/mock/`）已删除 |
@@ -22,6 +22,8 @@
 | 华为云适配器 | ⛔ **未实现**，仅保留 `ports/` 抽象与 `PROVIDER_PROFILE` 开关位 |
 
 没有「已上线」的部署：本仓库当前只保证**本地 Docker 全链路可运行**。
+
+本轮竞赛人数上限（`capacity`）不做强制校验：`capacity=null` 视为不限人数，界面显示「不限」。
 
 ---
 
