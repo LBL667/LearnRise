@@ -21,8 +21,6 @@ import type {
   TrialExamState,
   TrialSubmission,
   JobStatus,
-  UploadDocResult,
-  UserProgress,
   WeakPoint,
   WrongQuestion,
   WrongQuestionQuery,

@@ -38,6 +38,11 @@ MAX_QUIZ_PER_DAY = 10
 MAX_REVIEWS_PER_POINT = 12
 STANDARD_RATING = 4
 
+#: Hard ceiling on generated plan items. A competition may end far in the
+#: future (legacy rows even had ``9999-12-31``); without this cap the plan would
+#: contain millions of items and a multi-gigabyte response.
+MAX_PLAN_DAYS = 180
+
 NOT_FOUND_DETAIL = "资源不存在"
 MISSING_END_AT_DETAIL = "竞赛未设置结束时间"
 EMPTY_GUIDANCE = "先做一轮诊断练习，再生成备考计划"
@@ -65,6 +70,9 @@ class ExamPlanOut(BaseModel):
     items: list[ExamPlanItemOut] = Field(default_factory=list)
     guidance: str | None = None
     generated_at: datetime
+    #: True when the real horizon exceeds :data:`MAX_PLAN_DAYS` and the plan was
+    #: clamped to that many trailing days.
+    truncated: bool = False
 
 
 def _not_found() -> CodedHTTPException:
@@ -103,11 +111,13 @@ def _remaining_days(now: datetime, end_at: datetime) -> int:
     return max(1, math.ceil(delta / 86400))
 
 
-def _has_attempts(db: Session, user_id: str) -> bool:
-    return (
-        db.scalar(select(QuizAttempt.id).where(QuizAttempt.user_id == user_id).limit(1))
-        is not None
-    )
+def _has_attempts(db: Session, user_id: str, competition_id: str | None = None) -> bool:
+    statement = select(QuizAttempt.id).where(QuizAttempt.user_id == user_id)
+    if competition_id is not None:
+        statement = statement.join(
+            QuizQuestion, QuizQuestion.id == QuizAttempt.question_id
+        ).where(QuizQuestion.competition_id == competition_id)
+    return db.scalar(statement.limit(1)) is not None
 
 
 def _most_wrong_question_kps(
@@ -234,6 +244,11 @@ def _sprint_items(
 
 def _from_stored(stored: ExamPlan, competition: Competition) -> ExamPlanOut:
     items = [ExamPlanItemOut.model_validate(item) for item in stored.items]
+    now = datetime.now(UTC)
+    truncated = (
+        competition.end_at is not None
+        and _remaining_days(now, _aware_utc(competition.end_at)) > MAX_PLAN_DAYS
+    )
     return ExamPlanOut(
         mode=cast(PlanMode, stored.mode),
         competition_id=competition.id,
@@ -241,6 +256,7 @@ def _from_stored(stored: ExamPlan, competition: Competition) -> ExamPlanOut:
         items=items,
         guidance=None if items else EMPTY_GUIDANCE,
         generated_at=_aware_utc(stored.generated_at),
+        truncated=truncated,
     )
 
 
@@ -273,6 +289,8 @@ def generate_exam_plan(
     now = datetime.now(UTC)
     remaining = _remaining_days(now, end_at)
     mode: PlanMode = "standard" if remaining >= SPRINT_THRESHOLD_DAYS else "sprint"
+    planned_days = min(remaining, MAX_PLAN_DAYS)
+    truncated = remaining > MAX_PLAN_DAYS
     end_date = end_at.date()
 
     weak_points = rank_weak_points(
@@ -282,18 +300,18 @@ def generate_exam_plan(
         limit=WEAK_POINT_LIMIT,
     )
     guidance: str | None = None
-    if _has_attempts(db, user_id):
+    if _has_attempts(db, user_id, competition_id):
         if mode == "sprint":
             items = _sprint_items(
                 weak_points,
-                count=remaining,
+                count=planned_days,
                 end_date=end_date,
                 most_wrong_kps=_most_wrong_question_kps(
                     db, user_id=user_id, competition_id=competition_id
                 ),
             )
         else:
-            items = _standard_items(weak_points, count=remaining, end_date=end_date)
+            items = _standard_items(weak_points, count=planned_days, end_date=end_date)
     else:
         items = []
         guidance = EMPTY_GUIDANCE
@@ -321,4 +339,5 @@ def generate_exam_plan(
         items=items,
         guidance=guidance,
         generated_at=_aware_utc(stored.generated_at),
+        truncated=truncated,
     )

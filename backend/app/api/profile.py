@@ -23,11 +23,11 @@ from __future__ import annotations
 
 import zlib
 from datetime import date, datetime, timedelta
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -506,7 +506,12 @@ def get_setting_groups(user: CurrentUser) -> list[SettingGroupOut]:
 
 @leaderboard_router.get("/{competition_id}", response_model=list[LeaderboardEntryOut])
 def get_leaderboard(
-    competition_id: str, db: DbSession, user: CurrentUser
+    competition_id: str,
+    db: DbSession,
+    user: CurrentUser,
+    response: Response,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[LeaderboardEntryOut]:
     try:
         UUID(competition_id)
@@ -540,13 +545,15 @@ def get_leaderboard(
         (entry.id, _display_name(entry), points.get(entry.id, 0)) for entry in rows
     ]
     scored.sort(key=lambda item: (-item[2], item[1], item[0]))
+    response.headers["X-Total-Count"] = str(len(scored))
 
     output: list[LeaderboardEntryOut] = []
-    for index, (user_id, name, score) in enumerate(scored, start=1):
+    page = scored[offset : offset + limit]
+    for absolute_rank, (user_id, name, score) in enumerate(page, start=offset + 1):
         tier, division = _tier_for(score)
         output.append(
             LeaderboardEntryOut(
-                rank=index,
+                rank=absolute_rank,
                 userId=user_id,
                 name=name,
                 tier=tier,

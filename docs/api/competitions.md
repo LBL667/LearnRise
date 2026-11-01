@@ -44,7 +44,7 @@
 | `description` | `string` | 否 |
 | `host` | `string` | 否 |
 | `memberCount` | `integer` | 否 |
-| `capacity` | `integer` | 否 |
+| `capacity` | `integer \| null` | 否 |
 | `startTime` | `string` | 否 |
 | `endTime` | `string` | 否 |
 | `awardQuota` | `integer` | 否 |
@@ -106,7 +106,7 @@ curl -X GET 'http://localhost:8000/api/competitions?limit=20&offset=0' \
 | `description` | `string` | 否 |
 | `host` | `string` | 否 |
 | `memberCount` | `integer` | 否 |
-| `capacity` | `integer` | 否 |
+| `capacity` | `integer \| null` | 否 |
 | `startTime` | `string` | 否 |
 | `endTime` | `string` | 否 |
 | `awardQuota` | `integer` | 否 |
@@ -159,7 +159,7 @@ curl -X POST 'http://localhost:8000/api/competitions' \
 | `description` | `string` | 否 |
 | `host` | `string` | 否 |
 | `memberCount` | `integer` | 否 |
-| `capacity` | `integer` | 否 |
+| `capacity` | `integer \| null` | 否 |
 | `startTime` | `string` | 否 |
 | `endTime` | `string` | 否 |
 | `awardQuota` | `integer` | 否 |
@@ -212,7 +212,7 @@ curl -X POST 'http://localhost:8000/api/competitions/join' \
 | `description` | `string` | 否 |
 | `host` | `string` | 否 |
 | `memberCount` | `integer` | 否 |
-| `capacity` | `integer` | 否 |
+| `capacity` | `integer \| null` | 否 |
 | `startTime` | `string` | 否 |
 | `endTime` | `string` | 否 |
 | `awardQuota` | `integer` | 否 |
@@ -386,7 +386,7 @@ curl -X POST 'http://localhost:8000/api/competitions/{competition_id}/plan/gener
 | `competitionId` | `string` | 是 |
 | `title` | `string` | 是 |
 | `memberCount` | `integer` | 是 |
-| `capacity` | `integer` | 否 |
+| `capacity` | `integer \| null` | 否 |
 
 #### 错误状态码
 

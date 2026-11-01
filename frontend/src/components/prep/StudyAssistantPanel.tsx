@@ -223,10 +223,10 @@ export function StudyAssistantPanel() {
   const copyText = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
+      showToast('已复制')
     } catch {
-      /* 仅提示 */
+      showToast('复制失败，请手动选择文本', 'error')
     }
-    showToast('已复制')
   }
 
   const toggleLike = (id: string) => {

@@ -17,7 +17,7 @@
 
 - **标签**: `files`
 - **摘要**: Read Stored File
-- **鉴权**: 公开端点：无需 Bearer JWT
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
 
 #### 路径 / 查询 / 请求头参数
 
@@ -33,11 +33,12 @@
 
 #### 错误状态码
 
-`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
 
 #### curl 示例
 
 ```bash
-curl -X GET 'http://localhost:8000/files/{path}'
+curl -X GET 'http://localhost:8000/files/{path}' \
+  -H 'Authorization: Bearer $TOKEN'
 ```
 

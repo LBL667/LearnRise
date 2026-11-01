@@ -566,9 +566,15 @@
             "type": "boolean"
           },
           "capacity": {
-            "default": 0,
-            "title": "Capacity",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
           },
           "cover": {
             "default": "aurora",
@@ -1051,6 +1057,11 @@
             ],
             "title": "Mode",
             "type": "string"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
           }
         },
         "required": [
@@ -1187,6 +1198,18 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted At"
           },
           "total": {
             "title": "Total",
@@ -1380,9 +1403,15 @@
       "InviteOut": {
         "properties": {
           "capacity": {
-            "default": 0,
-            "title": "Capacity",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
           },
           "code": {
             "title": "Code",
@@ -5787,6 +5816,29 @@
               "title": "Competition Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -7085,6 +7137,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "summary": "Read Stored File",
         "tags": [
           "files"

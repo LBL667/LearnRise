@@ -288,7 +288,7 @@ export default function TrialPage() {
               exam_id: state.exam_id,
               score: state.score ?? 0,
               total: state.total,
-              submitted_at: state.expires_at,
+              submitted_at: state.submitted_at ?? new Date().toISOString(),
               results: state.results,
             })
           }

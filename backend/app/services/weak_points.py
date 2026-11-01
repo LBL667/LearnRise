@@ -71,6 +71,7 @@ def rank_weak_points(
         select(
             KnowledgePoint.id,
             KnowledgePoint.title,
+            KnowledgePoint.user_id,
             KnowledgePoint.mastery_score,
             grouped.c.total_attempts,
             grouped.c.wrong_attempts,
@@ -78,13 +79,17 @@ def rank_weak_points(
     ).all()
 
     ranked: list[WeakPoint] = []
-    for point_id, title, mastery, total, wrong in rows:
+    for point_id, title, owner_id, mastery, total, wrong in rows:
         total_attempts = int(cast(int, total))
         if total_attempts <= 0:
             continue
         wrong_attempts = int(cast(int, wrong))
         error_rate = wrong_attempts / total_attempts
-        mastery_score = float(cast(float, mastery or 0.0))
+        mastery_score = (
+            float(cast(float, mastery or 0.0))
+            if str(owner_id) == str(user_id)
+            else 0.0
+        )
         score = error_rate * ERROR_RATE_WEIGHT + (1.0 - mastery_score) * MASTERY_WEIGHT
         ranked.append(
             WeakPoint(

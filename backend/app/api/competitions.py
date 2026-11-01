@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import secrets
 import zlib
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response, status
@@ -36,7 +36,6 @@ COVER_VARIANTS = ("aurora", "blackboard", "geometry", "wave", "forest")
 NOT_FOUND_DETAIL = "资源不存在"
 INVITE_INVALID_DETAIL = "邀请码无效或已过期"
 ALREADY_MEMBER_DETAIL = "你已经加入该竞赛"
-COMPETITION_FULL_DETAIL = "竞赛人数已满"
 PLAN_NOT_READY_DETAIL = "学习规划尚未生成"
 CANNOT_REMOVE_SELF_DETAIL = "不能移除自己"
 FORBIDDEN_DETAIL = "没有权限执行该操作"
@@ -73,7 +72,7 @@ class CompetitionOut(BaseModel):
     description: str = ""
     host: str = ""
     memberCount: int = 0
-    capacity: int = 0
+    capacity: int | None = None
     startTime: str = ""
     endTime: str = ""
     awardQuota: int = 0
@@ -102,7 +101,7 @@ class InviteOut(BaseModel):
     competitionId: str
     title: str
     memberCount: int
-    capacity: int = 0
+    capacity: int | None = None
 
 
 class JoinRequest(BaseModel):
@@ -201,6 +200,7 @@ def _to_out(db: Session, competition: Competition, user: User, role: str | None)
         description=competition.description,
         host=owner.display_name if owner is not None else "",
         memberCount=_member_count(db, competition.id),
+        capacity=None,
         startTime=competition.start_at.isoformat() if competition.start_at else "",
         endTime=competition.end_at.isoformat() if competition.end_at else "",
         awardQuota=competition.winner_count,
@@ -269,6 +269,11 @@ def create_competition(
     if start_at and end_at and end_at <= start_at:
         raise CodedHTTPException(
             status_code=422, detail="结束时间必须晚于开始时间", code="VALIDATION_ERROR"
+        )
+
+    if end_at is not None and end_at > datetime.now(UTC) + timedelta(days=365 * 2):
+        raise CodedHTTPException(
+            status_code=422, detail="结束时间不能超过两年", code="VALIDATION_ERROR"
         )
 
     competition = Competition(

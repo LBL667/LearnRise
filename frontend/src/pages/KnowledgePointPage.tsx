@@ -21,6 +21,7 @@ export default function KnowledgePointPage() {
 
   useEffect(() => {
     let cancelled = false
+    setPoint(null)
     setError('')
     request<KnowledgePoint>(`/knowledge-points/${id}`)
       .then((body) => {
@@ -28,6 +29,7 @@ export default function KnowledgePointPage() {
       })
       .catch((caught) => {
         if (!cancelled) {
+          setPoint(null)
           setError(caught instanceof ApiError ? caught.detail : '知识点加载失败')
         }
       })

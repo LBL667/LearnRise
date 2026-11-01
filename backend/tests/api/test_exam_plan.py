@@ -238,3 +238,24 @@ def test_regenerate_false_replays_the_stored_plan(
     assert second.status_code == 200
     assert second.json()["items"] == first.json()["items"]
     assert second.json()["generated_at"] == first.json()["generated_at"]
+
+
+def test_long_horizon_is_truncated_to_the_plan_cap(
+    client: TestClient, db_session: Session, make_user: Callable[..., User]
+) -> None:
+    user = make_user()
+    headers = _login(client, user)
+    end_at = datetime.now(UTC) + timedelta(days=400)
+    competition = _make_competition(db_session, user, end_at=end_at)
+    _make_wrong_attempt(db_session, user, competition)
+
+    response = _plan(client, headers, competition.id)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["mode"] == "standard"
+    assert body["truncated"] is True
+    assert len(body["items"]) == 180
+    days = [date.fromisoformat(item["date"]) for item in body["items"]]
+    assert days[-1] == end_at.date()
+    assert days[0] == end_at.date() - timedelta(days=179)

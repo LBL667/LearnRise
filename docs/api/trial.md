@@ -78,6 +78,7 @@ curl -X POST 'http://localhost:8000/api/trial/exams' \
 | `score` | `integer \| null` | 否 |
 | `total` | `integer` | 是 |
 | `expires_at` | `string(date-time)` | 是 |
+| `submitted_at` | `string(date-time) \| null` | 否 |
 | `remaining_seconds` | `integer` | 是 |
 | `questions` | `array<app__api__trial__QuestionOut>` | 是 |
 | `questions[].id` | `string` | 是 |

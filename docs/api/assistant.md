@@ -296,6 +296,7 @@ curl -X POST 'http://localhost:8000/api/assistant/conversations/{conversation_id
 | `items[].rationale` | `string` | 否 |
 | `guidance` | `string \| null` | 否 |
 | `generated_at` | `string(date-time)` | 是 |
+| `truncated` | `boolean` | 否 |
 
 #### 错误状态码
 

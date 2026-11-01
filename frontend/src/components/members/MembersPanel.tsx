@@ -34,7 +34,8 @@ export function MembersPanel({ competition, members, onMembersChange }: MembersP
     }
   }
 
-  const slots = Math.max(0, competition.capacity - members.length)
+  const capacity = competition.capacity && competition.capacity > 0 ? competition.capacity : null
+  const slots = capacity ? Math.max(0, capacity - members.length) : 0
 
   return (
     <div>
@@ -44,7 +45,7 @@ export function MembersPanel({ competition, members, onMembersChange }: MembersP
           <h3 className="text-[15px] font-bold text-ink">
             成员管理{' '}
             <span className="text-primary">
-              {members.length}/{competition.capacity}
+              {members.length}/{capacity ?? '不限'}
             </span>
           </h3>
           <p className="mt-1 text-[13px] text-ink-mute">邀请志同道合的伙伴一起竞赛，共同进步!</p>
@@ -67,7 +68,7 @@ export function MembersPanel({ competition, members, onMembersChange }: MembersP
               开启竞赛
             </button>
             <span className="mt-1 whitespace-nowrap text-[11px] text-ink-mute">
-              需满{competition.capacity}人后方可开启竞赛
+              {capacity ? `需满${capacity}人后方可开启竞赛` : '人数不限'}
             </span>
           </div>
         </div>

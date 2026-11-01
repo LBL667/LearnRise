@@ -90,7 +90,12 @@ export async function streamMessage(
     const parsed = parseFrames(buffer)
     buffer = parsed.rest
     for (const frame of parsed.frames) {
-      const payload = JSON.parse(frame.data) as Record<string, unknown>
+      let payload: Record<string, unknown>
+      try {
+        payload = JSON.parse(frame.data) as Record<string, unknown>
+      } catch {
+        continue
+      }
       if (frame.event === 'citations') {
         handlers.onCitations((payload.citations ?? []) as AssistantCitation[])
       } else if (frame.event === 'token') {

@@ -24,6 +24,8 @@
 | 名称 | 位置 | 类型 | 必填 | 默认值 |
 |---|---|---|---|---|
 | `competition_id` | `path` | `string` | 是 | — |
+| `limit` | `query` | `integer` | 否 | 50 |
+| `offset` | `query` | `integer` | 否 | 0 |
 
 #### 响应字段（200）
 
@@ -44,7 +46,7 @@
 #### curl 示例
 
 ```bash
-curl -X GET 'http://localhost:8000/api/leaderboard/{competition_id}' \
+curl -X GET 'http://localhost:8000/api/leaderboard/{competition_id}?limit=50&offset=0' \
   -H 'Authorization: Bearer $TOKEN'
 ```
 

@@ -43,7 +43,7 @@ from app.models import (
 )
 from app.models.practice import PRACTICE_MAX_ITEMS
 from app.services.answer import grade
-from app.services.scope import authorize_resource
+from app.services.scope import authorize_resource, resolve_scope
 
 router = APIRouter(prefix="/api/assistant/practice", tags=["practice"])
 
@@ -314,6 +314,9 @@ def _append_item(
 def create_session(
     payload: SessionCreate, db: DbSession, user: CurrentUser
 ) -> SessionStartOut:
+    if payload.competition_id is not None:
+        resolve_scope(db, user, payload.competition_id)
+
     points = _load_visible_points(db, user, payload.knowledge_point_ids)
     point_ids = [point.id for point in points]
 

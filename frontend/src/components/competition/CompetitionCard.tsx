@@ -32,7 +32,7 @@ export function CompetitionCard({ competition }: { competition: Competition }) {
 
         <div className="mt-3 grid grid-cols-5 gap-3">
           <Meta icon={User} label="主办方" value={competition.host} />
-          <Meta icon={Users} label="人数" value={`${competition.memberCount}/${competition.capacity}`} />
+          <Meta icon={Users} label="人数" value={`${competition.memberCount}/${competition.capacity ? competition.capacity : '不限'}`} />
           <Meta icon={CalendarDays} label="开始时间" value={competition.startTime} />
           <Meta icon={CalendarClock} label="结束时间" value={competition.endTime} />
           <Meta icon={Trophy} label="获奖名额" value={`${competition.awardQuota} 名`} />

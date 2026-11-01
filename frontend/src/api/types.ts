@@ -14,7 +14,7 @@ export interface Competition {
   description: string
   host: string
   memberCount: number
-  capacity: number
+  capacity?: number | null
   /** '2025-09-01 14:00' */
   startTime: string
   endTime: string
@@ -350,6 +350,7 @@ export interface TrialExamState {
   score?: number | null
   total: number
   expires_at: string
+  submitted_at?: string | null
   remaining_seconds: number
   questions: TrialExamQuestion[]
   results?: TrialAnswerResult[] | null

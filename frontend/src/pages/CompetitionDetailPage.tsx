@@ -119,7 +119,7 @@ export default function CompetitionDetailPage() {
             <span className="text-ink-soft">
               人数{' '}
               <span className="ml-1 font-medium text-ink">
-                {competition.memberCount}/{competition.capacity}
+                {competition.memberCount}/{competition.capacity ? competition.capacity : '不限'}
               </span>
             </span>
             <span className="text-ink-soft">

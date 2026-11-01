@@ -99,7 +99,7 @@ export default function ReviewPage() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  })
+  }, [flipped, submitting, current])
 
   const predicted = current ? predictedEntries(current) : []
 

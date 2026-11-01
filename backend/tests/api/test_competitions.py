@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable, Iterator
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -508,3 +509,26 @@ def test_reward_image_rejects_wrong_type_and_oversize(
 
     assert wrong_type.status_code == 415
     assert oversize.status_code == 413
+
+
+def test_create_rejects_end_time_more_than_two_years_away(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    headers = _login(client, make_user())
+    now = datetime.now(UTC)
+
+    response = client.post(
+        "/api/competitions",
+        json={
+            "name": "超长竞赛",
+            "start_time": now.isoformat(),
+            "end_time": (now + timedelta(days=365 * 3)).isoformat(),
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": "结束时间不能超过两年",
+        "code": "VALIDATION_ERROR",
+    }

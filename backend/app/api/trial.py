@@ -111,6 +111,7 @@ class ExamStateResponse(BaseModel):
     score: int | None = None
     total: int
     expires_at: datetime
+    submitted_at: datetime | None = None
     remaining_seconds: int
     questions: list[QuestionOut]
     results: list[ResultOut] | None = None
@@ -339,6 +340,7 @@ def read_exam(exam_id: str, db: DbSession, user: CurrentUser) -> ExamStateRespon
         score=int(exam.score) if submitted and exam.score is not None else None,
         total=exam.total,
         expires_at=exam.expires_at,
+        submitted_at=exam.submitted_at,
         remaining_seconds=remaining,
         questions=[
             _question_out(question, index + 1, score)

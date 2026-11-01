@@ -398,3 +398,30 @@ def test_profile_endpoints_require_auth(client: TestClient) -> None:
     ):
         response = client.get(path)
         assert response.status_code == 401, path
+
+
+def test_leaderboard_paginates_with_global_rank(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    leader = make_user("队长")
+    second = make_user("队员乙")
+    third = make_user("队员丙")
+    competition = _create_competition(client, leader, "分页竞赛")
+    _join(client, second, competition["inviteCode"])
+    _join(client, third, competition["inviteCode"])
+
+    first_page = client.get(
+        f"/api/leaderboard/{competition['id']}?limit=1&offset=1",
+        headers=_headers(leader),
+    )
+    second_page = client.get(
+        f"/api/leaderboard/{competition['id']}?limit=1&offset=2",
+        headers=_headers(leader),
+    )
+
+    assert first_page.status_code == 200, first_page.text
+    assert first_page.headers["X-Total-Count"] == "3"
+    assert [entry["rank"] for entry in first_page.json()] == [2]
+    assert second_page.status_code == 200, second_page.text
+    assert second_page.headers["X-Total-Count"] == "3"
+    assert [entry["rank"] for entry in second_page.json()] == [3]
