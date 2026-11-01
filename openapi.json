@@ -361,6 +361,20 @@
         "title": "AttemptOut",
         "type": "object"
       },
+      "Body_upload_reward_image_api_uploads_reward_image_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_reward_image_api_uploads_reward_image_post",
+        "type": "object"
+      },
       "Body_upload_source_api_sources_upload_post": {
         "properties": {
           "file": {
@@ -1658,6 +1672,24 @@
         "title": "ReviewSubmitOut",
         "type": "object"
       },
+      "RewardImageOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "key"
+        ],
+        "title": "RewardImageOut",
+        "type": "object"
+      },
       "RewardItem": {
         "properties": {
           "imageUrl": {
@@ -2782,6 +2814,57 @@
           }
         ],
         "summary": "Read Plan",
+        "tags": [
+          "competitions"
+        ]
+      }
+    },
+    "/api/competitions/{competition_id}/plan/generate": {
+      "post": {
+        "operationId": "generate_plan_api_competitions__competition_id__plan_generate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "competition_id",
+            "required": true,
+            "schema": {
+              "title": "Competition Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Generate Plan Api Competitions  Competition Id  Plan Generate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Generate Plan",
         "tags": [
           "competitions"
         ]
@@ -3974,6 +4057,92 @@
         "summary": "Get Source Tree",
         "tags": [
           "knowledge-points"
+        ]
+      }
+    },
+    "/api/uploads/reward-image": {
+      "post": {
+        "operationId": "upload_reward_image_api_uploads_reward_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_reward_image_api_uploads_reward_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RewardImageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Upload Reward Image",
+        "tags": [
+          "uploads"
+        ]
+      }
+    },
+    "/files/{path}": {
+      "get": {
+        "operationId": "read_stored_file_files__path__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Stored File",
+        "tags": [
+          "files"
         ]
       }
     },

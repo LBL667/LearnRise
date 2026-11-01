@@ -3,7 +3,7 @@
 # competitions 竞赛
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：8。
+> 端点数量：9。
 
 ## 端点总览
 
@@ -16,6 +16,7 @@
 | `GET` | `/api/competitions/{competition_id}/members` | List Members |
 | `DELETE` | `/api/competitions/{competition_id}/members/{member_id}` | Remove Member |
 | `GET` | `/api/competitions/{competition_id}/plan` | Read Plan |
+| `POST` | `/api/competitions/{competition_id}/plan/generate` | Generate Plan |
 | `GET` | `/api/invite/{code}` | Read Invite |
 
 ## 端点详情
@@ -333,6 +334,35 @@ curl -X DELETE 'http://localhost:8000/api/competitions/{competition_id}/members/
 
 ```bash
 curl -X GET 'http://localhost:8000/api/competitions/{competition_id}/plan' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `POST /api/competitions/{competition_id}/plan/generate`
+
+- **标签**: `competitions`
+- **摘要**: Generate Plan
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `competition_id` | `path` | `string` | 是 | — |
+
+#### 响应字段（202）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| — | 无固定字段 | — |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/competitions/{competition_id}/plan/generate' \
   -H 'Authorization: Bearer $TOKEN'
 ```
 

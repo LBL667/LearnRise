@@ -8,17 +8,20 @@ import zlib
 from datetime import UTC, datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.errors import CodedHTTPException
+from app.db import SessionLocal
 from app.deps import CurrentUser, DbSession
 from app.models import (
     Competition,
     CompetitionInvite,
     CompetitionMember,
+    IngestionJob,
+    KnowledgePoint,
     KnowledgeSource,
     User,
 )
@@ -415,3 +418,128 @@ def read_plan(competition_id: str, db: DbSession, user: CurrentUser) -> PlanOut:
         intro=payload.get("intro", competition.intro),
         stages=payload.get("stages", []),
     )
+
+
+STAGE_THEMES = (
+    ("基础梳理", "把资料里的定义与概念过一遍"),
+    ("框架搭建", "按章节串成知识框架"),
+    ("典型题型", "用例题固化理解"),
+    ("薄弱补强", "集中处理反复出错的知识点"),
+    ("综合应用", "跨章节综合题训练"),
+    ("模拟冲刺", "按考试节奏做整套练习"),
+)
+STAGE_ICONS = ("book", "grid", "triangle", "chart", "pie", "crown")
+NO_CONTEXT_DETAIL = "共享库里还没有可用的知识点"
+
+
+def _build_stages(points: list[KnowledgePoint]) -> list[dict]:
+    ordered = sorted(points, key=lambda point: (point.level, point.sort_order, point.title))
+    titles = [point.title for point in ordered if point.title.strip()]
+    stages: list[dict] = []
+    total = len(STAGE_THEMES)
+    for index, (theme, summary) in enumerate(STAGE_THEMES):
+        bucket = titles[index::total] if titles else []
+        stages.append(
+            {
+                "no": f"{index + 1:02d}",
+                "title": theme,
+                "theme": summary,
+                "points": bucket[:8],
+                "icon": STAGE_ICONS[index],
+            }
+        )
+    return stages
+
+
+def _plan_stats(competition: Competition) -> dict:
+    now = datetime.now(UTC)
+    return {
+        "daysToStart": _days_between(competition.start_at, now),
+        "startAt": competition.start_at.isoformat() if competition.start_at else "",
+        "daysToEnd": _days_between(competition.end_at, now),
+        "endAt": competition.end_at.isoformat() if competition.end_at else "",
+        "awardQuota": competition.winner_count,
+    }
+
+
+def _generate_plan(competition_id: str, job_id: str) -> None:
+    session = SessionLocal()
+    try:
+        competition = session.get(Competition, competition_id)
+        job = session.get(IngestionJob, job_id)
+        if competition is None or job is None:
+            return
+        job.status = "parsing"
+        job.progress = 10
+        session.commit()
+
+        source_ids = session.scalars(
+            select(KnowledgeSource.id).where(KnowledgeSource.competition_id == competition_id)
+        ).all()
+        points = (
+            session.scalars(
+                select(KnowledgePoint).where(KnowledgePoint.source_id.in_(source_ids))
+            ).all()
+            if source_ids
+            else []
+        )
+
+        competition.plan_payload = {
+            "stats": _plan_stats(competition),
+            "intro": competition.intro or f"围绕《{competition.title}》的六阶段备赛路线。",
+            "stages": _build_stages(list(points)),
+        }
+        competition.plan_status = "ready"
+        competition.plan_generated_at = datetime.now(UTC)
+        job.status = "ready"
+        job.progress = 100
+        job.finished_at = datetime.now(UTC)
+        session.commit()
+    except Exception as exc:  # noqa: BLE001 - a failed background job must not crash the worker
+        session.rollback()
+        competition = session.get(Competition, competition_id)
+        job = session.get(IngestionJob, job_id)
+        if competition is not None:
+            competition.plan_status = "failed"
+        if job is not None:
+            job.status = "failed"
+            job.error_message = str(exc)[:2000]
+            job.finished_at = datetime.now(UTC)
+        session.commit()
+    finally:
+        session.close()
+
+
+@router.post(
+    "/api/competitions/{competition_id}/plan/generate",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generate_plan(
+    competition_id: str,
+    db: DbSession,
+    user: CurrentUser,
+    background_tasks: BackgroundTasks,
+) -> dict[str, str]:
+    competition, role = _visible_competition(db, competition_id, user)
+    if role != LEADER:
+        raise CodedHTTPException(status_code=403, detail=FORBIDDEN_DETAIL, code="FORBIDDEN")
+
+    source = db.scalar(
+        select(KnowledgeSource)
+        .where(KnowledgeSource.competition_id == competition_id)
+        .order_by(KnowledgeSource.created_at)
+        .limit(1)
+    )
+    if source is None:
+        raise CodedHTTPException(
+            status_code=409, detail=NO_CONTEXT_DETAIL, code="NO_CONTEXT"
+        )
+
+    competition.plan_status = "generating"
+    job = IngestionJob(source_id=source.id, user_id=user.id, status="queued", progress=0)
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    background_tasks.add_task(_generate_plan, competition.id, job.id)
+    return {"job_id": job.id, "competition_id": competition.id, "status": "queued"}

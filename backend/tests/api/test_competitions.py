@@ -15,6 +15,7 @@ from app.models import (
     Competition,
     CompetitionInvite,
     CompetitionMember,
+    KnowledgePoint,
     KnowledgeSource,
     User,
 )
@@ -363,3 +364,147 @@ def test_binding_another_users_source_is_404_and_does_not_persist(
     assert response.json()["code"] == "NOT_FOUND"
     assert stored is not None
     assert stored.competition_id is None
+
+
+def _seed_shared_source(
+    db_session: Session, owner: User, competition_id: str, titles: list[str]
+) -> KnowledgeSource:
+    source = KnowledgeSource(
+        user_id=owner.id,
+        competition_id=competition_id,
+        title="共享讲义",
+        filename="shared.pdf",
+        content_type="application/pdf",
+        size_bytes=1,
+        storage_key=f"tests/{uuid.uuid4().hex}.pdf",
+        status="ready",
+    )
+    db_session.add(source)
+    db_session.flush()
+    for index, title in enumerate(titles):
+        db_session.add(
+            KnowledgePoint(
+                user_id=owner.id,
+                source_id=source.id,
+                title=title,
+                content="",
+                level=0,
+                sort_order=index,
+            )
+        )
+    db_session.commit()
+    return source
+
+
+def test_plan_generate_is_leader_only(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    owner = make_user("队长")
+    member = make_user("队员")
+    owner_headers = _login(client, owner)
+    competition = _create_competition(client, owner_headers)
+    client.post(
+        "/api/competitions/join",
+        json={"invite_code": competition["inviteCode"]},
+        headers=_login(client, member),
+    )
+
+    response = client.post(
+        f"/api/competitions/{competition['id']}/plan/generate",
+        headers=_login(client, member),
+    )
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "FORBIDDEN"
+
+
+def test_plan_generate_without_sources_is_409_no_context(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    headers = _login(client, make_user())
+    competition = _create_competition(client, headers)
+
+    response = client.post(
+        f"/api/competitions/{competition['id']}/plan/generate", headers=headers
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "NO_CONTEXT"
+
+
+def test_plan_generate_produces_six_stages(
+    client: TestClient, db_session: Session, make_user: Callable[..., User]
+) -> None:
+    owner = make_user("队长")
+    headers = _login(client, owner)
+    competition = _create_competition(client, headers)
+    _seed_shared_source(
+        db_session,
+        owner,
+        competition["id"],
+        ["图的基本概念", "深度优先搜索", "广度优先搜索", "最短路", "最小生成树", "拓扑排序"],
+    )
+
+    accepted = client.post(
+        f"/api/competitions/{competition['id']}/plan/generate", headers=headers
+    )
+
+    assert accepted.status_code == 202, accepted.text
+    job_id = accepted.json()["job_id"]
+
+    job = client.get(f"/api/jobs/{job_id}", headers=headers)
+    assert job.status_code == 200
+    assert job.json()["status"] == "ready"
+
+    plan = client.get(f"/api/competitions/{competition['id']}/plan", headers=headers)
+    assert plan.status_code == 200, plan.text
+    body = plan.json()
+    assert len(body["stages"]) == 6
+    assert all({"no", "title", "theme", "points", "icon"} <= set(stage) for stage in body["stages"])
+    assert body["stats"]["awardQuota"] == 3
+    collected = [point for stage in body["stages"] for point in stage["points"]]
+    assert "深度优先搜索" in collected
+
+
+def test_reward_image_upload_returns_public_url(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    headers = _login(client, make_user())
+    png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
+        b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+
+    response = client.post(
+        "/api/uploads/reward-image",
+        files={"file": ("badge.png", png, "image/png")},
+        headers=headers,
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["url"].endswith(body["key"])
+    fetched = client.get(f"/files/{body['key']}")
+    assert fetched.status_code == 200
+    assert fetched.headers["content-type"].startswith("image/png")
+
+
+def test_reward_image_rejects_wrong_type_and_oversize(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    headers = _login(client, make_user())
+
+    wrong_type = client.post(
+        "/api/uploads/reward-image",
+        files={"file": ("note.txt", b"hello", "text/plain")},
+        headers=headers,
+    )
+    oversize = client.post(
+        "/api/uploads/reward-image",
+        files={"file": ("big.png", b"\x89PNG" + b"0" * (2 * 1024 * 1024), "image/png")},
+        headers=headers,
+    )
+
+    assert wrong_type.status_code == 415
+    assert oversize.status_code == 413
