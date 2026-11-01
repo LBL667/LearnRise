@@ -6,7 +6,15 @@ import type {
   CompetitionPlan,
   CreateCompetitionPayload,
   CreateResult,
+  DueReviewCard,
+  DueReviewList,
   LearnRiseApi,
+  RemediationPayload,
+  RemediationPlan,
+  ReviewStats,
+  ReviewSubmitResult,
+  WeakPoint,
+  WrongQuestionQuery,
   LeaderboardEntry,
   Member,
   MindMapData,
@@ -55,6 +63,22 @@ function genInviteCode(): string {
 
 function genId(): string {
   return `comp-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
+}
+
+function filterWrongQuestions(params: WrongQuestionQuery = {}): WrongQuestion[] {
+  const keyword = params.q?.trim().toLowerCase() ?? ''
+  const filtered = wrongQuestions.filter((q) => {
+    if (params.type && params.type !== 'all' && q.type !== params.type) return false
+    if (params.severity && params.severity !== 'all' && q.severity !== params.severity) return false
+    if (keyword) {
+      const haystack = [q.stem, ...q.tags].join(' ').toLowerCase()
+      if (!haystack.includes(keyword)) return false
+    }
+    return true
+  })
+  const offset = params.offset ?? 0
+  if (params.limit === undefined) return filtered.slice(offset)
+  return filtered.slice(offset, offset + params.limit)
 }
 
 /**
@@ -236,9 +260,17 @@ class MockApi implements LearnRiseApi {
     return { reply: variants[Math.floor(Math.random() * variants.length)] }
   }
 
-  async listWrongQuestions(): Promise<WrongQuestion[]> {
+  async listWrongQuestions(params: WrongQuestionQuery = {}): Promise<WrongQuestion[]> {
     await sleep(260)
-    return wrongQuestions
+    return filterWrongQuestions(params)
+  }
+
+  async listWrongQuestionsPage(
+    params: WrongQuestionQuery = {},
+  ): Promise<{ items: WrongQuestion[]; total: number }> {
+    await sleep(260)
+    const items = filterWrongQuestions(params)
+    return { items, total: filterWrongQuestions({ ...params, limit: undefined, offset: undefined }).length }
   }
 
   /** 删除一道错题（内存移除，返回删除后的列表） */
@@ -248,6 +280,112 @@ class MockApi implements LearnRiseApi {
     if (idx === -1) throw new Error(`错题不存在: ${id}`)
     wrongQuestions.splice(idx, 1)
     return [...wrongQuestions]
+  }
+
+  async getWeakPoints(_competitionId?: string): Promise<WeakPoint[]> {
+    await sleep(200)
+    const grouped = new Map<string, WrongQuestion[]>()
+    wrongQuestions.forEach((q) => {
+      q.tags.forEach((tag) => {
+        const bucket = grouped.get(tag) ?? []
+        bucket.push(q)
+        grouped.set(tag, bucket)
+      })
+    })
+    return [...grouped.entries()]
+      .map(([title, list], index) => {
+        const wrongAttempts = list.reduce((sum, q) => sum + q.wrongCount, 0)
+        const totalAttempts = wrongAttempts + 2
+        return {
+          knowledge_point_id: `mock-kp-${index + 1}`,
+          title,
+          total_attempts: totalAttempts,
+          wrong_attempts: wrongAttempts,
+          error_rate: wrongAttempts / totalAttempts,
+          mastery_score: 1 - wrongAttempts / totalAttempts,
+          score: (wrongAttempts / totalAttempts) * 0.7,
+        }
+      })
+      .sort((a, b) => b.score - a.score)
+  }
+
+  async createRemediationPlan(payload?: RemediationPayload): Promise<RemediationPlan> {
+    const weakPoints = await this.getWeakPoints(payload?.competitionId)
+    const limit = payload?.limit ?? 5
+    const items = weakPoints.slice(0, limit).map((point) => {
+      const owner = wrongQuestions.find((q) => q.tags.includes(point.title))
+      return {
+        knowledge_point_id: point.knowledge_point_id,
+        title: point.title,
+        error_rate: point.error_rate,
+        recommended_questions: owner
+          ? [
+              {
+                id: owner.id,
+                stem: owner.stem,
+                type: owner.type,
+                wrong_count: owner.wrongCount,
+              },
+            ]
+          : [],
+      }
+    })
+    return items.length > 0
+      ? { items }
+      : { items: [], guidance: '先做一轮诊断练习，再生成补强清单' }
+  }
+
+  private dueCards: DueReviewCard[] = wrongQuestions.slice(0, 3).map((q) => ({
+    id: `mock-card-${q.id}`,
+    question: q.stem,
+    answer: q.analysis.answer ?? q.analysis.choiceAnswer ?? q.analysis.conclusion,
+    knowledge_point_id: `mock-kp-${q.tags[0] ?? 'unknown'}`,
+    due_date: new Date().toISOString().slice(0, 10),
+    state: 0,
+    reps: 0,
+    lapses: q.wrongCount,
+    difficulty: 5,
+    stability: 1,
+    retrievability: 1,
+  }))
+
+  private reviewedToday = 0
+
+  async getDueCards(): Promise<DueReviewList> {
+    await sleep(240)
+    return { cards: [...this.dueCards], count: this.dueCards.length }
+  }
+
+  async submitReview(cardId: string, rating: number): Promise<ReviewSubmitResult> {
+    await sleep(220)
+    const card = this.dueCards.find((item) => item.id === cardId)
+    if (!card) throw new Error(`复习卡片不存在: ${cardId}`)
+    this.dueCards = this.dueCards.filter((item) => item.id !== cardId)
+    this.reviewedToday += 1
+    const intervalDays = [1, 2, 4, 7, 15][Math.max(0, Math.min(4, rating - 1))]
+    const next = new Date()
+    next.setDate(next.getDate() + intervalDays)
+    return {
+      card_id: cardId,
+      next_due_date: next.toISOString().slice(0, 10),
+      interval_days: intervalDays,
+      stability: card.stability + rating,
+      difficulty: card.difficulty,
+      state: card.state + 1,
+      reps: card.reps + 1,
+      lapses: card.lapses,
+      idempotent: false,
+    }
+  }
+
+  async getReviewStats(): Promise<ReviewStats> {
+    await sleep(160)
+    return {
+      due_count: this.dueCards.length,
+      reviewed_today: this.reviewedToday,
+      streak_days: this.reviewedToday > 0 ? 1 : 0,
+      total_cards: this.dueCards.length + this.reviewedToday,
+    }
   }
 
   async getDefaultMindMap(): Promise<MindMapData> {

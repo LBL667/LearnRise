@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage'
 import PrepPage from './pages/PrepPage'
 import ProfilePage from './pages/ProfilePage'
 import PromotionPage from './pages/PromotionPage'
+import ReviewPage from './pages/ReviewPage'
 import TrialPage from './pages/TrialPage'
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/competition/:id" element={<CompetitionDetailPage />} />
         <Route path="/prep" element={<PrepPage />} />
         <Route path="/trial" element={<TrialPage />} />
+        <Route path="/review" element={<ReviewPage />} />
         <Route path="/promo" element={<PromotionPage />} />
         <Route path="/rank" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />

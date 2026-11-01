@@ -18,7 +18,7 @@ export type ApiDomain =
 export const domainModes: Record<ApiDomain, DomainMode> = {
   competitions: 'real',
   assistant: 'mock',
-  diagnostics: 'mock',
+  diagnostics: 'real',
   mindmap: 'mock',
   trial: 'mock',
   profile: 'mock',

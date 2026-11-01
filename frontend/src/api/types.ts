@@ -214,6 +214,96 @@ export interface WrongQuestion {
   }
 }
 
+/** 错题列表查询参数（后端为 snake_case，这里保持前端风格） */
+export interface WrongQuestionQuery {
+  competitionId?: string
+  /** 'all' 与不传等价，方便直接透传面板筛选值 */
+  type?: WrongType | 'all'
+  severity?: WrongSeverity | 'all'
+  q?: string
+  limit?: number
+  offset?: number
+}
+
+/** 薄弱知识点（GET /api/assistant/weak-points） */
+export interface WeakPoint {
+  knowledge_point_id: string
+  title: string
+  total_attempts: number
+  wrong_attempts: number
+  error_rate: number
+  mastery_score: number
+  score: number
+}
+
+export interface RemediationQuestion {
+  id: string
+  stem: string
+  type: WrongType
+  wrong_count: number
+}
+
+export interface RemediationItem {
+  knowledge_point_id: string
+  title: string
+  error_rate: number
+  recommended_questions: RemediationQuestion[]
+}
+
+/** 补强计划（POST /api/assistant/remediation-plan） */
+export interface RemediationPlan {
+  items: RemediationItem[]
+  guidance?: string | null
+}
+
+export interface RemediationPayload {
+  competitionId?: string
+  limit?: number
+}
+
+/** DSR 到期卡片（GET /api/review/due） */
+export interface DueReviewCard {
+  id: string
+  question: string
+  answer: string
+  knowledge_point_id: string | null
+  due_date: string | null
+  state: number
+  reps: number
+  lapses: number
+  difficulty: number
+  stability: number
+  retrievability: number
+  /** 后端可选下发；缺失时前端不渲染预测区间 */
+  predicted_intervals?: number[] | Record<string, number> | null
+}
+
+export interface DueReviewList {
+  cards: DueReviewCard[]
+  count: number
+}
+
+/** POST /api/review/{card_id}/submit */
+export interface ReviewSubmitResult {
+  card_id: string
+  next_due_date: string
+  interval_days: number
+  stability: number
+  difficulty: number
+  state: number
+  reps: number
+  lapses: number
+  idempotent: boolean
+}
+
+/** GET /api/review/stats */
+export interface ReviewStats {
+  due_count: number
+  reviewed_today: number
+  streak_days: number
+  total_cards: number
+}
+
 /** 思维导图 */
 export interface MindMapBranch {
   id: string
@@ -353,9 +443,23 @@ export interface LearnRiseApi {
   getChatHistory(): Promise<ChatItem[]>
   getChatSuggestions(batch: number): Promise<{ questions: string[] }>
   sendChatMessage(text: string): Promise<ChatReply>
-  listWrongQuestions(): Promise<WrongQuestion[]>
+  /** 不传参数时保持旧的「取回全部」语义 */
+  listWrongQuestions(params?: WrongQuestionQuery): Promise<WrongQuestion[]>
+  /** 同上，并暴露 X-Total-Count 里的总数（服务端分页用） */
+  listWrongQuestionsPage(
+    params?: WrongQuestionQuery,
+  ): Promise<{ items: WrongQuestion[]; total: number }>
   /** 删除一道错题，返回删除后的列表 */
   removeWrongQuestion(id: string): Promise<WrongQuestion[]>
+  /** 按错误率排序的薄弱知识点 */
+  getWeakPoints(competitionId?: string): Promise<WeakPoint[]>
+  /** 生成补强计划（薄弱知识点 + 推荐练习） */
+  createRemediationPlan(payload?: RemediationPayload): Promise<RemediationPlan>
+  /** DSR 到期队列 */
+  getDueCards(): Promise<DueReviewList>
+  /** 提交一次复习评分（1-5），返回下次复习日期 */
+  submitReview(cardId: string, rating: number): Promise<ReviewSubmitResult>
+  getReviewStats(): Promise<ReviewStats>
   getDefaultMindMap(): Promise<MindMapData>
   generateMindMap(topic: string): Promise<MindMapData>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart3, ChevronDown, ChevronRight, ChevronsLeft, Crown, FileText, PencilLine, Trophy, User } from 'lucide-react'
+import { BarChart3, ChevronDown, ChevronRight, ChevronsLeft, Crown, FileText, PencilLine, RotateCw, Trophy, User } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useToast } from '../ui/Toast'
 
@@ -16,6 +16,7 @@ const PRIMARY_ITEM: NavItem = { key: 'arena', label: '竞赛空间', icon: Troph
 const SUB_ITEMS: NavItem[] = [
   { key: 'prep', label: '备赛区', icon: FileText, path: '/prep' },
   { key: 'trial', label: '赛题试炼', icon: PencilLine, path: '/trial' },
+  { key: 'review', label: '间隔复习', icon: RotateCw, path: '/review' },
   { key: 'promo', label: '晋级赛', icon: BarChart3, path: '/promo' },
   { key: 'rank', label: '排行榜', icon: Crown, path: '/rank' },
 ]

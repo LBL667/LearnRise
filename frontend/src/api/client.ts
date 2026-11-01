@@ -8,6 +8,7 @@ import type {
   CompetitionRecord,
   CreateCompetitionPayload,
   CreateResult,
+  DueReviewList,
   LearnRiseApi,
   LeaderboardEntry,
   Member,
@@ -15,13 +16,19 @@ import type {
   PlanStage,
   ProfileInfo,
   ProfileStat,
+  RemediationPayload,
+  RemediationPlan,
+  ReviewStats,
+  ReviewSubmitResult,
   SettingGroup,
   StudyProgressItem,
   TrialExam,
   JobStatus,
   UploadDocResult,
   UserProgress,
+  WeakPoint,
   WrongQuestion,
+  WrongQuestionQuery,
 } from './types'
 
 /**
@@ -98,11 +105,11 @@ interface RequestOptions {
   timeoutMs?: number
 }
 
-export async function request<T>(
+async function perform(
   path: string,
   init: RequestInit = {},
   options: RequestOptions = {},
-): Promise<T> {
+): Promise<Response> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
   const controller = new AbortController()
   const timer = window.setTimeout(() => controller.abort(), timeoutMs)
@@ -127,10 +134,7 @@ export async function request<T>(
     if (!response.ok) {
       throw await toApiError(response)
     }
-    if (response.status === 204) {
-      return undefined as T
-    }
-    return (await response.json()) as T
+    return response
   } catch (error) {
     if (error instanceof ApiError) {
       throw error
@@ -142,6 +146,18 @@ export async function request<T>(
   } finally {
     window.clearTimeout(timer)
   }
+}
+
+export async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  options: RequestOptions = {},
+): Promise<T> {
+  const response = await perform(path, init, options)
+  if (response.status === 204) {
+    return undefined as T
+  }
+  return (await response.json()) as T
 }
 
 const QUESTION_TYPE_MAP: Record<string, string[]> = {
@@ -164,6 +180,31 @@ function query(params: Record<string, string | number | undefined>): string {
   })
   const rendered = search.toString()
   return rendered ? `?${rendered}` : ''
+}
+
+function wrongQuestionsQuery(params: WrongQuestionQuery = {}): string {
+  return query({
+    competition_id: params.competitionId,
+    type: params.type === 'all' ? undefined : params.type,
+    severity: params.severity === 'all' ? undefined : params.severity,
+    q: params.q,
+    limit: params.limit,
+    offset: params.offset,
+  })
+}
+
+function fetchWrongQuestions(params?: WrongQuestionQuery): Promise<WrongQuestion[]> {
+  return request<WrongQuestion[]>(`/wrong-questions${wrongQuestionsQuery(params)}`)
+}
+
+async function fetchWrongQuestionsPage(
+  params?: WrongQuestionQuery,
+): Promise<{ items: WrongQuestion[]; total: number }> {
+  const response = await perform(`/wrong-questions${wrongQuestionsQuery(params)}`)
+  const items = (await response.json()) as WrongQuestion[]
+  const header = response.headers.get('X-Total-Count')
+  const parsed = header === null ? Number.NaN : Number(header)
+  return { items, total: Number.isFinite(parsed) ? parsed : items.length }
 }
 
 const realApi: LearnRiseApi = {
@@ -223,9 +264,26 @@ const realApi: LearnRiseApi = {
     request<{ questions: string[] }>(`/chat/suggestions${query({ batch })}`),
   sendChatMessage: (text) =>
     request<ChatReply>('/chat/messages', { method: 'POST', body: JSON.stringify({ text }) }),
-  listWrongQuestions: () => request<WrongQuestion[]>('/wrong-questions'),
-  removeWrongQuestion: (id) =>
-    request<WrongQuestion[]>(`/wrong-questions/${id}`, { method: 'DELETE' }),
+  listWrongQuestions: (params) => fetchWrongQuestions(params),
+  listWrongQuestionsPage: (params) => fetchWrongQuestionsPage(params),
+  removeWrongQuestion: async (id) => {
+    await request<void>(`/wrong-questions/${id}`, { method: 'DELETE' })
+    return fetchWrongQuestions()
+  },
+  getWeakPoints: (competitionId) =>
+    request<WeakPoint[]>(`/assistant/weak-points${query({ competition_id: competitionId })}`),
+  createRemediationPlan: (payload: RemediationPayload = {}) =>
+    request<RemediationPlan>('/assistant/remediation-plan', {
+      method: 'POST',
+      body: JSON.stringify({ competition_id: payload.competitionId, limit: payload.limit }),
+    }),
+  getDueCards: () => request<DueReviewList>('/review/due'),
+  submitReview: (cardId, rating) =>
+    request<ReviewSubmitResult>(`/review/${cardId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ rating }),
+    }),
+  getReviewStats: () => request<ReviewStats>('/review/stats'),
   getDefaultMindMap: () => request<MindMapData>('/mindmap/default'),
   generateMindMap: (topic) =>
     request<MindMapData>('/mindmap/generate', { method: 'POST', body: JSON.stringify({ topic }) }),
@@ -260,7 +318,13 @@ const methodDomains: Record<keyof LearnRiseApi, ApiDomain> = {
   getChatSuggestions: 'assistant',
   sendChatMessage: 'assistant',
   listWrongQuestions: 'diagnostics',
+  listWrongQuestionsPage: 'diagnostics',
   removeWrongQuestion: 'diagnostics',
+  getWeakPoints: 'diagnostics',
+  createRemediationPlan: 'diagnostics',
+  getDueCards: 'diagnostics',
+  submitReview: 'diagnostics',
+  getReviewStats: 'diagnostics',
   getDefaultMindMap: 'mindmap',
   generateMindMap: 'mindmap',
 
@@ -298,7 +362,13 @@ export const api: LearnRiseApi = {
   getChatSuggestions: pick('getChatSuggestions'),
   sendChatMessage: pick('sendChatMessage'),
   listWrongQuestions: pick('listWrongQuestions'),
+  listWrongQuestionsPage: pick('listWrongQuestionsPage'),
   removeWrongQuestion: pick('removeWrongQuestion'),
+  getWeakPoints: pick('getWeakPoints'),
+  createRemediationPlan: pick('createRemediationPlan'),
+  getDueCards: pick('getDueCards'),
+  submitReview: pick('submitReview'),
+  getReviewStats: pick('getReviewStats'),
   getDefaultMindMap: pick('getDefaultMindMap'),
   generateMindMap: pick('generateMindMap'),
 
