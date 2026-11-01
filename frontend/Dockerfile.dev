@@ -1,0 +1,19 @@
+# Dev-only image for the React frontend: runs the Vite dev server inside the
+# compose network so nginx can proxy both HTML and HMR websockets to it.
+#
+# There is no package-lock.json tracked in this repo, so `npm install` is used
+# instead of `npm ci`. The service mounts ./frontend over /app and keeps an
+# anonymous volume on /app/node_modules so the host directory does not shadow
+# the dependencies installed here.
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 5174
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5174"]

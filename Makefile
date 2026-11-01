@@ -1,30 +1,33 @@
-.PHONY: up down dev test lint demo migrate logs verify
+.PHONY: up down dev test lint demo migrate logs verify compose-check
+
+COMPOSE_FILE ?= docker-compose.yml
+export COMPOSE_FILE
 
 up:
-	docker compose up -d --build
+	docker compose -f $(COMPOSE_FILE) up -d --build
 
 down:
-	docker compose down
+	docker compose -f $(COMPOSE_FILE) down
 
 dev:
-	docker compose up --build
+	docker compose -f $(COMPOSE_FILE) up --build
 
 logs:
-	docker compose logs -f --tail=200
+	docker compose -f $(COMPOSE_FILE) logs -f --tail=200
 
 test:
-	docker compose run --rm backend pytest -q
+	docker compose -f $(COMPOSE_FILE) run --rm backend pytest -q
 
 lint:
-	docker compose run --rm backend ruff check app tests alembic
-	docker compose run --rm backend mypy app
+	docker compose -f $(COMPOSE_FILE) run --rm backend ruff check app tests alembic
+	docker compose -f $(COMPOSE_FILE) run --rm backend mypy app
 
 demo:
-	docker compose run --rm backend python scripts/seed_demo.py
+	docker compose -f $(COMPOSE_FILE) run --rm backend python scripts/seed_demo.py
 	bash scripts/demo.sh
 
 migrate:
-	docker compose run --rm backend alembic upgrade head
+	docker compose -f $(COMPOSE_FILE) run --rm backend alembic upgrade head
 
 # Full pre-commit gate: ruff + mypy + pytest + vitest + build + playwright + gitleaks.
 # A missing tool prints a loud SKIP line with the reason instead of silently
@@ -47,22 +50,22 @@ migrate:
 verify:
 	@set -e; \
 	echo "[verify] ruff"; \
-	if docker compose run --rm -T --no-deps backend sh -c 'command -v ruff >/dev/null 2>&1'; then \
-		docker compose run --rm -T --no-deps backend ruff check app tests alembic; \
+	if docker compose -f $(COMPOSE_FILE) run --rm -T --no-deps backend sh -c 'command -v ruff >/dev/null 2>&1'; then \
+		docker compose -f $(COMPOSE_FILE) run --rm -T --no-deps backend ruff check app tests alembic; \
 	else \
 		echo "[verify] SKIP ruff: ruff not available in the backend image"; \
 	fi
 	@set -e; \
 	echo "[verify] mypy"; \
-	if docker compose run --rm -T --no-deps backend sh -c 'command -v mypy >/dev/null 2>&1'; then \
-		docker compose run --rm -T --no-deps backend mypy app; \
+	if docker compose -f $(COMPOSE_FILE) run --rm -T --no-deps backend sh -c 'command -v mypy >/dev/null 2>&1'; then \
+		docker compose -f $(COMPOSE_FILE) run --rm -T --no-deps backend mypy app; \
 	else \
 		echo "[verify] SKIP mypy: mypy not available in the backend image"; \
 	fi
 	@set -e; \
 	echo "[verify] pytest"; \
-	if docker compose run --rm -T --no-deps backend sh -c 'command -v pytest >/dev/null 2>&1'; then \
-		docker compose run --rm -T backend pytest -q; \
+	if docker compose -f $(COMPOSE_FILE) run --rm -T --no-deps backend sh -c 'command -v pytest >/dev/null 2>&1'; then \
+		docker compose -f $(COMPOSE_FILE) run --rm -T backend pytest -q; \
 	else \
 		echo "[verify] SKIP pytest: pytest not available in the backend image"; \
 	fi
@@ -106,7 +109,7 @@ verify:
 		if [ "$${VERIFY_ALLOW_SKIP:-0}" = "1" ]; then \
 			echo "[verify] SKIP playwright: stack not reachable (backend $$API_URL, frontend $$BASE_URL)"; \
 		else \
-			echo "[verify] FAIL playwright: stack not reachable (backend $$API_URL, frontend $$BASE_URL); run 'docker compose up -d' or set VERIFY_ALLOW_SKIP=1 to skip" >&2; \
+			echo "[verify] FAIL playwright: stack not reachable (backend $$API_URL, frontend $$BASE_URL); run 'docker compose -f $(COMPOSE_FILE) up -d' or set VERIFY_ALLOW_SKIP=1 to skip" >&2; \
 			exit 1; \
 		fi; \
 	else \
@@ -121,3 +124,6 @@ verify:
 		echo "[verify] SKIP gitleaks: gitleaks not installed (see .pre-commit-config.yaml)"; \
 	fi
 	@echo "[verify] done"
+
+compose-check:
+	docker compose -f $(COMPOSE_FILE) config -q

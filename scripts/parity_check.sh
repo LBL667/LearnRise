@@ -16,7 +16,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 PROFILE="${PROVIDER_PROFILE:-local}"
-COMPOSE=(docker compose)
+COMPOSE=(docker compose -f "${COMPOSE_FILE:-docker-compose.yml}")
 BASE_URL="${PARITY_BASE_URL:-http://localhost:8000}"
 MAAS_BASE_URL="${MAAS_BASE_URL:-https://api.modelarts-maas.com/openai/v1}"
 
@@ -130,7 +130,7 @@ preflight() {
   local service
   for service in backend db; do
     if ! printf '%s\n' "$running" | grep -qx "$service"; then
-      echo "fatal: compose service '$service' is not running; run 'docker compose up -d'" >&2
+      echo "fatal: compose service '$service' is not running; run 'docker compose -f ${COMPOSE_FILE:-docker-compose.yml} up -d'" >&2
       exit 1
     fi
   done

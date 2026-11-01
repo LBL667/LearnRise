@@ -7,7 +7,7 @@
 |---|---|
 | `../docker-compose.prod.yml` | 生产编排：backend + web(nginx) + 可选 ocr-service，**无 db/minio** |
 | `../.env.prod.example` | 生产环境变量模板（占位符 + 轮换标记） |
-| `nginx.conf` | TLS、静态 SPA、`/api` 反代、SSE 无缓冲路由 |
+| `nginx.conf` | 单栈 compose 入口：`/` 反代 Vite dev server、`/api` 反代后端、SSE 无缓冲路由 |
 | `Dockerfile.web` | 多阶段构建：`npm run build` → nginx 镜像 |
 | `systemd/learnrise.service` | 开机自启（`docker compose up -d`） |
 | `certs/` | 证书挂载点（`fullchain.pem` / `privkey.pem`，**不提交**） |
@@ -16,7 +16,48 @@
 
 ---
 
-## 快速开始
+## 单栈 compose（本地 / 演示）
+
+根目录的 [`../docker-compose.yml`](../docker-compose.yml) 是唯一的编排文件，
+`deploy/nginx.conf` 直接挂载为 nginx 容器的 `/etc/nginx/conf.d/default.conf`：
+
+```
+浏览器 :8080 → nginx → /        → frontend:5174 (Vite dev server, 含 HMR websocket)
+                     → /api/    → backend:8000  (FastAPI)
+                     → SSE 路径 → backend:8000  (proxy_buffering off)
+```
+
+| 服务 | 宿主机端口 | 说明 |
+|---|---|---|
+| `nginx` | 8080 | 唯一对外入口 |
+| `backend` | 8000 | FastAPI；启动命令先 `alembic upgrade head` 再起 uvicorn |
+| `frontend` | 5174 | React + Vite dev server（`frontend/Dockerfile.dev`） |
+| `db` | 55433 | `pgvector/pgvector:0.8.0-pg15` |
+| `minio` | 9000 / 19001 | API / 控制台（9001 已被宿主机其他容器占用） |
+| `ocr-service` | 8001 | RapidOCR HTTP 服务 |
+
+SSE（`/api/knowledge-points/<id>/explain`、`/api/assistant/conversations/<id>/stream`）
+在 nginx 里单独关掉缓冲与压缩：`proxy_buffering off` + `gzip off` +
+`proxy_read_timeout 300s`，逐 token 帧直达浏览器。任何反代层重新打开缓冲都会把流攒成
+一次性响应。
+
+### 首次启动必须重建数据卷
+
+数据库用户名 / 库名已从旧名字改为 `learnrise`，而 `scripts/db-init/` 里的扩展初始化
+只在**全新 datadir** 上执行；已有的 PostgreSQL 数据目录不会自动套用新凭据。因此本次
+改动后的第一次启动**必须**：
+
+```bash
+docker compose down -v && docker compose up -d --wait
+docker compose ps --format '{{.Service}} {{.Health}}'   # 6 个服务全部 healthy
+```
+
+`down -v` 只删除本项目（`learnrise`）的 `pgdata` / `minio_data`；其他项目的卷不受影响。
+
+---
+
+## 生产部署（docker-compose.prod.yml）
+
 
 ```bash
 # 1) 配置环境
@@ -49,28 +90,31 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod.example config -q
 
 ## nginx 配置要点
 
-1. **TLS 终止**：80 只做 ACME 与 301；443 用 `deploy/certs/` 下证书。
-2. **上传上限**：`client_max_body_size 20m`，与后端 `MAX_UPLOAD_MB=20` 对齐。
+1. **入口**：单栈只用 `nginx:alpine` + `deploy/nginx.conf`（挂到
+   `/etc/nginx/conf.d/default.conf`），`8080:80` 对外。
+2. **上传上限**：`client_max_body_size 25m`，与后端 `MAX_UPLOAD_MB=20` 留出余量。
 3. **SSE 无缓冲**（最重要）：
 
    ```nginx
    location ~ ^/api/knowledge-points/[^/]+/explain$ {
-       proxy_pass http://api_backend;
+       proxy_pass http://backend:8000;
        proxy_buffering off;
-       proxy_request_buffering off;
        proxy_cache off;
        proxy_read_timeout 300s;
-       add_header X-Accel-Buffering "no" always;
+       proxy_send_timeout 300s;
+       proxy_set_header Connection "";
        gzip off;
    }
    ```
 
    真实路由来自 `backend/app/api/explain.py`：
-   `POST /api/knowledge-points/{knowledge_point_id}/explain`。
-
-4. **`/api` 关 gzip**：压缩会破坏分帧；静态资源仍走 gzip。
-5. **SPA 回退**：`try_files $uri $uri/ /index.html`；`/assets/` 长缓存。
-6. **健康检查**：`GET /healthz` 返回 200（容器内 wget 使用）。
+   `POST /api/knowledge-points/{knowledge_point_id}/explain`。同理
+   `^/api/assistant/conversations/[^/]+/stream$` 也单独关缓冲。
+   正则 location 优先于 `/api/` 前缀匹配，因此 SSE 不会被通用 API 的配置吃掉。
+4. **`/api/` 关 gzip**：压缩会破坏分帧。
+5. **`/` 反代 Vite dev server**：dev 容器没有构建产物，必须走
+   `proxy_pass http://frontend:5174;`，并透传 `Upgrade` / `Connection` 让 HMR websocket 生效。
+6. **健康检查**：compose 用 `/api/health` 探活 nginx → backend 链路。
 
 > 禁止把 `/api` 或 SSE 放到 CDN / OBS 后面：CDN 的边缘缓冲会把逐 token 流
 > 攒成一次性响应，OBS 静态托管不支持流式代理。详见 `docs/deploy.md` 第 5 节。
@@ -83,13 +127,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod.example config -q
 # compose 语法 + 变量插值
 docker compose -f docker-compose.prod.yml --env-file .env.prod.example config -q
 
-# nginx 语法：生成一次性自签证书，避免 ssl_certificate 缺失导致误报
-tmp=$(mktemp -d)
-openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
-  -keyout "$tmp/privkey.pem" -out "$tmp/fullchain.pem" -subj "/CN=localhost" >/dev/null 2>&1
-docker run --rm -v "$PWD/deploy/nginx.conf:/etc/nginx/nginx.conf:ro" \
-  -v "$tmp:/etc/nginx/certs:ro" nginx:alpine nginx -t
-rm -rf "$tmp"
+# nginx 语法（conf.d server 片段）
+docker run --rm -v "$PWD/deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+  nginx:alpine nginx -t
 ```
 
 ---
