@@ -7,9 +7,11 @@ from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException, status
 from jose import jwt
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 
+from app.api.errors import CodedHTTPException
 from app.config import settings
 from app.deps import CurrentUser, DbSession
 from app.models import User
@@ -18,11 +20,19 @@ from app.security.password import hash_password, verify_password
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 LOGIN_FAILED_DETAIL = "邮箱或密码错误"
+EMAIL_TAKEN_DETAIL = "邮箱已注册"
+EMPTY_DISPLAY_NAME_DETAIL = "显示名称不能为空"
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    display_name: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=8)
 
 
 class UserOut(BaseModel):
@@ -80,3 +90,44 @@ def login(payload: LoginRequest, db: DbSession) -> TokenResponse:
 @router.get("/me", response_model=UserOut)
 def read_current_user(user: CurrentUser) -> UserOut:
     return UserOut.model_validate(user)
+
+
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterRequest, db: DbSession) -> TokenResponse:
+    email = payload.email.strip().lower()
+    display_name = payload.display_name.strip()
+    if not display_name:
+        raise HTTPException(
+            status_code=422,
+            detail=EMPTY_DISPLAY_NAME_DETAIL,
+        )
+
+    existing = db.scalar(select(User).where(func.lower(User.email) == email))
+    if existing is not None:
+        raise CodedHTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=EMAIL_TAKEN_DETAIL,
+            code="EMAIL_TAKEN",
+        )
+
+    user = User(
+        email=email,
+        password_hash=hash_password(payload.password),
+        display_name=display_name,
+    )
+    db.add(user)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise CodedHTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=EMAIL_TAKEN_DETAIL,
+            code="EMAIL_TAKEN",
+        ) from None
+    db.refresh(user)
+
+    return TokenResponse(
+        access_token=create_access_token(user.id),
+        user=UserOut.model_validate(user),
+    )

@@ -11,9 +11,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from httpx import Response
 from jose import jwt
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.api.errors import install_error_handlers
 from app.config import settings
 from app.db import SessionLocal
 from app.deps import CurrentUser, get_current_user_optional, require_owner
@@ -349,3 +350,147 @@ def test_me_never_returns_another_users_identity(
     assert body["id"] != alice.id
     assert body["email"] == bob.email
     assert "password_hash" not in body
+
+
+def _register(client: TestClient, email: str, password: str = "Passw0rd!", name: str = "注册用户"):
+    return client.post(
+        "/api/auth/register",
+        json={"email": email, "display_name": name, "password": password},
+    )
+
+
+@pytest.fixture
+def cleanup_emails(db_session: Session) -> Iterator[list[str]]:
+    emails: list[str] = []
+    try:
+        yield emails
+    finally:
+        if emails:
+            db_session.execute(delete(User).where(User.email.in_(emails)))
+            db_session.commit()
+
+
+def test_register_returns_token_and_user(
+    client: TestClient, cleanup_emails: list[str]
+) -> None:
+    email = f"register-{uuid.uuid4().hex}@example.com"
+    cleanup_emails.append(email)
+
+    response = _register(client, email)
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["token_type"] == "bearer"
+    assert body["user"]["email"] == email
+    assert body["user"]["display_name"] == "注册用户"
+    assert "password_hash" not in response.text
+
+    me = client.get("/api/auth/me", headers=_auth_header(body["access_token"]))
+    assert me.status_code == 200
+    assert me.json()["email"] == email
+
+
+def test_register_duplicate_email_is_409_with_code(
+    client: TestClient, cleanup_emails: list[str]
+) -> None:
+    email = f"dupe-{uuid.uuid4().hex}@example.com"
+    cleanup_emails.append(email)
+
+    first = _register(client, email)
+    second = _register(client, email)
+
+    assert first.status_code == 201
+    assert second.status_code == 409
+    body = second.json()
+    assert body["code"] == "EMAIL_TAKEN"
+    assert body["detail"] == "邮箱已注册"
+
+
+def test_register_duplicate_detection_is_case_insensitive(
+    client: TestClient, cleanup_emails: list[str]
+) -> None:
+    email = f"mixed-{uuid.uuid4().hex}@example.com"
+    cleanup_emails.append(email)
+
+    assert _register(client, email).status_code == 201
+    upper = email.upper()
+    response = _register(client, upper)
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "EMAIL_TAKEN"
+
+
+def test_register_stores_bcrypt_hash(
+    client: TestClient, db_session: Session, cleanup_emails: list[str]
+) -> None:
+    email = f"hash-{uuid.uuid4().hex}@example.com"
+    cleanup_emails.append(email)
+    password = "Passw0rd!"
+
+    assert _register(client, email, password=password).status_code == 201
+
+    stored = db_session.scalar(select(User).where(User.email == email))
+    assert stored is not None
+    assert stored.password_hash is not None
+    assert stored.password_hash != password
+    assert stored.password_hash.startswith("$2")
+    assert verify_password(password, stored.password_hash) is True
+
+
+def test_register_rejects_short_password(client: TestClient, cleanup_emails: list[str]) -> None:
+    email = f"short-{uuid.uuid4().hex}@example.com"
+    cleanup_emails.append(email)
+
+    response = _register(client, email, password="short")
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "VALIDATION_ERROR"
+
+
+def test_register_rejects_blank_display_name(
+    client: TestClient, cleanup_emails: list[str]
+) -> None:
+    email = f"blank-{uuid.uuid4().hex}@example.com"
+    cleanup_emails.append(email)
+
+    response = _register(client, email, name="   ")
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "VALIDATION_ERROR"
+
+
+def test_legacy_login_failure_body_has_no_code(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    user = make_user()
+
+    response = client.post(
+        "/api/auth/login", json={"email": user.email, "password": "wrong-password"}
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": LOGIN_FAILED}
+
+
+def _new_api_app() -> FastAPI:
+    app = FastAPI()
+    install_error_handlers(app)
+
+    @app.get("/api/competitions/{competition_id}")
+    def read_competition(competition_id: str) -> dict[str, str]:
+        raise HTTPException(status_code=404, detail="资源不存在")
+
+    @app.get("/legacy/missing")
+    def legacy_missing() -> dict[str, str]:
+        raise HTTPException(status_code=404, detail="资源不存在")
+
+    return app
+
+
+def test_new_api_errors_carry_code_while_legacy_bodies_do_not() -> None:
+    with TestClient(_new_api_app()) as scoped:
+        new_body = scoped.get("/api/competitions/abc").json()
+        legacy_body = scoped.get("/legacy/missing").json()
+
+    assert new_body == {"detail": "资源不存在", "code": "NOT_FOUND"}
+    assert legacy_body == {"detail": "资源不存在"}
