@@ -75,11 +75,8 @@ fi
 [[ $STATUS -eq 1 ]] || echo "    ok"
 
 echo "[5/5] commit messages (last 200)"
-# The pre-existing T03 baseline commit body documents the approved renames
-# and intentionally mentions the old name; commit bodies are scanned
-# excluding that one commit, while commit subjects are always scanned.
-if { git log --format='%h %s' -n 200; git log --format='%b' -n 200 --not 7d5cd0d2fa04ee107636999e4a708a151e8b344a; } \
-  | grep -i -E 'zhixue|closed[-_ ]?loop'; then
+if { git log --format='%h %s' -n 200; git log --format='%b' -n 200; } \
+  | grep -i -E 'zhixue|智学|closed[-_ ]?loop'; then
   STATUS=1
 else
   echo "    ok"
