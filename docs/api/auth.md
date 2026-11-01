@@ -3,7 +3,7 @@
 # auth 认证
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：2。
+> 端点数量：3。
 
 ## 端点总览
 
@@ -11,6 +11,7 @@
 |---|---|---|
 | `POST` | `/api/auth/login` | Login |
 | `GET` | `/api/auth/me` | Read Current User |
+| `POST` | `/api/auth/register` | Register |
 
 ## 端点详情
 
@@ -73,5 +74,42 @@ curl -X POST 'http://localhost:8000/api/auth/login' \
 ```bash
 curl -X GET 'http://localhost:8000/api/auth/me' \
   -H 'Authorization: Bearer $TOKEN'
+```
+
+### `POST /api/auth/register`
+
+- **标签**: `auth`
+- **摘要**: Register
+- **鉴权**: 公开端点：无需 Bearer JWT
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `email` | `string(email)` | 是 | — |
+| `display_name` | `string` | 是 | — |
+| `password` | `string` | 是 | — |
+
+#### 响应字段（201）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `access_token` | `string` | 是 |
+| `token_type` | `string` | 否 |
+| `user` | `UserOut` | 是 |
+| `user.id` | `string` | 是 |
+| `user.email` | `string` | 是 |
+| `user.display_name` | `string` | 是 |
+
+#### 错误状态码
+
+`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/auth/register' \
+  -H 'Content-Type: application/json' \
+  -d '{"display_name": "string", "email": "user@example.com", "password": "string"}'
 ```
 
