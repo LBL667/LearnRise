@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+@theme {
+  /* 品牌色 */
+  --color-primary: #2e7cf6;
+  --color-primary-deep: #1f66e0;
+  --color-primary-soft: #eaf2ff;
+  --color-primary-soft-2: #f3f8ff;
+
+  /* 中性色 */
+  --color-page: #f4f7fc;
+  --color-ink: #1f2733;
+  --color-ink-soft: #5b6b82;
+  --color-ink-mute: #97a3b8;
+  --color-line: #e8edf5;
+
+  /* 奖牌色 */
+  --color-gold: #f6b73c;
+  --color-silver: #9aa7b8;
+  --color-bronze: #e08b3d;
+
+  --radius-card: 14px;
+  --font-sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-page text-ink font-sans antialiased;
+}
+
+@utility btn-base {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-lg text-sm font-medium
+    transition-colors duration-150 cursor-pointer select-none
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary
+    disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-[14px] border border-line;
+  }
+
+  .btn-primary {
+    @apply btn-base bg-primary text-white hover:bg-primary-deep px-4 h-9;
+  }
+
+  .btn-ghost {
+    @apply btn-base bg-primary-soft text-primary hover:bg-[#dcebff] px-4 h-9;
+  }
+
+  .btn-gray {
+    @apply btn-base bg-[#eef1f6] text-ink-mute px-4 h-9;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-md border border-line bg-white px-2 py-0.5
+      text-[11px] leading-4 text-ink-soft;
+  }
+
+  .field-input {
+    @apply w-full h-9 rounded-lg border border-line bg-white px-3 text-sm text-ink
+      placeholder:text-ink-mute outline-none
+      focus:border-primary focus:ring-2 focus:ring-primary/15 transition
+      disabled:bg-[#f5f7fa] disabled:text-ink-mute disabled:cursor-not-allowed;
+  }
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d3dcea;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* toast 动画 */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.toast-item {
+  animation: toast-in 0.22s ease-out;
+}
+
+/* 弹窗动画 */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.modal-panel {
+  animation: modal-in 0.2s ease-out;
+}
+
+/* AI 思考中跳点 */
+@keyframes dot-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+.dot-bounce {
+  animation: dot-bounce 1s ease-in-out infinite;
+}
+.dot-bounce + .dot-bounce {
+  margin-left: 3px;
+}
+
+/* 思维导图画布点阵背景 */
+.dot-grid {
+  background-image: radial-gradient(circle, #dbe5f2 1px, transparent 1px);
+  background-size: 22px 22px;
+}

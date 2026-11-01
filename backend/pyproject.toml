@@ -1,0 +1,10 @@
+[project]
+name = "learnrise-backend"
+version = "0.1.0"
+description = "LearnRise 学习竞赛平台后端（FastAPI）"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+]

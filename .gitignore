@@ -1,0 +1,31 @@
+# 依赖
+frontend/node_modules/
+backend/.venv/
+
+# 构建产物
+frontend/dist/
+
+# Python
+__pycache__/
+*.pyc
+.python-version
+
+# 环境变量
+.env
+.env.local
+*.local
+
+# 根目录开发截图（public 内的图片资源需要提交）
+/*.png
+
+# 本地工作区数据
+.workbuddy/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# playwright-cli 会话日志
+.playwright-cli/
