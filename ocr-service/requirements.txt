@@ -1,0 +1,16 @@
+# PP-OCR models served through RapidOCR/ONNX.
+# The PaddlePaddle 3.0.0 CPython 3.11 wheel alone is 192.8 MB on the Tsinghua
+# mirror (measured ~370 kB/s here), so the Paddle runtime cannot fit the
+# 15-minute image build window. See docs/limitations.md for the substitution.
+rapidocr-onnxruntime==1.2.3
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pillow==11.0.0
+numpy==2.1.3
+onnxruntime==1.20.1
+opencv-python-headless==4.10.0.84
+pyclipper==1.3.0.post6
+shapely==2.0.6
+PyYAML==6.0.2
+six==1.16.0

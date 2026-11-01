@@ -1,0 +1,25 @@
+[Unit]
+Description=LearnRise stack (docker compose, production)
+Documentation=file:///opt/learnrise/docs/deploy.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/learnrise
+Environment=COMPOSE_FILE=docker-compose.prod.yml
+Environment=COMPOSE_PROJECT_NAME=learnrise-prod
+
+# 后台拉起全部服务；--env-file 必须传，compose 的 MAAS_* -> LLM_* 映射依赖它。
+ExecStart=/usr/bin/docker compose --env-file /opt/learnrise/.env.prod -f /opt/learnrise/docker-compose.prod.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker compose --env-file /opt/learnrise/.env.prod -f /opt/learnrise/docker-compose.prod.yml down
+ExecReload=/usr/bin/docker compose --env-file /opt/learnrise/.env.prod -f /opt/learnrise/docker-compose.prod.yml up -d --remove-orphans
+
+TimeoutStartSec=300
+TimeoutStopSec=120
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

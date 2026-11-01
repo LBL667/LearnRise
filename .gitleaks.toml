@@ -1,0 +1,15 @@
+title = "learnrise gitleaks config"
+
+[allowlist]
+description = "Non-secret placeholder values committed for local development"
+paths = [
+  '''\.env\.example$''',
+  '''docker-compose\.yml$''',
+]
+
+regexes = [
+  '''dev-only-change-me''',
+  '''dev-only-fernet-key-change-me-32bytes=''',
+  '''dev-only-cron-secret''',
+  '''minioadmin''',
+]
