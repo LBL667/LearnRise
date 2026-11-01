@@ -120,6 +120,7 @@ curl -X POST 'http://localhost:8000/api/assistant/conversations' \
 | `messages[].citations` | `array<Citation>` | 否 |
 | `messages[].citations[].chunk_id` | `string` | 是 |
 | `messages[].citations[].source_id` | `string` | 是 |
+| `messages[].citations[].knowledge_point_id` | `string \| null` | 否 |
 | `messages[].citations[].page` | `integer \| null` | 否 |
 | `messages[].citations[].heading` | `string \| null` | 否 |
 | `messages[].citations[].snippet` | `string` | 是 |
@@ -167,6 +168,7 @@ curl -X GET 'http://localhost:8000/api/assistant/conversations/{conversation_id}
 | `citations` | `array<Citation>` | 否 |
 | `citations[].chunk_id` | `string` | 是 |
 | `citations[].source_id` | `string` | 是 |
+| `citations[].knowledge_point_id` | `string \| null` | 否 |
 | `citations[].page` | `integer \| null` | 否 |
 | `citations[].heading` | `string \| null` | 否 |
 | `citations[].snippet` | `string` | 是 |

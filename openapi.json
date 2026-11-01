@@ -442,6 +442,17 @@
             ],
             "title": "Heading"
           },
+          "knowledge_point_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Point Id"
+          },
           "page": {
             "anyOf": [
               {

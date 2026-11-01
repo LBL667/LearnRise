@@ -23,6 +23,7 @@ from app.models import (
     AssistantMessage,
     Chunk,
     CompetitionMember,
+    KnowledgePoint,
     KnowledgeSource,
 )
 from app.ports import ChatMessage
@@ -57,6 +58,7 @@ class MessageCreate(BaseModel):
 class Citation(BaseModel):
     chunk_id: str
     source_id: str
+    knowledge_point_id: str | None = None
     page: int | None = None
     heading: str | None = None
     snippet: str
@@ -156,10 +158,21 @@ def _retrieve(db: Session, source_ids: list[str], question: str) -> list[Citatio
     for hit in hits:
         chunk = db.get(Chunk, hit.chunk_id)
         content = chunk.content if chunk is not None else hit.content
+        point_id = db.scalar(
+            select(KnowledgePoint.id).where(KnowledgePoint.chunk_id == hit.chunk_id).limit(1)
+        )
+        if point_id is None:
+            point_id = db.scalar(
+                select(KnowledgePoint.id)
+                .where(KnowledgePoint.source_id == hit.source_id)
+                .order_by(KnowledgePoint.level, KnowledgePoint.sort_order)
+                .limit(1)
+            )
         citations.append(
             Citation(
                 chunk_id=hit.chunk_id,
                 source_id=hit.source_id,
+                knowledge_point_id=point_id,
                 page=chunk.page if chunk is not None else hit.page,
                 heading=chunk.heading if chunk is not None else hit.heading,
                 snippet=(content or "")[:SNIPPET_CHARS],
