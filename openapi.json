@@ -1806,6 +1806,40 @@
         "title": "RadarItem",
         "type": "object"
       },
+      "RecommendedQuestionOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "choice",
+              "multiple",
+              "blank",
+              "judge"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "wrong_count": {
+            "title": "Wrong Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "stem",
+          "type",
+          "wrong_count"
+        ],
+        "title": "RecommendedQuestionOut",
+        "type": "object"
+      },
       "RegisterRequest": {
         "properties": {
           "display_name": {
@@ -1831,6 +1865,89 @@
           "password"
         ],
         "title": "RegisterRequest",
+        "type": "object"
+      },
+      "RemediationItemOut": {
+        "properties": {
+          "error_rate": {
+            "title": "Error Rate",
+            "type": "number"
+          },
+          "knowledge_point_id": {
+            "title": "Knowledge Point Id",
+            "type": "string"
+          },
+          "recommended_questions": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedQuestionOut"
+            },
+            "title": "Recommended Questions",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "knowledge_point_id",
+          "title",
+          "error_rate",
+          "recommended_questions"
+        ],
+        "title": "RemediationItemOut",
+        "type": "object"
+      },
+      "RemediationPlanOut": {
+        "properties": {
+          "guidance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guidance"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RemediationItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "RemediationPlanOut",
+        "type": "object"
+      },
+      "RemediationRequest": {
+        "properties": {
+          "competition_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition Id"
+          },
+          "limit": {
+            "default": 5,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "RemediationRequest",
         "type": "object"
       },
       "ReminderRunOut": {
@@ -2619,6 +2736,231 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WeakPointOut": {
+        "properties": {
+          "error_rate": {
+            "title": "Error Rate",
+            "type": "number"
+          },
+          "knowledge_point_id": {
+            "title": "Knowledge Point Id",
+            "type": "string"
+          },
+          "mastery_score": {
+            "title": "Mastery Score",
+            "type": "number"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "total_attempts": {
+            "title": "Total Attempts",
+            "type": "integer"
+          },
+          "wrong_attempts": {
+            "title": "Wrong Attempts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "knowledge_point_id",
+          "title",
+          "total_attempts",
+          "wrong_attempts",
+          "error_rate",
+          "mastery_score",
+          "score"
+        ],
+        "title": "WeakPointOut",
+        "type": "object"
+      },
+      "WrongAnalysisOut": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "choiceAnswer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choiceanswer"
+          },
+          "conclusion": {
+            "title": "Conclusion",
+            "type": "string"
+          },
+          "optionNotes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/WrongOptionNoteOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Optionnotes"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
+          }
+        },
+        "required": [
+          "conclusion"
+        ],
+        "title": "WrongAnalysisOut",
+        "type": "object"
+      },
+      "WrongOptionNoteOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "correct",
+              "wrong"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "verdict",
+          "text"
+        ],
+        "title": "WrongOptionNoteOut",
+        "type": "object"
+      },
+      "WrongOptionOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "text"
+        ],
+        "title": "WrongOptionOut",
+        "type": "object"
+      },
+      "WrongQuestionOut": {
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/WrongAnalysisOut"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "myMistake": {
+            "title": "Mymistake",
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/WrongOptionOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "severity": {
+            "enum": [
+              "repeat",
+              "general"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "choice",
+              "multiple",
+              "blank",
+              "judge"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "wrongCount": {
+            "title": "Wrongcount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "type",
+          "stem",
+          "tags",
+          "myMistake",
+          "wrongCount",
+          "analysis"
+        ],
+        "title": "WrongQuestionOut",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -3212,6 +3554,111 @@
         "summary": "Stream Message",
         "tags": [
           "assistant"
+        ]
+      }
+    },
+    "/api/assistant/remediation-plan": {
+      "post": {
+        "operationId": "remediation_plan_api_assistant_remediation_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemediationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemediationPlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Remediation Plan",
+        "tags": [
+          "diagnostics"
+        ]
+      }
+    },
+    "/api/assistant/weak-points": {
+      "get": {
+        "operationId": "list_weak_points_api_assistant_weak_points_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "competition_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Competition Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WeakPointOut"
+                  },
+                  "title": "Response List Weak Points Api Assistant Weak Points Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Weak Points",
+        "tags": [
+          "diagnostics"
         ]
       }
     },
@@ -5106,6 +5553,187 @@
         "summary": "Upload Reward Image",
         "tags": [
           "uploads"
+        ]
+      }
+    },
+    "/api/wrong-questions": {
+      "get": {
+        "operationId": "list_wrong_questions_api_wrong_questions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "competition_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Competition Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "choice",
+                    "multiple",
+                    "judge",
+                    "short_answer",
+                    "blank"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "severity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "repeat",
+                    "general"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WrongQuestionOut"
+                  },
+                  "title": "Response List Wrong Questions Api Wrong Questions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Wrong Questions",
+        "tags": [
+          "diagnostics"
+        ]
+      }
+    },
+    "/api/wrong-questions/{question_id}": {
+      "delete": {
+        "operationId": "dismiss_wrong_question_api_wrong_questions__question_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Dismiss Wrong Question",
+        "tags": [
+          "diagnostics"
         ]
       }
     },
