@@ -18,3 +18,24 @@ repos:
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
+
+  - repo: local
+    hooks:
+      - id: legacy-name
+        name: legacy-name gate
+        entry: scripts/check_legacy_name.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+      - id: repo-hygiene
+        name: repo-hygiene gate
+        entry: scripts/check_repo_hygiene.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+      - id: adapter-isolation
+        name: adapter-isolation gate
+        entry: scripts/check_import_isolation.sh
+        language: script
+        pass_filenames: false
+        always_run: true

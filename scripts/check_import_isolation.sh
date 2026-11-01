@@ -7,7 +7,7 @@
 # offenders as file:line.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(git rev-parse --show-toplevel)"
 SCAN_DIR="$ROOT/backend/app"
 EXCLUDE_DIR="$ROOT/backend/app/adapters"
 
