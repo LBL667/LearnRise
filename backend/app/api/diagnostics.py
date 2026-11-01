@@ -26,7 +26,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -38,6 +38,7 @@ from app.models import (
     QuizQuestion,
     WrongQuestionDismissal,
 )
+from app.services.weak_points import WeakPoint, rank_weak_points
 
 router = APIRouter(tags=["diagnostics"])
 
@@ -398,54 +399,27 @@ def _rank_weak_points(
     competition_id: str | None,
     limit: int,
 ) -> list[WeakPointOut]:
-    aggregate = (
-        select(
-            QuizQuestion.knowledge_point_id.label("knowledge_point_id"),
-            func.count(QuizAttempt.id).label("total_attempts"),
-            func.count(
-                case((QuizAttempt.correct.is_(False), 1))
-            ).label("wrong_attempts"),
+    return [
+        _to_weak_point_out(point)
+        for point in rank_weak_points(
+            db,
+            user_id=user_id,
+            competition_id=competition_id,
+            limit=limit,
         )
-        .join(QuizAttempt, QuizAttempt.question_id == QuizQuestion.id)
-        .where(QuizAttempt.user_id == user_id)
-        .group_by(QuizQuestion.knowledge_point_id)
+    ]
+
+
+def _to_weak_point_out(point: WeakPoint) -> WeakPointOut:
+    return WeakPointOut(
+        knowledge_point_id=point.knowledge_point_id,
+        title=point.title,
+        total_attempts=point.total_attempts,
+        wrong_attempts=point.wrong_attempts,
+        error_rate=point.error_rate,
+        mastery_score=point.mastery_score,
+        score=point.score,
     )
-    if competition_id:
-        aggregate = aggregate.where(QuizQuestion.competition_id == competition_id)
-    grouped = aggregate.subquery()
-
-    rows = db.execute(
-        select(
-            KnowledgePoint.id,
-            KnowledgePoint.title,
-            KnowledgePoint.mastery_score,
-            grouped.c.total_attempts,
-            grouped.c.wrong_attempts,
-        ).join(grouped, grouped.c.knowledge_point_id == KnowledgePoint.id)
-    ).all()
-
-    ranked: list[WeakPointOut] = []
-    for point_id, title, mastery, total, wrong in rows:
-        total_attempts = int(cast(int, total))
-        if total_attempts <= 0:
-            continue
-        wrong_attempts = int(cast(int, wrong))
-        error_rate = wrong_attempts / total_attempts
-        mastery_score = float(cast(float, mastery or 0.0))
-        score = error_rate * 0.7 + (1.0 - mastery_score) * 0.3
-        ranked.append(
-            WeakPointOut(
-                knowledge_point_id=cast(str, point_id),
-                title=cast(str, title),
-                total_attempts=total_attempts,
-                wrong_attempts=wrong_attempts,
-                error_rate=error_rate,
-                mastery_score=mastery_score,
-                score=score,
-            )
-        )
-    ranked.sort(key=lambda item: (-item.score, -item.error_rate, item.title))
-    return ranked[:limit]
 
 
 @router.get("/api/assistant/weak-points", response_model=list[WeakPointOut])
