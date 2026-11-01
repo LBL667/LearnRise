@@ -35,7 +35,7 @@
 | `exam_id` | `string` | 是 |
 | `expires_at` | `string(date-time)` | 是 |
 | `total` | `integer` | 是 |
-| `questions` | `array<QuestionOut>` | 是 |
+| `questions` | `array<app__api__trial__QuestionOut>` | 是 |
 | `questions[].id` | `string` | 是 |
 | `questions[].no` | `integer` | 是 |
 | `questions[].type` | `string` | 是 |
@@ -79,7 +79,7 @@ curl -X POST 'http://localhost:8000/api/trial/exams' \
 | `total` | `integer` | 是 |
 | `expires_at` | `string(date-time)` | 是 |
 | `remaining_seconds` | `integer` | 是 |
-| `questions` | `array<QuestionOut>` | 是 |
+| `questions` | `array<app__api__trial__QuestionOut>` | 是 |
 | `questions[].id` | `string` | 是 |
 | `questions[].no` | `integer` | 是 |
 | `questions[].type` | `string` | 是 |

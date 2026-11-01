@@ -257,40 +257,22 @@
         "title": "AgentUpdate",
         "type": "object"
       },
-      "AnswerOut": {
+      "AnswerIn": {
         "properties": {
-          "citations": {
-            "items": {
-              "$ref": "#/components/schemas/Citation"
-            },
-            "title": "Citations",
-            "type": "array"
-          },
-          "content": {
-            "title": "Content",
+          "answer": {
+            "title": "Answer",
             "type": "string"
           },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "message_id": {
-            "title": "Message Id",
-            "type": "string"
-          },
-          "role": {
-            "default": "assistant",
-            "title": "Role",
+          "question_id": {
+            "title": "Question Id",
             "type": "string"
           }
         },
         "required": [
-          "message_id",
-          "content",
-          "created_at"
+          "question_id",
+          "answer"
         ],
-        "title": "AnswerOut",
+        "title": "AnswerIn",
         "type": "object"
       },
       "AnswerRequest": {
@@ -993,6 +975,112 @@
         "title": "DueListOut",
         "type": "object"
       },
+      "ExamPlanItemOut": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "focus_kp_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Focus Kp Ids",
+            "type": "array"
+          },
+          "quiz_count": {
+            "default": 0,
+            "title": "Quiz Count",
+            "type": "integer"
+          },
+          "rationale": {
+            "default": "",
+            "title": "Rationale",
+            "type": "string"
+          },
+          "review_count": {
+            "default": 0,
+            "title": "Review Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date"
+        ],
+        "title": "ExamPlanItemOut",
+        "type": "object"
+      },
+      "ExamPlanOut": {
+        "properties": {
+          "competition_id": {
+            "title": "Competition Id",
+            "type": "string"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "guidance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guidance"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExamPlanItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "mode": {
+            "enum": [
+              "standard",
+              "sprint"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "competition_id",
+          "end_at",
+          "generated_at"
+        ],
+        "title": "ExamPlanOut",
+        "type": "object"
+      },
+      "ExamPlanRequest": {
+        "properties": {
+          "competition_id": {
+            "format": "uuid",
+            "title": "Competition Id",
+            "type": "string"
+          },
+          "regenerate": {
+            "default": true,
+            "title": "Regenerate",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "competition_id"
+        ],
+        "title": "ExamPlanRequest",
+        "type": "object"
+      },
       "ExamStartRequest": {
         "properties": {
           "competition_id": {
@@ -1030,7 +1118,7 @@
           },
           "questions": {
             "items": {
-              "$ref": "#/components/schemas/QuestionOut"
+              "$ref": "#/components/schemas/app__api__trial__QuestionOut"
             },
             "title": "Questions",
             "type": "array"
@@ -1062,7 +1150,7 @@
           },
           "questions": {
             "items": {
-              "$ref": "#/components/schemas/QuestionOut"
+              "$ref": "#/components/schemas/app__api__trial__QuestionOut"
             },
             "title": "Questions",
             "type": "array"
@@ -1134,7 +1222,8 @@
             "enum": [
               "concise",
               "detailed",
-              "example"
+              "example",
+              "socratic"
             ],
             "title": "Style",
             "type": "string"
@@ -1190,6 +1279,102 @@
           "count"
         ],
         "title": "HistogramItem",
+        "type": "object"
+      },
+      "HistoryItemOut": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "answered": {
+            "title": "Answered",
+            "type": "boolean"
+          },
+          "correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correct"
+          },
+          "correct_answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correct Answer"
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "no": {
+            "title": "No",
+            "type": "integer"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "no",
+          "type",
+          "difficulty",
+          "stem",
+          "answered"
+        ],
+        "title": "HistoryItemOut",
         "type": "object"
       },
       "InviteOut": {
@@ -1785,56 +1970,27 @@
         "title": "ProfileStatOut",
         "type": "object"
       },
-      "QuestionOut": {
+      "ProgressOut": {
         "properties": {
           "answered": {
-            "default": false,
             "title": "Answered",
-            "type": "boolean"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "no": {
-            "title": "No",
             "type": "integer"
           },
-          "options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/OptionOut"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Options"
-          },
-          "score": {
-            "title": "Score",
+          "correct": {
+            "title": "Correct",
             "type": "integer"
           },
-          "stem": {
-            "title": "Stem",
-            "type": "string"
-          },
-          "type": {
-            "title": "Type",
-            "type": "string"
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
-          "id",
-          "no",
-          "type",
-          "score",
-          "stem"
+          "answered",
+          "correct",
+          "total"
         ],
-        "title": "QuestionOut",
+        "title": "ProgressOut",
         "type": "object"
       },
       "QuizGenerateRequest": {
@@ -2195,6 +2351,52 @@
         "title": "ResultOut",
         "type": "object"
       },
+      "RevealOut": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "explanation": {
+            "default": "",
+            "title": "Explanation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "answer"
+        ],
+        "title": "RevealOut",
+        "type": "object"
+      },
+      "RevealRequest": {
+        "properties": {
+          "chunk_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chunk Id"
+          },
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          }
+        },
+        "title": "RevealRequest",
+        "type": "object"
+      },
       "ReviewCardCreate": {
         "properties": {
           "answer": {
@@ -2504,6 +2706,174 @@
           "rank"
         ],
         "title": "RewardItem",
+        "type": "object"
+      },
+      "SessionCreate": {
+        "properties": {
+          "competition_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition Id"
+          },
+          "count": {
+            "default": 1,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "default": "easy",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "knowledge_point_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Knowledge Point Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "knowledge_point_ids"
+        ],
+        "title": "SessionCreate",
+        "type": "object"
+      },
+      "SessionDetailOut": {
+        "properties": {
+          "current_question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__api__practice__QuestionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ProgressOut"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "difficulty",
+          "status",
+          "progress",
+          "items"
+        ],
+        "title": "SessionDetailOut",
+        "type": "object"
+      },
+      "SessionEndOut": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "integer"
+          },
+          "ended_at": {
+            "format": "date-time",
+            "title": "Ended At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "answered",
+          "correct",
+          "accuracy",
+          "ended_at"
+        ],
+        "title": "SessionEndOut",
+        "type": "object"
+      },
+      "SessionStartOut": {
+        "properties": {
+          "current_question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__api__practice__QuestionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ProgressOut"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "difficulty",
+          "status",
+          "progress"
+        ],
+        "title": "SessionStartOut",
         "type": "object"
       },
       "SettingGroupOut": {
@@ -3221,6 +3591,193 @@
         ],
         "title": "WrongQuestionOut",
         "type": "object"
+      },
+      "app__api__assistant__AnswerOut": {
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "message_id": {
+            "title": "Message Id",
+            "type": "string"
+          },
+          "rewritten": {
+            "default": false,
+            "title": "Rewritten",
+            "type": "boolean"
+          },
+          "role": {
+            "default": "assistant",
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "content",
+          "created_at"
+        ],
+        "title": "AnswerOut",
+        "type": "object"
+      },
+      "app__api__practice__AnswerOut": {
+        "properties": {
+          "correct": {
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "correct_answer": {
+            "title": "Correct Answer",
+            "type": "string"
+          },
+          "current_question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__api__practice__QuestionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "finished": {
+            "title": "Finished",
+            "type": "boolean"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ProgressOut"
+          }
+        },
+        "required": [
+          "correct",
+          "correct_answer",
+          "explanation",
+          "difficulty",
+          "progress",
+          "finished"
+        ],
+        "title": "AnswerOut",
+        "type": "object"
+      },
+      "app__api__practice__QuestionOut": {
+        "properties": {
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "no": {
+            "title": "No",
+            "type": "integer"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "no",
+          "type",
+          "difficulty",
+          "stem"
+        ],
+        "title": "QuestionOut",
+        "type": "object"
+      },
+      "app__api__trial__QuestionOut": {
+        "properties": {
+          "answered": {
+            "default": false,
+            "title": "Answered",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "no": {
+            "title": "No",
+            "type": "integer"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OptionOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "no",
+          "type",
+          "score",
+          "stem"
+        ],
+        "title": "QuestionOut",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -3734,7 +4291,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AnswerOut"
+                  "$ref": "#/components/schemas/app__api__assistant__AnswerOut"
                 }
               }
             },
@@ -3757,6 +4314,63 @@
           }
         ],
         "summary": "Send Message",
+        "tags": [
+          "assistant"
+        ]
+      }
+    },
+    "/api/assistant/conversations/{conversation_id}/reveal": {
+      "post": {
+        "operationId": "reveal_answer_api_assistant_conversations__conversation_id__reveal_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevealRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevealOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Reveal Answer",
         "tags": [
           "assistant"
         ]
@@ -3814,6 +4428,249 @@
         "summary": "Stream Message",
         "tags": [
           "assistant"
+        ]
+      }
+    },
+    "/api/assistant/exam-plan": {
+      "post": {
+        "operationId": "generate_exam_plan_api_assistant_exam_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExamPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamPlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Generate Exam Plan",
+        "tags": [
+          "assistant"
+        ]
+      }
+    },
+    "/api/assistant/practice/sessions": {
+      "post": {
+        "operationId": "create_session_api_assistant_practice_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Session",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/assistant/practice/sessions/{session_id}": {
+      "get": {
+        "operationId": "read_session_api_assistant_practice_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Session",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/assistant/practice/sessions/{session_id}/answer": {
+      "post": {
+        "operationId": "answer_question_api_assistant_practice_sessions__session_id__answer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__practice__AnswerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Answer Question",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/assistant/practice/sessions/{session_id}/end": {
+      "post": {
+        "operationId": "end_session_api_assistant_practice_sessions__session_id__end_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionEndOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "End Session",
+        "tags": [
+          "practice"
         ]
       }
     },

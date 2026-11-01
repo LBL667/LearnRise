@@ -3,7 +3,7 @@
 # assistant 学习助手
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：5。
+> 端点数量：7。
 
 ## 端点总览
 
@@ -13,7 +13,9 @@
 | `POST` | `/api/assistant/conversations` | Create Conversation |
 | `GET` | `/api/assistant/conversations/{conversation_id}` | Read Conversation |
 | `POST` | `/api/assistant/conversations/{conversation_id}/messages` | Send Message |
+| `POST` | `/api/assistant/conversations/{conversation_id}/reveal` | Reveal Answer |
 | `POST` | `/api/assistant/conversations/{conversation_id}/stream` | Stream Message |
+| `POST` | `/api/assistant/exam-plan` | Generate Exam Plan |
 
 ## 端点详情
 
@@ -174,6 +176,7 @@ curl -X GET 'http://localhost:8000/api/assistant/conversations/{conversation_id}
 | `citations[].snippet` | `string` | 是 |
 | `citations[].score` | `number` | 是 |
 | `created_at` | `string(date-time)` | 是 |
+| `rewritten` | `boolean` | 否 |
 
 #### 错误状态码
 
@@ -186,6 +189,45 @@ curl -X POST 'http://localhost:8000/api/assistant/conversations/{conversation_id
   -H 'Authorization: Bearer $TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{"content": "string", "mode": "string"}'
+```
+
+### `POST /api/assistant/conversations/{conversation_id}/reveal`
+
+- **标签**: `assistant`
+- **摘要**: Reveal Answer
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `conversation_id` | `path` | `string` | 是 | — |
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `question_id` | `string \| null` | 否 | — |
+| `chunk_id` | `string \| null` | 否 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `answer` | `string` | 是 |
+| `explanation` | `string` | 否 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/assistant/conversations/{conversation_id}/reveal' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"chunk_id": "string", "question_id": "string"}'
 ```
 
 ### `POST /api/assistant/conversations/{conversation_id}/stream`
@@ -224,5 +266,47 @@ curl -X POST 'http://localhost:8000/api/assistant/conversations/{conversation_id
   -H 'Authorization: Bearer $TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{"content": "string", "mode": "string"}'
+```
+
+### `POST /api/assistant/exam-plan`
+
+- **标签**: `assistant`
+- **摘要**: Generate Exam Plan
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `competition_id` | `string(uuid)` | 是 | — |
+| `regenerate` | `boolean` | 否 | true |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `mode` | `enum["standard", "sprint"]` | 是 |
+| `competition_id` | `string` | 是 |
+| `end_at` | `string(date-time)` | 是 |
+| `items` | `array<ExamPlanItemOut>` | 否 |
+| `items[].date` | `string` | 是 |
+| `items[].focus_kp_ids` | `array<string>` | 否 |
+| `items[].quiz_count` | `integer` | 否 |
+| `items[].review_count` | `integer` | 否 |
+| `items[].rationale` | `string` | 否 |
+| `guidance` | `string \| null` | 否 |
+| `generated_at` | `string(date-time)` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/assistant/exam-plan' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"competition_id": "00000000-0000-0000-0000-000000000000", "regenerate": false}'
 ```
 
