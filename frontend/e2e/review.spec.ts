@@ -16,8 +16,20 @@ interface KnowledgePointRow {
   id: string
 }
 
+interface GeneratedQuizItem {
+  id: string
+  type: string
+  answer: string
+  options?: string[] | null
+}
+
 interface GeneratedQuiz {
-  created: { id: string; answer: string }[]
+  created: GeneratedQuizItem[]
+}
+
+interface AnswerResult {
+  correct: boolean
+  correct_answer: string
 }
 
 interface DueList {
@@ -52,6 +64,22 @@ async function apiFetch<T>(path: string, token: string, init: RequestInit = {}):
   return (await response.json()) as T
 }
 
+function judgeIsTrue(value: string): boolean {
+  return ['true', 't', '正确', '对', '是', '√'].includes(value.trim().toLowerCase())
+}
+
+function deliberateWrongAnswer(question: GeneratedQuizItem): string {
+  if (question.type === 'judge') return judgeIsTrue(question.answer) ? 'false' : 'true'
+  if (question.type === 'choice') {
+    const keys = (question.options ?? [])
+      .map((option) => /^\s*([A-Za-z])\s*[.、:：)．]/.exec(option)?.[1]?.toUpperCase())
+      .filter((key): key is string => Boolean(key))
+    const correct = question.answer.trim().toUpperCase().slice(0, 1)
+    return keys.find((key) => key !== correct) ?? (correct === 'A' ? 'B' : 'A')
+  }
+  return '__wrong__'
+}
+
 async function answerOneWrongJudgement(token: string): Promise<void> {
   const points = await apiFetch<KnowledgePointRow[]>('/api/knowledge-points?limit=1', token)
   if (points.length === 0) throw new Error('cannot seed wrong questions: no knowledge points')
@@ -61,11 +89,16 @@ async function answerOneWrongJudgement(token: string): Promise<void> {
   })
   const question = generated.created[0]
   if (!question) throw new Error('cannot seed wrong questions: quiz generation returned no rows')
-  const wrongAnswer = question.answer.trim().toUpperCase() === 'T' ? 'F' : 'T'
-  await apiFetch(`/api/quiz/${question.id}/answer`, token, {
+  const result = await apiFetch<AnswerResult>(`/api/quiz/${question.id}/answer`, token, {
     method: 'POST',
-    body: JSON.stringify({ answer: wrongAnswer }),
+    body: JSON.stringify({ answer: deliberateWrongAnswer(question) }),
   })
+  if (result.correct) {
+    throw new Error(
+      `cannot seed wrong questions: answer ${JSON.stringify(question.answer)} was graded correct for a deliberately wrong submission`,
+    )
+  }
+  expect(result.correct).toBe(false)
 }
 
 async function ensureWrongQuestions(token: string): Promise<void> {

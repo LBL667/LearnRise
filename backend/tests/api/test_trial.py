@@ -17,6 +17,7 @@ from app.db import SessionLocal
 from app.models import (
     KnowledgePoint,
     KnowledgeSource,
+    QuizAttempt,
     QuizQuestion,
     TrialAnswer,
     TrialExam,
@@ -347,3 +348,116 @@ def test_count_over_available_and_out_of_range(
     assert too_small.json()["code"] == "VALIDATION_ERROR"
     assert too_large.status_code == 422
     assert too_large.json()["code"] == "VALIDATION_ERROR"
+
+
+def test_trial_mistakes_reach_the_wrong_question_book(
+    client: TestClient, make_user: Callable[..., User], make_question
+) -> None:
+    user = make_user()
+    wrong_choice = make_question(
+        user,
+        stem="试炼错题单选",
+        qtype="choice",
+        options=["A. 甲", "B. 乙", "C. 丙", "D. 丁"],
+        answer="A",
+    )
+    wrong_judge = make_question(user, stem="试炼错题判断", qtype="judge", answer="true")
+    correct = make_question(
+        user,
+        stem="试炼答对单选",
+        qtype="choice",
+        options=["A. 甲", "B. 乙", "C. 丙", "D. 丁"],
+        answer="B",
+    )
+    body = _start(client, user, count=3)
+
+    response = client.post(
+        f"/api/trial/exams/{body['exam_id']}/submit",
+        json={
+            "answers": {
+                wrong_choice.id: "B",
+                wrong_judge.id: "false",
+                correct.id: "B",
+            }
+        },
+        headers=_headers(user),
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["score"] == 1
+
+    listing = client.get("/api/wrong-questions?limit=50", headers=_headers(user))
+
+    assert listing.status_code == 200, listing.text
+    by_id = {item["id"]: item for item in listing.json()}
+    assert set(by_id) == {wrong_choice.id, wrong_judge.id}
+    assert by_id[wrong_choice.id]["wrongCount"] == 1
+    assert by_id[wrong_judge.id]["wrongCount"] == 1
+    assert by_id[wrong_judge.id]["type"] == "judge"
+    assert by_id[wrong_judge.id]["myMistake"] == "false"
+    assert correct.id not in by_id
+
+
+def test_trial_resubmission_does_not_duplicate_attempts(
+    client: TestClient,
+    db_session: Session,
+    make_user: Callable[..., User],
+    make_question,
+) -> None:
+    user = make_user()
+    question = make_question(user, stem="重复提交单选", answer="A")
+    body = _start(client, user, count=1)
+    answers = {question.id: "B"}
+
+    first = client.post(
+        f"/api/trial/exams/{body['exam_id']}/submit",
+        json={"answers": answers},
+        headers=_headers(user),
+    )
+    second = client.post(
+        f"/api/trial/exams/{body['exam_id']}/submit",
+        json={"answers": answers},
+        headers=_headers(user),
+    )
+
+    assert first.status_code == 200, first.text
+    assert second.status_code == 200, second.text
+    assert second.json() == first.json()
+
+    attempts = db_session.scalar(
+        select(func.count())
+        .select_from(QuizAttempt)
+        .where(
+            QuizAttempt.user_id == user.id,
+            QuizAttempt.question_id == question.id,
+        )
+    )
+    assert attempts == 1
+    listing = client.get("/api/wrong-questions?limit=50", headers=_headers(user))
+    by_id = {item["id"]: item for item in listing.json()}
+    assert by_id[question.id]["wrongCount"] == 1
+
+
+def test_trial_mistakes_feed_weak_points(
+    client: TestClient, make_user: Callable[..., User], make_question
+) -> None:
+    user = make_user()
+    choice = make_question(user, stem="薄弱单选", qtype="choice", answer="A")
+    judge = make_question(user, stem="薄弱判断", qtype="judge", answer="true")
+    body = _start(client, user, count=2)
+
+    response = client.post(
+        f"/api/trial/exams/{body['exam_id']}/submit",
+        json={"answers": {choice.id: "B", judge.id: "false"}},
+        headers=_headers(user),
+    )
+    assert response.status_code == 200, response.text
+
+    weak = client.get("/api/assistant/weak-points", headers=_headers(user))
+
+    assert weak.status_code == 200, weak.text
+    points = weak.json()
+    assert len(points) == 1
+    assert points[0]["knowledge_point_id"] == choice.knowledge_point_id
+    assert points[0]["total_attempts"] == 2
+    assert points[0]["wrong_attempts"] == 2
+    assert points[0]["error_rate"] == 1.0

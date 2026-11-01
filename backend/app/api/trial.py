@@ -5,6 +5,12 @@ so a refresh cannot reshuffle the paper. Answers are only ever compared on the
 server with :func:`app.services.answer.grade`; the client never receives the
 reference answer before submitting. Re-submitting a submitted exam replays the
 stored result without re-scoring or writing duplicate ``trial_answers`` rows.
+
+Every graded trial answer is mirrored into ``quiz_attempts`` as well, so the
+derived diagnostics (``/api/wrong-questions`` and
+``/api/assistant/weak-points``) see trial mistakes without a second write path.
+The mirror is written in the same transaction as the ``trial_answers`` row and
+only on the first submission, so replaying a submitted exam adds nothing.
 """
 
 from __future__ import annotations
@@ -22,6 +28,7 @@ from sqlalchemy.orm import Session
 from app.api.errors import CodedHTTPException
 from app.deps import CurrentUser, DbSession
 from app.models import (
+    QuizAttempt,
     QuizQuestion,
     TrialAnswer,
     TrialExam,
@@ -308,6 +315,19 @@ def submit_exam(
                 question_id=question.id,
                 answer=given,
                 correct=correct,
+            )
+        )
+        # Mirror the graded answer into the append-only attempt log so the
+        # wrong-question book and weak-point ranking see trial mistakes too.
+        # Only reached on the first submission (a submitted exam short-circuits
+        # above), so replays never duplicate attempts.
+        db.add(
+            QuizAttempt(
+                question_id=question.id,
+                user_id=user.id,
+                answer=given,
+                correct=correct,
+                response_time_ms=None,
             )
         )
         if correct:
