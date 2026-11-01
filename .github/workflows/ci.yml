@@ -1,0 +1,72 @@
+name: ci
+
+on:
+  push:
+    branches: [main, feature]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: mechanical gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: legacy-name gate
+        run: bash scripts/check_legacy_name.sh
+      - name: adapter-isolation gate
+        run: bash scripts/check_import_isolation.sh
+      - name: repo-hygiene gate
+        run: bash scripts/check_repo_hygiene.sh
+
+  backend-tests:
+    name: backend pytest vs baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: start database
+        run: docker compose -f docker-compose.yml up -d db
+      - name: run migrations and tests
+        run: |
+          docker compose -f docker-compose.yml run --rm -T -v "$PWD/artifacts:/out" backend \
+            sh -c "alembic upgrade head && pytest -q --junitxml=/out/junit.xml"
+      - name: compare against recorded baseline
+        run: bash scripts/compare_test_baseline.sh artifacts/junit.xml
+      - name: stop stack
+        if: always()
+        run: docker compose -f docker-compose.yml down
+
+  frontend:
+    name: frontend typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install dependencies
+        run: cd frontend && npm install --no-audit --no-fund
+      - name: typecheck
+        run: cd frontend && npx tsc --noEmit
+      - name: build
+        run: cd frontend && npm run build
+
+  docs-drift:
+    name: generated api docs are reproducible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: regenerate
+        run: |
+          docker compose -f docker-compose.yml run --rm -T -v "$PWD:/repo" -w /repo backend \
+            python scripts/gen_api_docs.py
+      - name: fail on drift
+        run: git diff --exit-code -- openapi.json docs/api
+      - name: stop stack
+        if: always()
+        run: docker compose -f docker-compose.yml down

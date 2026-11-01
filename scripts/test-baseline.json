@@ -1,0 +1,12 @@
+{
+  "recorded_at": "2026-11-01",
+  "recorded_from": "pytest -q --junitxml inside the backend container, immediately after the backend whitelist import (task T03)",
+  "command": "docker compose run --rm backend pytest -q --junitxml=/tmp/baseline.xml",
+  "collected": 360,
+  "tests": 360,
+  "passed": 352,
+  "skipped": 8,
+  "failed": 0,
+  "errors": 0,
+  "policy": "passed and collected may only grow; skipped may only shrink; failed and errors must stay 0. Any change to an existing expectation must be registered in the task row and the commit body."
+}

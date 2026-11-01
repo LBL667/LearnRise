@@ -26,32 +26,45 @@ if [[ -n "$dirty" ]]; then
 fi
 
 # 2) The diff file set against main must stay inside the plan whitelist.
-banned="$(git diff --name-only main...HEAD | grep -E '^(.sisyphus/|docs/submission/|bench/)' || true)"
-if [[ -n "$banned" ]]; then
-  echo "repo-hygiene: diff vs main contains banned paths:" >&2
-  echo "$banned" >&2
-  fail "diff vs main touches banned top-level paths (.sisyphus/, docs/submission/, bench/)"
+#    CI checkouts of a feature branch often have no local `main`; fall back to
+#    the remote-tracking ref, and skip the diff checks if neither exists.
+if git rev-parse --verify --quiet main >/dev/null; then
+  BASE_REF=main
+elif git rev-parse --verify --quiet origin/main >/dev/null; then
+  BASE_REF=origin/main
+else
+  BASE_REF=""
+  echo "SKIP: neither 'main' nor 'origin/main' exists; skipping diff whitelist checks"
 fi
-banned="$(git diff --name-only main...HEAD | grep -E '(^|/)(node_modules|\.venv|dist)/' || true)"
-if [[ -n "$banned" ]]; then
-  echo "$banned" >&2
-  fail "diff vs main contains node_modules/, .venv/ or dist/ paths"
-fi
-banned="$(git diff --name-only main...HEAD | grep -E '^var/' || true)"
-if [[ -n "$banned" ]]; then
-  echo "$banned" >&2
-  fail "diff vs main contains var/ (runtime) paths"
-fi
-# Bare .env is banned; .env.example / .env.demo are allowed.
-banned="$(git diff --name-only main...HEAD | grep -E '(^|/)\.env$' || true)"
-if [[ -n "$banned" ]]; then
-  echo "$banned" >&2
-  fail "diff vs main contains a bare .env file (only .env.example/.env.demo are allowed)"
-fi
-banned="$(git diff --name-only main...HEAD | grep -E '\.vue$' || true)"
-if [[ -n "$banned" ]]; then
-  echo "$banned" >&2
-  fail "diff vs main contains .vue files (Vue frontend must not enter the repo)"
+
+if [[ -n "$BASE_REF" ]]; then
+  banned="$(git diff --name-only "$BASE_REF"...HEAD | grep -E '^(.sisyphus/|docs/submission/|bench/)' || true)"
+  if [[ -n "$banned" ]]; then
+    echo "repo-hygiene: diff vs main contains banned paths:" >&2
+    echo "$banned" >&2
+    fail "diff vs main touches banned top-level paths (.sisyphus/, docs/submission/, bench/)"
+  fi
+  banned="$(git diff --name-only "$BASE_REF"...HEAD | grep -E '(^|/)(node_modules|\.venv|dist)/' || true)"
+  if [[ -n "$banned" ]]; then
+    echo "$banned" >&2
+    fail "diff vs main contains node_modules/, .venv/ or dist/ paths"
+  fi
+  banned="$(git diff --name-only "$BASE_REF"...HEAD | grep -E '^var/' || true)"
+  if [[ -n "$banned" ]]; then
+    echo "$banned" >&2
+    fail "diff vs main contains var/ (runtime) paths"
+  fi
+  # Bare .env is banned; .env.example / .env.demo are allowed.
+  banned="$(git diff --name-only "$BASE_REF"...HEAD | grep -E '(^|/)\.env$' || true)"
+  if [[ -n "$banned" ]]; then
+    echo "$banned" >&2
+    fail "diff vs main contains a bare .env file (only .env.example/.env.demo are allowed)"
+  fi
+  banned="$(git diff --name-only "$BASE_REF"...HEAD | grep -E '\.vue$' || true)"
+  if [[ -n "$banned" ]]; then
+    echo "$banned" >&2
+    fail "diff vs main contains .vue files (Vue frontend must not enter the repo)"
+  fi
 fi
 
 # 3) No generated/runtime directory may be tracked.

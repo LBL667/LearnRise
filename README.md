@@ -172,11 +172,15 @@ make demo          # 种子数据 + 端到端冒烟
 make compose-check # 校验 compose 文件可解析
 ```
 
-`make verify` 仍在适配 React 前端的过程中（部分步骤面向旧前端工具链），
-在此之前请以 `make test` / `make lint` / 三个闸门脚本作为提交前检查。
+`make verify` 是提交前的一站式门禁：三道闸门 + ruff + mypy + 容器内 pytest（并对基线做回归比对）
++ 前端 `tsc --noEmit` 与 `vite build` + gitleaks。它**要求工作区已提交干净**（最后一步会校验
+`git status` 为空），因此请在 `git commit` 之后运行。
 
 > 后端测试**必须**在容器内运行：宿主机 Python 版本与本项目固定的 3.11 不一致，
 > 且测试直接连接数据库。请使用 `docker compose run --rm backend pytest -q`。
+
+测试基线记录在 `scripts/test-baseline.json`：`passed` 只允许增加，`skipped` 只允许减少，
+`failed` / `errors` 必须为 0。任何存量断言的变更都要在任务行与提交正文里登记理由。
 
 ---
 
