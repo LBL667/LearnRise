@@ -35,10 +35,18 @@ function StatBlock({
 }
 
 interface PlanPanelProps {
-  plan: CompetitionPlan
+  plan?: CompetitionPlan
 }
 
 export function PlanPanel({ plan }: PlanPanelProps) {
+  if (!plan) {
+    return (
+      <div className="card p-10 text-center text-sm text-ink-mute">
+        学习规划尚未生成，队长可在详情页触发生成。
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {/* 统计行 */}

@@ -175,6 +175,11 @@ const realApi: LearnRiseApi = {
   previewRoadmap: (payload) =>
     request<PlanStage[]>('/roadmap/preview', { method: 'POST', body: JSON.stringify(payload) }),
   findByInviteCode: (code) => request<Competition>(`/invite/${encodeURIComponent(code)}`),
+  joinCompetition: (code) =>
+    request<Competition>('/competitions/join', {
+      method: 'POST',
+      body: JSON.stringify({ invite_code: code }),
+    }),
 
   getChatHistory: () => request<ChatItem[]>('/chat/history'),
   getChatSuggestions: (batch) =>
@@ -210,6 +215,7 @@ const methodDomains: Record<keyof LearnRiseApi, ApiDomain> = {
   uploadDocument: 'competitions',
   previewRoadmap: 'competitions',
   findByInviteCode: 'competitions',
+  joinCompetition: 'competitions',
 
   getChatHistory: 'assistant',
   getChatSuggestions: 'assistant',
@@ -245,6 +251,7 @@ export const api: LearnRiseApi = {
   uploadDocument: pick('uploadDocument'),
   previewRoadmap: pick('previewRoadmap'),
   findByInviteCode: pick('findByInviteCode'),
+  joinCompetition: pick('joinCompetition'),
 
   getChatHistory: pick('getChatHistory'),
   getChatSuggestions: pick('getChatSuggestions'),

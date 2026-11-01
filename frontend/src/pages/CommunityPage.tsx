@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '@/api/client'
+import { ApiError, api } from '@/api/client'
 import type { Competition } from '@/api/types'
 import { CompetitionCard } from '@/components/competition/CompetitionCard'
 import { CreateCompetitionModal } from '@/components/create/CreateCompetitionModal'
@@ -11,13 +11,17 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
   const [inviteInput, setInviteInput] = useState('')
+  const [error, setError] = useState('')
   const { showToast } = useToast()
   const navigate = useNavigate()
 
   const load = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
       setCompetitions(await api.listCompetitions())
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.detail : '竞赛列表加载失败，请稍后重试')
     } finally {
       setLoading(false)
     }
@@ -33,11 +37,22 @@ export default function CommunityPage() {
       showToast('请先输入邀请码', 'error')
       return
     }
-    const found = await api.findByInviteCode(code)
-    if (found) {
-      navigate(`/competition/${found.id}`)
-    } else {
-      showToast('邀请码无效或竞赛不存在', 'error')
+    try {
+      const joined = await api.joinCompetition(code)
+      showToast(`已加入「${joined.title}」`, 'success')
+      await load()
+      navigate(`/competition/${joined.id}`)
+    } catch (caught) {
+      if (caught instanceof ApiError) {
+        const messageByCode: Record<string, string> = {
+          JOIN_INVITE_INVALID: '邀请码无效或已过期',
+          ALREADY_MEMBER: '你已经加入该竞赛',
+          COMPETITION_FULL: '竞赛人数已满',
+        }
+        showToast(messageByCode[caught.code ?? ''] ?? caught.detail, 'error')
+      } else {
+        showToast('加入失败，请稍后重试', 'error')
+      }
     }
   }
 
@@ -65,7 +80,22 @@ export default function CommunityPage() {
       {/* 竞赛列表 */}
       <div className="mt-6 flex flex-col gap-4">
         {loading && <div className="card p-10 text-center text-sm text-ink-mute">正在加载竞赛…</div>}
-        {!loading && competitions.map((c) => <CompetitionCard key={c.id} competition={c} />)}
+        {!loading && error && (
+          <div className="card p-10 text-center">
+            <p className="text-sm text-[#e25050]">{error}</p>
+            <button className="btn-ghost mt-4" onClick={() => void load()}>
+              重新加载
+            </button>
+          </div>
+        )}
+        {!loading && !error && competitions.length === 0 && (
+          <div className="card p-10 text-center text-sm text-ink-mute">
+            还没有加入任何竞赛，创建一个或用邀请码加入。
+          </div>
+        )}
+        {!loading &&
+          !error &&
+          competitions.map((c) => <CompetitionCard key={c.id} competition={c} />)}
       </div>
 
       {/* 创建竞赛分步弹窗 */}

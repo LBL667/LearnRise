@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api } from '@/api/client'
+import { ApiError, api } from '@/api/client'
 import type { Competition, CompetitionPlan, Member } from '@/api/types'
 import { CoverArt } from '@/components/competition/CoverArt'
 import { MembersPanel } from '@/components/members/MembersPanel'
@@ -16,29 +16,75 @@ export default function CompetitionDetailPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [plan, setPlan] = useState<CompetitionPlan | undefined>()
   const [tab, setTab] = useState<TabKey>('members')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [notFound, setNotFound] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
+    setLoading(true)
+    setError('')
+    setNotFound(false)
     void (async () => {
-      const [comp, mem, pln] = await Promise.all([
+      const [comp, mem, pln] = await Promise.allSettled([
         api.getCompetition(id),
         api.listMembers(id),
         api.getPlan(id),
       ])
       if (cancelled) return
-      setCompetition(comp)
-      setMembers(mem)
-      setPlan(pln)
+
+      if (comp.status === 'rejected') {
+        const reason = comp.reason
+        if (reason instanceof ApiError && reason.status === 404) {
+          setNotFound(true)
+        } else {
+          setError(reason instanceof ApiError ? reason.detail : '竞赛详情加载失败，请稍后重试')
+        }
+        setLoading(false)
+        return
+      }
+
+      setCompetition(comp.value)
+      setMembers(mem.status === 'fulfilled' ? mem.value : [])
+      setPlan(pln.status === 'fulfilled' ? pln.value : undefined)
+      setLoading(false)
     })()
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, reloadKey])
 
-  if (!competition || !plan) {
+  if (loading) {
     return (
       <div className="w-full px-6 py-6">
         <div className="card p-10 text-center text-sm text-ink-mute">正在加载竞赛详情…</div>
+      </div>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <div className="w-full px-6 py-6">
+        <div className="card p-10 text-center">
+          <p className="text-sm text-ink-soft">竞赛不存在，或你没有权限查看。</p>
+          <button className="btn-ghost mt-4" onClick={() => navigate('/')}>
+            返回竞赛空间
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !competition) {
+    return (
+      <div className="w-full px-6 py-6">
+        <div className="card p-10 text-center">
+          <p className="text-sm text-[#e25050]">{error || '竞赛详情加载失败'}</p>
+          <button className="btn-ghost mt-4" onClick={() => setReloadKey((key) => key + 1)}>
+            重新加载
+          </button>
+        </div>
       </div>
     )
   }

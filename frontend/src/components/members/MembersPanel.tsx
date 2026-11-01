@@ -13,8 +13,7 @@ interface MembersPanelProps {
 export function MembersPanel({ competition, members, onMembersChange }: MembersPanelProps) {
   const { showToast } = useToast()
 
-  /** 当前登录用户（林同学）在该竞赛是否拥有队长权限 */
-  const canManage = members.some((m) => m.role === 'leader' && m.name === '林同学')
+  const canManage = competition.canManageMembers === true
 
   const copyCode = async () => {
     try {
@@ -53,7 +52,7 @@ export function MembersPanel({ competition, members, onMembersChange }: MembersP
         <div className="flex items-center gap-3">
           <div className="flex h-9 items-center gap-2 rounded-lg bg-page px-3">
             <span className="text-[13px] text-ink-mute">邀请码</span>
-            <span className="text-[14px] font-bold tracking-widest text-ink">{competition.inviteCode}</span>
+            <span data-testid="invite-code" className="text-[14px] font-bold tracking-widest text-ink">{competition.inviteCode}</span>
             <button
               onClick={() => void copyCode()}
               aria-label="复制邀请码"

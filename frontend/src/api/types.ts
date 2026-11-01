@@ -25,6 +25,14 @@ export interface Competition {
   daysToEnd: number
   cover: CoverVariant
   inviteCode: string
+  /** 后端下发的题型（choice / judge / short_answer） */
+  questionTypes?: string[]
+  difficulty?: Difficulty
+  rewards?: RewardItem[]
+  planStatus?: 'pending' | 'generating' | 'ready' | 'failed'
+  /** 当前登录用户在该竞赛中的角色；未加入时为空 */
+  currentUserRole?: 'leader' | 'member' | 'viewer' | null
+  canManageMembers?: boolean
 }
 
 /** 竞赛成员 */
@@ -294,6 +302,8 @@ export interface LearnRiseApi {
   uploadDocument(file: File): Promise<UploadDocResult>
   previewRoadmap(payload: CreateCompetitionPayload): Promise<PlanStage[]>
   findByInviteCode(code: string): Promise<Competition | undefined>
+  /** 用邀请码加入竞赛；失败时抛出带 code 的 ApiError */
+  joinCompetition(code: string): Promise<Competition>
 
   /* 备赛区 */
   getChatHistory(): Promise<ChatItem[]>

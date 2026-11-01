@@ -167,6 +167,14 @@ class MockApi implements LearnRiseApi {
     })
   }
 
+  async joinCompetition(code: string): Promise<Competition> {
+    const found = await this.findByInviteCode(code)
+    if (!found) {
+      throw new Error('邀请码无效')
+    }
+    return found
+  }
+
   async findByInviteCode(code: string): Promise<Competition | undefined> {
     await sleep(180)
     const upper = code.trim().toUpperCase()

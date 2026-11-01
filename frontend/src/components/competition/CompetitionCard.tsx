@@ -19,7 +19,9 @@ export function CompetitionCard({ competition }: { competition: Competition }) {
   const navigate = useNavigate()
 
   return (
-    <article className="card flex items-center gap-5 p-4 transition-shadow hover:shadow-[0_6px_24px_rgba(46,124,246,0.08)]">
+    <article
+      data-testid="competition-card"
+      className="card flex items-center gap-5 p-4 transition-shadow hover:shadow-[0_6px_24px_rgba(46,124,246,0.08)]">
       <CoverArt variant={competition.cover} className="h-[96px] w-[168px] rounded-xl" />
 
       <div className="min-w-0 flex-1">
