@@ -689,6 +689,44 @@
         "title": "CompetitionOut",
         "type": "object"
       },
+      "CompetitionRecordOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "joinedAt": {
+            "title": "Joinedat",
+            "type": "string"
+          },
+          "memberCount": {
+            "title": "Membercount",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "role",
+          "memberCount",
+          "joinedAt",
+          "status"
+        ],
+        "title": "CompetitionRecordOut",
+        "type": "object"
+      },
       "ConversationCreate": {
         "properties": {
           "competition_id": {
@@ -1389,6 +1427,49 @@
         "title": "KnowledgePointUpdate",
         "type": "object"
       },
+      "LeaderboardEntryOut": {
+        "properties": {
+          "avatarHue": {
+            "title": "Avatarhue",
+            "type": "integer"
+          },
+          "division": {
+            "title": "Division",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "points": {
+            "title": "Points",
+            "type": "integer"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "tier": {
+            "title": "Tier",
+            "type": "string"
+          },
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "userId",
+          "name",
+          "tier",
+          "division",
+          "points",
+          "avatarHue"
+        ],
+        "title": "LeaderboardEntryOut",
+        "type": "object"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -1614,6 +1695,94 @@
           "stages"
         ],
         "title": "PlanOut",
+        "type": "object"
+      },
+      "ProfileInfoOut": {
+        "properties": {
+          "avatarHue": {
+            "title": "Avatarhue",
+            "type": "integer"
+          },
+          "competitionCount": {
+            "title": "Competitioncount",
+            "type": "integer"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "joinedAt": {
+            "title": "Joinedat",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "avatarHue",
+          "level",
+          "joinedAt",
+          "competitionCount"
+        ],
+        "title": "ProfileInfoOut",
+        "type": "object"
+      },
+      "ProfileStatOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "tone": {
+            "enum": [
+              "primary",
+              "success",
+              "warning",
+              "violet"
+            ],
+            "title": "Tone",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "tone"
+        ],
+        "title": "ProfileStatOut",
         "type": "object"
       },
       "QuestionOut": {
@@ -2337,6 +2506,69 @@
         "title": "RewardItem",
         "type": "object"
       },
+      "SettingGroupOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SettingItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "items"
+        ],
+        "title": "SettingGroupOut",
+        "type": "object"
+      },
+      "SettingItemOut": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "icon": {
+            "enum": [
+              "user",
+              "shield",
+              "bell",
+              "sliders",
+              "monitor",
+              "lock"
+            ],
+            "title": "Icon",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "label",
+          "description",
+          "icon"
+        ],
+        "title": "SettingItemOut",
+        "type": "object"
+      },
       "SourceChunkOut": {
         "properties": {
           "content": {
@@ -2502,6 +2734,34 @@
           "created_at"
         ],
         "title": "SourceOut",
+        "type": "object"
+      },
+      "StudyProgressOut": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "percent": {
+            "title": "Percent",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "value",
+          "total",
+          "percent"
+        ],
+        "title": "StudyProgressOut",
         "type": "object"
       },
       "SubmitRequest": {
@@ -4655,6 +4915,203 @@
         "summary": "Explain Knowledge Point",
         "tags": [
           "explain"
+        ]
+      }
+    },
+    "/api/leaderboard/{competition_id}": {
+      "get": {
+        "operationId": "get_leaderboard_api_leaderboard__competition_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "competition_id",
+            "required": true,
+            "schema": {
+              "title": "Competition Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LeaderboardEntryOut"
+                  },
+                  "title": "Response Get Leaderboard Api Leaderboard  Competition Id  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Leaderboard",
+        "tags": [
+          "leaderboard"
+        ]
+      }
+    },
+    "/api/profile/competition-records": {
+      "get": {
+        "operationId": "get_competition_records_api_profile_competition_records_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CompetitionRecordOut"
+                  },
+                  "title": "Response Get Competition Records Api Profile Competition Records Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Competition Records",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/info": {
+      "get": {
+        "operationId": "get_profile_info_api_profile_info_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileInfoOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Profile Info",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/settings": {
+      "get": {
+        "operationId": "get_setting_groups_api_profile_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SettingGroupOut"
+                  },
+                  "title": "Response Get Setting Groups Api Profile Settings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Setting Groups",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/stats": {
+      "get": {
+        "operationId": "get_profile_stats_api_profile_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileStatOut"
+                  },
+                  "title": "Response Get Profile Stats Api Profile Stats Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Profile Stats",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/study-progress": {
+      "get": {
+        "operationId": "get_study_progress_api_profile_study_progress_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudyProgressOut"
+                  },
+                  "title": "Response Get Study Progress Api Profile Study Progress Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Study Progress",
+        "tags": [
+          "profile"
         ]
       }
     },

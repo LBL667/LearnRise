@@ -26,6 +26,8 @@ NEW_API_PREFIXES: tuple[str, ...] = (
     "/api/invite",
     "/api/assistant",
     "/api/trial",
+    "/api/profile",
+    "/api/leaderboard",
 )
 
 STATUS_CODES: dict[int, str] = {
