@@ -3,7 +3,369 @@
 # competitions 竞赛
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：0。
+> 端点数量：8。
 
-尚无端点（后续切片引入）。
+## 端点总览
+
+| 方法 | 路径 | 摘要 |
+|---|---|---|
+| `GET` | `/api/competitions` | List Competitions |
+| `POST` | `/api/competitions` | Create Competition |
+| `POST` | `/api/competitions/join` | Join Competition |
+| `GET` | `/api/competitions/{competition_id}` | Read Competition |
+| `GET` | `/api/competitions/{competition_id}/members` | List Members |
+| `DELETE` | `/api/competitions/{competition_id}/members/{member_id}` | Remove Member |
+| `GET` | `/api/competitions/{competition_id}/plan` | Read Plan |
+| `GET` | `/api/invite/{code}` | Read Invite |
+
+## 端点详情
+
+### `GET /api/competitions`
+
+- **标签**: `competitions`
+- **摘要**: List Competitions
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `limit` | `query` | `integer` | 否 | 20 |
+| `offset` | `query` | `integer` | 否 | 0 |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `id` | `string` | 是 |
+| `title` | `string` | 是 |
+| `level` | `string` | 否 |
+| `description` | `string` | 否 |
+| `host` | `string` | 否 |
+| `memberCount` | `integer` | 否 |
+| `capacity` | `integer` | 否 |
+| `startTime` | `string` | 否 |
+| `endTime` | `string` | 否 |
+| `awardQuota` | `integer` | 否 |
+| `daysToStart` | `integer` | 否 |
+| `daysToEnd` | `integer` | 否 |
+| `cover` | `string` | 否 |
+| `inviteCode` | `string` | 否 |
+| `questionTypes` | `array<string>` | 否 |
+| `difficulty` | `string` | 否 |
+| `rewards` | `array<RewardItem>` | 否 |
+| `rewards[].rank` | `integer` | 是 |
+| `rewards[].name` | `string` | 否 |
+| `rewards[].imageUrl` | `string \| null` | 否 |
+| `planStatus` | `string` | 否 |
+| `currentUserRole` | `string \| null` | 否 |
+| `canManageMembers` | `boolean` | 否 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X GET 'http://localhost:8000/api/competitions?limit=20&offset=0' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `POST /api/competitions`
+
+- **标签**: `competitions`
+- **摘要**: Create Competition
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `name` | `string` | 是 | — |
+| `knowledge_prompt` | `string` | 否 | "" |
+| `question_types` | `array<enum["choice", "judge", "short_answer"]>` | 否 | — |
+| `difficulty` | `enum["easy", "medium", "hard"]` | 否 | "medium" |
+| `winner_count` | `integer` | 否 | 3 |
+| `rewards` | `array<RewardItem>` | 否 | — |
+| `rewards[].rank` | `integer` | 是 | — |
+| `rewards[].name` | `string` | 否 | "" |
+| `rewards[].imageUrl` | `string \| null` | 否 | — |
+| `start_time` | `string \| null` | 否 | — |
+| `end_time` | `string \| null` | 否 | — |
+| `source_ids` | `array<string>` | 否 | — |
+
+#### 响应字段（201）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `id` | `string` | 是 |
+| `title` | `string` | 是 |
+| `level` | `string` | 否 |
+| `description` | `string` | 否 |
+| `host` | `string` | 否 |
+| `memberCount` | `integer` | 否 |
+| `capacity` | `integer` | 否 |
+| `startTime` | `string` | 否 |
+| `endTime` | `string` | 否 |
+| `awardQuota` | `integer` | 否 |
+| `daysToStart` | `integer` | 否 |
+| `daysToEnd` | `integer` | 否 |
+| `cover` | `string` | 否 |
+| `inviteCode` | `string` | 否 |
+| `questionTypes` | `array<string>` | 否 |
+| `difficulty` | `string` | 否 |
+| `rewards` | `array<RewardItem>` | 否 |
+| `rewards[].rank` | `integer` | 是 |
+| `rewards[].name` | `string` | 否 |
+| `rewards[].imageUrl` | `string \| null` | 否 |
+| `planStatus` | `string` | 否 |
+| `currentUserRole` | `string \| null` | 否 |
+| `canManageMembers` | `boolean` | 否 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/competitions' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"difficulty": "easy", "end_time": "string", "knowledge_prompt": "string", "name": "string", "question_types": [], "rewards": [], "source_ids": [], "start_time": "string", "winner_count": 0}'
+```
+
+### `POST /api/competitions/join`
+
+- **标签**: `competitions`
+- **摘要**: Join Competition
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `invite_code` | `string` | 是 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `id` | `string` | 是 |
+| `title` | `string` | 是 |
+| `level` | `string` | 否 |
+| `description` | `string` | 否 |
+| `host` | `string` | 否 |
+| `memberCount` | `integer` | 否 |
+| `capacity` | `integer` | 否 |
+| `startTime` | `string` | 否 |
+| `endTime` | `string` | 否 |
+| `awardQuota` | `integer` | 否 |
+| `daysToStart` | `integer` | 否 |
+| `daysToEnd` | `integer` | 否 |
+| `cover` | `string` | 否 |
+| `inviteCode` | `string` | 否 |
+| `questionTypes` | `array<string>` | 否 |
+| `difficulty` | `string` | 否 |
+| `rewards` | `array<RewardItem>` | 否 |
+| `rewards[].rank` | `integer` | 是 |
+| `rewards[].name` | `string` | 否 |
+| `rewards[].imageUrl` | `string \| null` | 否 |
+| `planStatus` | `string` | 否 |
+| `currentUserRole` | `string \| null` | 否 |
+| `canManageMembers` | `boolean` | 否 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/competitions/join' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"invite_code": "string"}'
+```
+
+### `GET /api/competitions/{competition_id}`
+
+- **标签**: `competitions`
+- **摘要**: Read Competition
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `competition_id` | `path` | `string` | 是 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `id` | `string` | 是 |
+| `title` | `string` | 是 |
+| `level` | `string` | 否 |
+| `description` | `string` | 否 |
+| `host` | `string` | 否 |
+| `memberCount` | `integer` | 否 |
+| `capacity` | `integer` | 否 |
+| `startTime` | `string` | 否 |
+| `endTime` | `string` | 否 |
+| `awardQuota` | `integer` | 否 |
+| `daysToStart` | `integer` | 否 |
+| `daysToEnd` | `integer` | 否 |
+| `cover` | `string` | 否 |
+| `inviteCode` | `string` | 否 |
+| `questionTypes` | `array<string>` | 否 |
+| `difficulty` | `string` | 否 |
+| `rewards` | `array<RewardItem>` | 否 |
+| `rewards[].rank` | `integer` | 是 |
+| `rewards[].name` | `string` | 否 |
+| `rewards[].imageUrl` | `string \| null` | 否 |
+| `planStatus` | `string` | 否 |
+| `currentUserRole` | `string \| null` | 否 |
+| `canManageMembers` | `boolean` | 否 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X GET 'http://localhost:8000/api/competitions/{competition_id}' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `GET /api/competitions/{competition_id}/members`
+
+- **标签**: `competitions`
+- **摘要**: List Members
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `competition_id` | `path` | `string` | 是 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `id` | `string` | 是 |
+| `userId` | `string` | 是 |
+| `name` | `string` | 是 |
+| `role` | `string` | 是 |
+| `avatarHue` | `integer` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X GET 'http://localhost:8000/api/competitions/{competition_id}/members' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `DELETE /api/competitions/{competition_id}/members/{member_id}`
+
+- **标签**: `competitions`
+- **摘要**: Remove Member
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `competition_id` | `path` | `string` | 是 | — |
+| `member_id` | `path` | `string` | 是 | — |
+
+#### 响应字段（204）
+
+无响应体。
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X DELETE 'http://localhost:8000/api/competitions/{competition_id}/members/{member_id}' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `GET /api/competitions/{competition_id}/plan`
+
+- **标签**: `competitions`
+- **摘要**: Read Plan
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `competition_id` | `path` | `string` | 是 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `stats` | `object` | 是 |
+| `rewards` | `array<RewardItem>` | 是 |
+| `rewards[].rank` | `integer` | 是 |
+| `rewards[].name` | `string` | 否 |
+| `rewards[].imageUrl` | `string \| null` | 否 |
+| `intro` | `string` | 是 |
+| `stages` | `array<object>` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X GET 'http://localhost:8000/api/competitions/{competition_id}/plan' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `GET /api/invite/{code}`
+
+- **标签**: `competitions`
+- **摘要**: Read Invite
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `code` | `path` | `string` | 是 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `code` | `string` | 是 |
+| `competitionId` | `string` | 是 |
+| `title` | `string` | 是 |
+| `memberCount` | `integer` | 是 |
+| `capacity` | `integer` | 否 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X GET 'http://localhost:8000/api/invite/{code}' \
+  -H 'Authorization: Bearer $TOKEN'
+```
 

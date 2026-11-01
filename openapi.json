@@ -375,6 +375,209 @@
         "title": "Body_upload_source_api_sources_upload_post",
         "type": "object"
       },
+      "CompetitionCreate": {
+        "properties": {
+          "difficulty": {
+            "default": "medium",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time"
+          },
+          "knowledge_prompt": {
+            "default": "",
+            "title": "Knowledge Prompt",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "question_types": {
+            "items": {
+              "enum": [
+                "choice",
+                "judge",
+                "short_answer"
+              ],
+              "type": "string"
+            },
+            "title": "Question Types",
+            "type": "array"
+          },
+          "rewards": {
+            "items": {
+              "$ref": "#/components/schemas/RewardItem"
+            },
+            "title": "Rewards",
+            "type": "array"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Ids",
+            "type": "array"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Time"
+          },
+          "winner_count": {
+            "default": 3,
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Winner Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CompetitionCreate",
+        "type": "object"
+      },
+      "CompetitionOut": {
+        "properties": {
+          "awardQuota": {
+            "default": 0,
+            "title": "Awardquota",
+            "type": "integer"
+          },
+          "canManageMembers": {
+            "default": false,
+            "title": "Canmanagemembers",
+            "type": "boolean"
+          },
+          "capacity": {
+            "default": 0,
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "cover": {
+            "default": "aurora",
+            "title": "Cover",
+            "type": "string"
+          },
+          "currentUserRole": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentuserrole"
+          },
+          "daysToEnd": {
+            "default": 0,
+            "title": "Daystoend",
+            "type": "integer"
+          },
+          "daysToStart": {
+            "default": 0,
+            "title": "Daystostart",
+            "type": "integer"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "difficulty": {
+            "default": "medium",
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "endTime": {
+            "default": "",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "host": {
+            "default": "",
+            "title": "Host",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inviteCode": {
+            "default": "",
+            "title": "Invitecode",
+            "type": "string"
+          },
+          "level": {
+            "default": "",
+            "title": "Level",
+            "type": "string"
+          },
+          "memberCount": {
+            "default": 0,
+            "title": "Membercount",
+            "type": "integer"
+          },
+          "planStatus": {
+            "default": "pending",
+            "title": "Planstatus",
+            "type": "string"
+          },
+          "questionTypes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Questiontypes",
+            "type": "array"
+          },
+          "rewards": {
+            "items": {
+              "$ref": "#/components/schemas/RewardItem"
+            },
+            "title": "Rewards",
+            "type": "array"
+          },
+          "startTime": {
+            "default": "",
+            "title": "Starttime",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "CompetitionOut",
+        "type": "object"
+      },
       "CurveItem": {
         "properties": {
           "days": {
@@ -623,6 +826,39 @@
         "title": "HistogramItem",
         "type": "object"
       },
+      "InviteOut": {
+        "properties": {
+          "capacity": {
+            "default": 0,
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "competitionId": {
+            "title": "Competitionid",
+            "type": "string"
+          },
+          "memberCount": {
+            "title": "Membercount",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "competitionId",
+          "title",
+          "memberCount"
+        ],
+        "title": "InviteOut",
+        "type": "object"
+      },
       "JobOut": {
         "properties": {
           "error_message": {
@@ -692,6 +928,21 @@
           "finished_at"
         ],
         "title": "JobOut",
+        "type": "object"
+      },
+      "JoinRequest": {
+        "properties": {
+          "invite_code": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Invite Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invite_code"
+        ],
+        "title": "JoinRequest",
         "type": "object"
       },
       "KnowledgePointOut": {
@@ -829,6 +1080,39 @@
         "title": "LoginRequest",
         "type": "object"
       },
+      "MemberOut": {
+        "properties": {
+          "avatarHue": {
+            "title": "Avatarhue",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "name",
+          "role",
+          "avatarHue"
+        ],
+        "title": "MemberOut",
+        "type": "object"
+      },
       "NotesRequest": {
         "properties": {
           "agent_id": {
@@ -875,6 +1159,42 @@
           "model"
         ],
         "title": "NotesResponse",
+        "type": "object"
+      },
+      "PlanOut": {
+        "properties": {
+          "intro": {
+            "title": "Intro",
+            "type": "string"
+          },
+          "rewards": {
+            "items": {
+              "$ref": "#/components/schemas/RewardItem"
+            },
+            "title": "Rewards",
+            "type": "array"
+          },
+          "stages": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Stages",
+            "type": "array"
+          },
+          "stats": {
+            "additionalProperties": true,
+            "title": "Stats",
+            "type": "object"
+          }
+        },
+        "required": [
+          "stats",
+          "rewards",
+          "intro",
+          "stages"
+        ],
+        "title": "PlanOut",
         "type": "object"
       },
       "QuizGenerateRequest": {
@@ -1336,6 +1656,36 @@
           "idempotent"
         ],
         "title": "ReviewSubmitOut",
+        "type": "object"
+      },
+      "RewardItem": {
+        "properties": {
+          "imageUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imageurl"
+          },
+          "name": {
+            "default": "",
+            "title": "Name",
+            "type": "string"
+          },
+          "rank": {
+            "minimum": 1.0,
+            "title": "Rank",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rank"
+        ],
+        "title": "RewardItem",
         "type": "object"
       },
       "SourceChunkOut": {
@@ -2088,6 +2438,355 @@
         ]
       }
     },
+    "/api/competitions": {
+      "get": {
+        "operationId": "list_competitions_api_competitions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CompetitionOut"
+                  },
+                  "title": "Response List Competitions Api Competitions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Competitions",
+        "tags": [
+          "competitions"
+        ]
+      },
+      "post": {
+        "operationId": "create_competition_api_competitions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompetitionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Competition",
+        "tags": [
+          "competitions"
+        ]
+      }
+    },
+    "/api/competitions/join": {
+      "post": {
+        "operationId": "join_competition_api_competitions_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Join Competition",
+        "tags": [
+          "competitions"
+        ]
+      }
+    },
+    "/api/competitions/{competition_id}": {
+      "get": {
+        "operationId": "read_competition_api_competitions__competition_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "competition_id",
+            "required": true,
+            "schema": {
+              "title": "Competition Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Competition",
+        "tags": [
+          "competitions"
+        ]
+      }
+    },
+    "/api/competitions/{competition_id}/members": {
+      "get": {
+        "operationId": "list_members_api_competitions__competition_id__members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "competition_id",
+            "required": true,
+            "schema": {
+              "title": "Competition Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberOut"
+                  },
+                  "title": "Response List Members Api Competitions  Competition Id  Members Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Members",
+        "tags": [
+          "competitions"
+        ]
+      }
+    },
+    "/api/competitions/{competition_id}/members/{member_id}": {
+      "delete": {
+        "operationId": "remove_member_api_competitions__competition_id__members__member_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "competition_id",
+            "required": true,
+            "schema": {
+              "title": "Competition Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "title": "Member Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Remove Member",
+        "tags": [
+          "competitions"
+        ]
+      }
+    },
+    "/api/competitions/{competition_id}/plan": {
+      "get": {
+        "operationId": "read_plan_api_competitions__competition_id__plan_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "competition_id",
+            "required": true,
+            "schema": {
+              "title": "Competition Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Plan",
+        "tags": [
+          "competitions"
+        ]
+      }
+    },
     "/api/dashboard/summary": {
       "get": {
         "operationId": "get_dashboard_summary_api_dashboard_summary_get",
@@ -2136,6 +2835,53 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/invite/{code}": {
+      "get": {
+        "operationId": "read_invite_api_invite__code__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "title": "Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Invite",
+        "tags": [
+          "competitions"
         ]
       }
     },
