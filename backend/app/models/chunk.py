@@ -32,6 +32,9 @@ class Chunk(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     user_id: Mapped[str] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
+    competition_id: Mapped[str | None] = mapped_column(
+        ForeignKey("competitions.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     page: Mapped[int | None] = mapped_column(Integer, nullable=True)

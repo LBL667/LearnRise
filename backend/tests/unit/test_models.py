@@ -20,6 +20,17 @@ EXPECTED_TABLES = {
     "explanation_logs",
     "quiz_questions",
     "quiz_attempts",
+    "competitions",
+    "competition_members",
+    "competition_invites",
+    "trial_exams",
+    "trial_answers",
+    "assistant_conversations",
+    "assistant_messages",
+    "practice_sessions",
+    "practice_items",
+    "wrong_question_dismissals",
+    "exam_plans",
 }
 
 

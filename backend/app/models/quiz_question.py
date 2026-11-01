@@ -36,6 +36,9 @@ class QuizQuestion(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     user_id: Mapped[str] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
+    competition_id: Mapped[str | None] = mapped_column(
+        ForeignKey("competitions.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     knowledge_point_id: Mapped[str] = mapped_column(
         ForeignKey("knowledge_points.id", ondelete="CASCADE"),
         index=True,
