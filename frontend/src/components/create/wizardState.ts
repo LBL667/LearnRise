@@ -17,6 +17,10 @@ export interface WizardState {
   endTime: string
   /** 时间选定后固定不可更改 */
   timeLocked: boolean
+  /** 后端返回的资料 id，建赛时作为 source_ids 提交 */
+  sourceId: string | null
+  /** 入库 job 轮询状态 */
+  uploadState: 'idle' | 'uploading' | 'parsing' | 'ready' | 'failed'
 }
 
 export const initialWizardState: WizardState = {
@@ -35,6 +39,8 @@ export const initialWizardState: WizardState = {
   startTime: '',
   endTime: '',
   timeLocked: false,
+  sourceId: null,
+  uploadState: 'idle',
 }
 
 export type StepProps = {

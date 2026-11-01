@@ -81,7 +81,8 @@ export interface CompetitionPlan {
 export interface CreateCompetitionPayload {
   /** 学习竞赛名称 */
   name: string
-  documentName?: string
+  /** 已上传到后端、待绑定到竞赛的资料 id */
+  sourceIds?: string[]
   /** 知识点范围 / 掌握程度 / 章节，最底层 prompt */
   knowledgePrompt: string
   /** 已选题型（可多选） */
@@ -100,8 +101,16 @@ export interface CreateResult {
 }
 
 export interface UploadDocResult {
-  documentId: string
+  sourceId: string
+  jobId: string
   fileName: string
+}
+
+/** 后端 job 轮询结果 */
+export interface JobStatus {
+  id: string
+  status: 'queued' | 'parsing' | 'embedding' | 'ready' | 'ready_empty' | 'failed'
+  progress: number
 }
 
 /* ========== 备赛区：学习助手 / 错题收藏 / 思维导图 ========== */
@@ -300,6 +309,10 @@ export interface LearnRiseApi {
   getPlan(competitionId: string): Promise<CompetitionPlan>
   createCompetition(payload: CreateCompetitionPayload): Promise<CreateResult>
   uploadDocument(file: File): Promise<UploadDocResult>
+  /** 轮询入库 job 状态 */
+  getJob(jobId: string): Promise<JobStatus>
+  /** 上传奖励图片，返回可公开访问的 url */
+  uploadRewardImage(file: File): Promise<{ url: string; key: string }>
   previewRoadmap(payload: CreateCompetitionPayload): Promise<PlanStage[]>
   findByInviteCode(code: string): Promise<Competition | undefined>
   /** 用邀请码加入竞赛；失败时抛出带 code 的 ApiError */

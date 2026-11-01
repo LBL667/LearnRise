@@ -1,4 +1,5 @@
 import { ImagePlus, X } from 'lucide-react'
+import { api } from '@/api/client'
 import type { StepProps } from '../wizardState'
 
 const MEDAL_BG = ['bg-gold', 'bg-silver', 'bg-bronze']
@@ -25,9 +26,14 @@ export function RewardsStep({ state, update }: StepProps) {
     })
   }
 
-  const uploadImage = (rank: number, file: File | undefined) => {
+  const uploadImage = async (rank: number, file: File | undefined) => {
     if (!file) return
-    setReward(rank, { imageUrl: URL.createObjectURL(file) })
+    try {
+      const uploaded = await api.uploadRewardImage(file)
+      setReward(rank, { imageUrl: uploaded.url })
+    } catch {
+      setReward(rank, { imageUrl: undefined })
+    }
   }
 
   return (

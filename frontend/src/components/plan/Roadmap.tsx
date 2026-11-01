@@ -37,9 +37,17 @@ function Connector({ offset }: { offset: number }) {
   )
 }
 
-function StageCard({ stage, index }: { stage: PlanStage; index: number }) {
+function StageCard({
+  stage,
+  index,
+  total,
+}: {
+  stage: PlanStage
+  index: number
+  total: number
+}) {
   const Icon = STAGE_ICONS[stage.icon] ?? BookOpen
-  const isLast = index === 5
+  const isLast = index === total - 1
   return (
     <div className="flex flex-col items-center" style={{ marginBottom: index * STEP_GAP }}>
       {/* 段位 Logo（悬于阶梯卡片上方） */}
@@ -104,7 +112,7 @@ export function Roadmap({ stages }: RoadmapProps) {
         {stages.map((stage, i) => (
           <div key={stage.no} className="flex items-end">
             {i > 0 && <Connector offset={i * STEP_GAP} />}
-            <StageCard stage={stage} index={i} />
+            <StageCard stage={stage} index={i} total={stages.length} />
           </div>
         ))}
       </div>

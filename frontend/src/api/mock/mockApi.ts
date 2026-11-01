@@ -139,7 +139,11 @@ class MockApi implements LearnRiseApi {
 
   async uploadDocument(file: File): Promise<UploadDocResult> {
     await sleep(500)
-    return { documentId: `doc-${Date.now().toString(36)}`, fileName: file.name }
+    return {
+      sourceId: `src-${Date.now().toString(36)}`,
+      jobId: `job-${Date.now().toString(36)}`,
+      fileName: file.name,
+    }
   }
 
   /**
@@ -165,6 +169,14 @@ class MockApi implements LearnRiseApi {
         points: i === 0 && chunks.length > 6 ? chunks.slice(6, 10).map((c) => (c.length > 10 ? c.slice(0, 10) : c)) : stage.points,
       }
     })
+  }
+
+  async getJob(jobId: string): Promise<{ id: string; status: 'ready'; progress: number }> {
+    return { id: jobId, status: 'ready', progress: 100 }
+  }
+
+  async uploadRewardImage(file: File): Promise<{ url: string; key: string }> {
+    return { url: URL.createObjectURL(file), key: `mock/${file.name}` }
   }
 
   async joinCompetition(code: string): Promise<Competition> {

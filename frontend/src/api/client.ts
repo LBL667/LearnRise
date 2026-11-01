@@ -18,6 +18,7 @@ import type {
   SettingGroup,
   StudyProgressItem,
   TrialExam,
+  JobStatus,
   UploadDocResult,
   UserProgress,
   WrongQuestion,
@@ -143,6 +144,19 @@ export async function request<T>(
   }
 }
 
+const QUESTION_TYPE_MAP: Record<string, string[]> = {
+  choice: ['choice'],
+  multiple: ['choice'],
+  judge: ['judge'],
+  blank: ['short_answer'],
+  both: ['choice', 'judge'],
+}
+
+export function mapQuestionTypes(types: string[]): string[] {
+  const mapped = types.flatMap((type) => QUESTION_TYPE_MAP[type] ?? [])
+  return Array.from(new Set(mapped))
+}
+
 function query(params: Record<string, string | number | undefined>): string {
   const search = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -162,14 +176,37 @@ const realApi: LearnRiseApi = {
     ),
   getPlan: (id) => request<CompetitionPlan>(`/competitions/${id}/plan`),
   createCompetition: (payload) =>
-    request<CreateResult>('/competitions', { method: 'POST', body: JSON.stringify(payload) }),
+    request<CreateResult>('/competitions', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: payload.name,
+        knowledge_prompt: payload.knowledgePrompt,
+        question_types: mapQuestionTypes(payload.questionTypes),
+        difficulty: payload.difficulty,
+        winner_count: payload.winnerCount,
+        rewards: payload.rewards,
+        start_time: payload.startTime,
+        end_time: payload.endTime,
+        source_ids: payload.sourceIds ?? [],
+      }),
+    }),
   uploadDocument: (file) => {
     const form = new FormData()
     form.append('file', file)
-    return request<UploadDocResult>(
+    return request<{ source_id: string; job_id: string }>(
       '/sources/upload',
       { method: 'POST', body: form },
       { timeoutMs: 120_000 },
+    ).then((body) => ({ sourceId: body.source_id, jobId: body.job_id, fileName: file.name }))
+  },
+  getJob: (jobId) => request<JobStatus>(`/jobs/${jobId}`),
+  uploadRewardImage: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request<{ url: string; key: string }>(
+      '/uploads/reward-image',
+      { method: 'POST', body: form },
+      { timeoutMs: 60_000 },
     )
   },
   previewRoadmap: (payload) =>
@@ -213,6 +250,8 @@ const methodDomains: Record<keyof LearnRiseApi, ApiDomain> = {
   getPlan: 'competitions',
   createCompetition: 'competitions',
   uploadDocument: 'competitions',
+  getJob: 'competitions',
+  uploadRewardImage: 'competitions',
   previewRoadmap: 'competitions',
   findByInviteCode: 'competitions',
   joinCompetition: 'competitions',
@@ -249,6 +288,8 @@ export const api: LearnRiseApi = {
   getPlan: pick('getPlan'),
   createCompetition: pick('createCompetition'),
   uploadDocument: pick('uploadDocument'),
+  getJob: pick('getJob'),
+  uploadRewardImage: pick('uploadRewardImage'),
   previewRoadmap: pick('previewRoadmap'),
   findByInviteCode: pick('findByInviteCode'),
   joinCompetition: pick('joinCompetition'),

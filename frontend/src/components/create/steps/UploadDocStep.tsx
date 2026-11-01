@@ -13,16 +13,48 @@ function formatSize(bytes: number): string {
 export function UploadDocStep({ state, update }: StepProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  const STATE_LABEL: Record<string, string> = {
+    uploading: '上传中…',
+    parsing: '解析中…',
+    ready: '解析完成',
+    failed: '解析失败',
+  }
+
+  const pollJob = async (jobId: string): Promise<boolean> => {
+    let consecutiveFailures = 0
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      try {
+        const job = await api.getJob(jobId)
+        consecutiveFailures = 0
+        update({ uploadState: job.status === 'ready' || job.status === 'ready_empty' ? 'ready' : 'parsing' })
+        if (job.status === 'ready' || job.status === 'ready_empty') return true
+        if (job.status === 'failed') return false
+      } catch {
+        consecutiveFailures += 1
+        if (consecutiveFailures >= 3) return false
+      }
+    }
+    return false
+  }
 
   const pickFile = async (file: File | undefined) => {
     if (!file) return
-    update({ file, documentName: file.name })
-    setUploading(true)
+    setError('')
+    update({ file, documentName: file.name, sourceId: null, uploadState: 'uploading' })
     try {
-      await api.uploadDocument(file)
-    } finally {
-      setUploading(false)
+      const uploaded = await api.uploadDocument(file)
+      update({ sourceId: uploaded.sourceId, uploadState: 'parsing' })
+      const ready = await pollJob(uploaded.jobId)
+      if (!ready) {
+        update({ uploadState: 'failed' })
+        setError('解析未完成，请重新上传')
+      }
+    } catch (caught) {
+      update({ uploadState: 'failed' })
+      setError(caught instanceof Error ? caught.message : '上传失败，请重试')
     }
   }
 
@@ -75,15 +107,17 @@ export function UploadDocStep({ state, update }: StepProps) {
             <div className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2">
               <FileText size={18} className="text-primary" />
               <span className="max-w-[320px] truncate text-[13px] font-medium text-ink">{state.documentName}</span>
-              <span className="text-[12px] text-ink-mute">
-                {uploading ? '上传中…' : formatSize(state.file.size)}
+              <span
+                className={`text-[12px] ${state.uploadState === 'failed' ? 'text-[#e25050]' : 'text-ink-mute'}`}
+              >
+                {STATE_LABEL[state.uploadState] ?? formatSize(state.file.size)}
               </span>
               <button
                 aria-label="移除文档"
                 className="text-ink-mute hover:text-[#e25050]"
                 onClick={(e) => {
                   e.stopPropagation()
-                  update({ file: null, documentName: '' })
+                  update({ file: null, documentName: '', sourceId: null, uploadState: 'idle' })
                 }}
               >
                 <X size={15} />
@@ -97,6 +131,18 @@ export function UploadDocStep({ state, update }: StepProps) {
             </>
           )}
         </div>
+        {error && (
+          <div className="mt-2 flex items-center gap-3 text-[12px] text-[#e25050]">
+            <span>{error}</span>
+            <button
+              type="button"
+              className="text-primary underline"
+              onClick={() => void pickFile(state.file ?? undefined)}
+            >
+              重新上传
+            </button>
+          </div>
+        )}
       </div>
 
       <div>

@@ -70,7 +70,7 @@ export function CreateCompetitionModal({ onClose, onCreated }: CreateCompetition
     try {
       const result = await api.createCompetition({
         name: state.name.trim(),
-        documentName: state.documentName || undefined,
+        sourceIds: state.sourceId ? [state.sourceId] : [],
         knowledgePrompt: state.knowledgePrompt.trim(),
         questionTypes: state.questionTypes,
         difficulty: state.difficulty,
