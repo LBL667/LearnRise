@@ -17,6 +17,7 @@
 | 编排（Docker Compose / nginx） | ✅ 单套 compose，6 个服务全部 healthy；SSE 已确认不被缓冲 |
 | API 契约与文档 | ✅ `openapi.json` + `docs/api/` 由脚本生成，可零漂移复现（61 个 path / 69 个 operation） |
 | 前端（React） | ✅ 所有页面都读 FastAPI；本地 mock 层（`src/api/mock/`）已删除 |
+| 前端功能对齐 | ⚠️ 后端端点已全覆盖，但仍有约 **30 个端点在界面上暂无入口**，见 [待办事项](#待办事项roadmap) |
 | 竞赛 / 学习助手 / 试炼 / 诊断 / 个人中心 / 排行榜 | ✅ 接口与页面均已落地并接通真实数据 |
 | 演示数据 | ✅ `backend/scripts/seed_demo.py` 幂等写入 2 场竞赛、题目、错题与复习卡片 |
 | 华为云适配器 | ⛔ **未实现**，仅保留 `ports/` 抽象与 `PROVIDER_PROFILE` 开关位 |
@@ -24,6 +25,39 @@
 没有「已上线」的部署：本仓库当前只保证**本地 Docker 全链路可运行**。
 
 本轮竞赛人数上限（`capacity`）不做强制校验：`capacity=null` 视为不限人数，界面显示「不限」。
+
+---
+
+## 待办事项（Roadmap）
+
+> 后端接口已完整覆盖存量项目（63 个端点 / 23 张表 / 468 collected 测试）。下列缺口**全部是「后端已实现、前端暂无入口」**，不是接口缺失。
+
+### 前端补齐（按优先级）
+
+- [ ] **P0 · Agent 设置页** —— `/api/agents` 的 7 个端点（列表 / 新建 / 详情 / 修改 / 设默认 / 删除 / 测试连接）无任何界面入口；知识点讲解与「默认 Agent」选择也依赖它。
+- [ ] **P0 · 资料库页** —— `GET /api/sources`、`GET /api/sources/{id}`、`POST /api/sources/{id}/reprocess`、`GET /api/sources/{id}/tree`、`POST /api/sources/{id}/notes`；目前上传后无法浏览、重处理或查看知识点树。
+- [ ] **P1 · 仪表盘** —— `GET /api/dashboard/summary`（到期数 / 热力图 / 掌握度雷达 / 遗忘曲线 / 难度分布）无页面；部分指标目前只出现在个人中心。
+- [ ] **P1 · 刷题页** —— `/api/quiz/generate`、`/api/quiz/{id}/answer`、`/api/quiz/{id}/attempts` 无入口；现有 `/trial` 是「考试」，与「刷题练习」不是同一功能。
+- [ ] **P1 · 知识点讲解** —— `POST /api/knowledge-points/{id}/explain`（SSE 流式 + 风格选择 + Agent 选择）无入口；`/kp/:id` 当前只渲染正文。
+- [ ] **P1 · 思维导图接真数据** —— `MindMapPanel` 仍消费本地静态数据（`src/assets/mindmapData`），应改为 `/api/sources/{id}/tree` 与 `/api/sources/{id}/notes`。
+- [ ] **P2 · 陪练闭环前端** —— `/api/assistant/practice/sessions`（创建 / 作答 / 进度 / 结束）后端已实现，界面无入口。
+- [ ] **P2 · 其余入口** —— `POST /api/assistant/exam-plan`（备考计划生成）、`POST /api/competitions/{id}/plan/generate`（规划生成按钮）、`GET|POST /api/review/cards`（手工建卡）、`GET /api/knowledge-points/search` 与 `PUT|DELETE /api/knowledge-points/{id}`（搜索 / 编辑 / 删除）、`POST /api/assistant/conversations/{id}/messages`。
+
+### 已完成（本轮）
+
+- [x] 苏格拉底引导模式 + 「揭晓答案」按钮（`a39a048`）
+- [x] 移除 mock 层与死契约，全部页面直连 FastAPI（`47accc2`）
+
+### 补齐时必须遵守
+
+- **受保护端点**：上述约 30 个端点属于「待接前端」，清理死契约时**禁止删除**（另有 `/health`、`/files/{path}`、`/internal/reminders/run` 为基础设施端点，不面向用户界面）。
+- **新增页面**需补 Playwright 用例与截图证据（沿用 `frontend/e2e/` 与仓库外 `.sisyphus/evidence/` 的惯例）；`.vue` 文件禁止入仓。
+- **大文件**：新增大文件需在 `scripts/check_repo_hygiene.sh` 的 `ALLOWED_OVERSIZE` 登记，否则卫生闸门失败。
+- **契约生成物**：改后端字段必须重跑 `scripts/gen_api_docs.py`，否则 CI 的 docs-drift 任务失败。
+
+### 其他
+
+- [ ] 华为云适配器（OBS / MaaS / OCR / FunctionGraph）—— 本轮明确不实现，仅保留 `ports/` 抽象与 `PROVIDER_PROFILE` 开关。
 
 ---
 
