@@ -160,7 +160,11 @@ test('final QA: real browser walk across every product slice', async ({ page, br
   trackPage(page, 'demo')
 
   const demoToken = await apiLogin(page.request, EMAIL, PASSWORD)
-  const seededCompetitions = await api<CompetitionRow[]>(page.request, '/api/competitions', demoToken)
+  const seededCompetitions = await api<CompetitionRow[]>(
+    page.request,
+    '/api/competitions?limit=100',
+    demoToken,
+  )
   const seeded = seededCompetitions.find((row) => row.planStatus === 'ready') ?? seededCompetitions[0]
   expect(seeded, 'seed_demo.py must leave at least one competition').toBeTruthy()
 
@@ -524,8 +528,15 @@ test('final QA: real browser walk across every product slice', async ({ page, br
     await expect(page.getByTestId('profile-stats')).toContainText('参赛数')
     await expect(page.getByTestId('profile-stats')).toContainText('复习次数')
     await expect(page.getByTestId('profile-stats')).toContainText('连续学习天数')
-    await expect(page.getByTestId('profile-settings')).toContainText('账号设置')
+    await expect(page.getByTestId('profile-settings')).toContainText('基本信息')
+    await expect(page.getByTestId('profile-settings')).toContainText('通知设置')
     await expect(page.getByTestId('profile-settings')).toContainText('隐私设置')
+    await expect(page.getByTestId('settings-edit-info')).toBeVisible()
+    await expect(page.getByTestId('settings-change-password')).toBeVisible()
+    await expect(page.getByTestId('settings-notifications-toggle')).toBeVisible()
+    await expect(page.getByTestId('settings-ui-theme')).toBeVisible()
+    await expect(page.getByTestId('settings-privacy-anonymous')).toBeVisible()
+    await expect(page.getByText('即将上线')).toHaveCount(0)
   })
 
   console.log('[final-qa] network issues:', JSON.stringify(networkIssues, null, 2))

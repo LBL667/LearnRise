@@ -382,6 +382,9 @@ export interface ProfileInfo {
   /** 'YYYY-MM-DD' */
   joinedAt: string
   competitionCount: number
+  school?: string | null
+  grade?: string | null
+  avatarUrl?: string | null
 }
 
 export interface ProfileStat {
@@ -407,18 +410,6 @@ export interface StudyProgressItem {
   value: number
   total: number
   percent: number
-}
-
-export interface SettingItem {
-  icon: 'user' | 'shield' | 'bell' | 'sliders' | 'monitor' | 'lock'
-  label: string
-  description: string
-  value?: string | null
-}
-
-export interface SettingGroup {
-  title: string
-  items: SettingItem[]
 }
 
 /* ========== 排行榜 ========== */
@@ -482,6 +473,5 @@ export interface LearnRiseApi {
   getProfileStats(): Promise<ProfileStat[]>
   getCompetitionRecords(): Promise<CompetitionRecord[]>
   getStudyProgress(): Promise<StudyProgressItem[]>
-  getSettingGroups(): Promise<SettingGroup[]>
   getLeaderboard(competitionId: string): Promise<LeaderboardEntry[]>
 }

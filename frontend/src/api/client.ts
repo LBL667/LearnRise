@@ -14,7 +14,6 @@ import type {
   RemediationPlan,
   ReviewStats,
   ReviewSubmitResult,
-  SettingGroup,
   StudyProgressItem,
   StartTrialExamPayload,
   TrialExam,
@@ -43,6 +42,8 @@ export const TIMEOUTS = {
   notes: 180_000,
   agentTest: 30_000,
   messages: 90_000,
+  avatar: 60_000,
+  password: 30_000,
 } as const
 const LOGIN_PATH = '/login'
 
@@ -430,7 +431,6 @@ const realApi: LearnRiseApi = {
   getProfileStats: () => request<ProfileStat[]>('/profile/stats'),
   getCompetitionRecords: () => request<CompetitionRecord[]>('/profile/competition-records'),
   getStudyProgress: () => request<StudyProgressItem[]>('/profile/study-progress'),
-  getSettingGroups: () => request<SettingGroup[]>('/profile/settings'),
   getLeaderboard: (competitionId) =>
     request<LeaderboardEntry[]>(`/leaderboard/${encodeURIComponent(competitionId)}`),
 }

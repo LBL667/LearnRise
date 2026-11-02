@@ -1,11 +1,13 @@
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { expect, test, type Page } from '@playwright/test'
 
 const EMAIL = process.env.E2E_EMAIL ?? 'demo@example.com'
 const PASSWORD = process.env.E2E_PASSWORD ?? 'demo1234'
 const API = process.env.E2E_API_URL ?? 'http://127.0.0.1:8080'
 const EVIDENCE_DIR = process.env.EVIDENCE_DIR
+const AVATAR_FIXTURE = fileURLToPath(new URL('../../fixtures/board.png', import.meta.url))
 
 interface LoginBody {
   access_token: string
@@ -21,6 +23,10 @@ interface LeaderboardRow {
   rank: number
   userId: string
   points: number
+}
+
+interface ProfileInfoBody {
+  name: string
 }
 
 async function login(email = EMAIL, password = PASSWORD): Promise<string> {
@@ -92,6 +98,49 @@ async function capture(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: join(EVIDENCE_DIR, name), fullPage: true })
 }
 
+async function waitForPut(page: Page, pathFragment: string) {
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes(pathFragment) && response.request().method() === 'PUT',
+  )
+}
+
+async function setToggle(page: Page, testId: string, desired: boolean): Promise<void> {
+  const toggle = page.getByTestId(testId)
+  await expect(toggle).toBeVisible()
+  const current = (await toggle.getAttribute('aria-checked')) === 'true'
+  if (current === desired) return
+  const response = waitForPut(page, '/api/profile/preferences/')
+  await toggle.click()
+  expect((await response).ok()).toBeTruthy()
+  await expect(toggle).toHaveAttribute('aria-checked', desired ? 'true' : 'false')
+}
+
+async function setTheme(page: Page, label: '浅色' | '深色' | '跟随系统'): Promise<void> {
+  const response = waitForPut(page, '/api/profile/preferences/ui')
+  await page.getByTestId('settings-ui-theme').getByRole('button', { name: label }).click()
+  expect((await response).ok()).toBeTruthy()
+}
+
+async function restoreDemoProfile(token: string, name: string): Promise<void> {
+  await apiFetch('/api/profile/info', token, {
+    method: 'PUT',
+    body: JSON.stringify({ display_name: name }),
+  })
+  await apiFetch('/api/profile/preferences/ui', token, {
+    method: 'PUT',
+    body: JSON.stringify({ theme: 'light', sidebar_collapsed: false, compact_tables: false }),
+  })
+  await apiFetch('/api/profile/preferences/notifications', token, {
+    method: 'PUT',
+    body: JSON.stringify({ email_reminders_enabled: true }),
+  })
+  await apiFetch('/api/profile/preferences/privacy', token, {
+    method: 'PUT',
+    body: JSON.stringify({ leaderboard_anonymous: false, name_visibility: 'public' }),
+  })
+}
+
 test('profile page renders all five blocks with real data', async ({ page }) => {
   const token = await login()
   await page.addInitScript((value) => window.localStorage.setItem('learnrise.token', value), token)
@@ -113,10 +162,85 @@ test('profile page renders all five blocks with real data', async ({ page }) => 
   await expect(page.getByText('正在加载个人中心…')).toHaveCount(0)
   await expect(page.getByTestId('profile-stats')).toContainText('参赛数')
   await expect(page.getByTestId('profile-stats')).toContainText('连续学习天数')
-  await expect(page.getByTestId('profile-settings')).toContainText('账号设置')
+  await expect(page.getByTestId('profile-settings')).toContainText('基本信息')
+  await expect(page.getByTestId('profile-settings')).toContainText('通知设置')
   await expect(page.getByTestId('profile-settings')).toContainText('隐私设置')
+  await expect(page.getByTestId('settings-edit-info')).toBeVisible()
+  await expect(page.getByTestId('settings-change-password')).toBeVisible()
+  await expect(page.getByTestId('settings-notifications-toggle')).toBeVisible()
+  await expect(page.getByTestId('settings-learning-save')).toBeVisible()
+  await expect(page.getByTestId('settings-ui-theme')).toBeVisible()
+  await expect(page.getByTestId('settings-privacy-anonymous')).toBeVisible()
+  await expect(page.getByText('即将上线')).toHaveCount(0)
 
   await capture(page, 'task-21-profile.png')
+})
+
+test('profile settings persist real edits', async ({ page }) => {
+  const token = await login()
+  await page.addInitScript((value) => window.localStorage.setItem('learnrise.token', value), token)
+  const original = await apiFetch<ProfileInfoBody>('/api/profile/info', token)
+
+  try {
+    await page.goto('/profile')
+
+    await page.getByTestId('settings-edit-info').click()
+    await page.getByTestId('profile-display-name-input').fill('QA-昵称')
+    const infoResponse = waitForPut(page, '/api/profile/info')
+    await page.getByTestId('profile-info-save').click()
+    expect((await infoResponse).ok()).toBeTruthy()
+    await expect(page.getByTestId('profile-info')).toContainText('QA-昵称')
+
+    await page.reload()
+    await expect(page.getByTestId('profile-info')).toContainText('QA-昵称')
+
+    await setTheme(page, '深色')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await setTheme(page, '浅色')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+
+    await setToggle(page, 'settings-notifications-toggle', true)
+    await setToggle(page, 'settings-notifications-toggle', false)
+    await page.reload()
+    await expect(page.getByTestId('settings-notifications-toggle')).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+    await setToggle(page, 'settings-notifications-toggle', true)
+
+    const competition = await seedCompetition(token)
+    await setToggle(page, 'settings-privacy-anonymous', true)
+    await page.goto('/rank')
+    await page.locator('select').selectOption({ label: competition.title })
+    await expect(page.getByTestId('rank-label').first()).toBeVisible()
+    await expect(page.getByText('匿名用户').first()).toBeVisible()
+
+    await capture(page, 'task-20-profile-settings.png')
+  } finally {
+    await restoreDemoProfile(token, original.name)
+  }
+})
+
+test('profile avatar uploads and renders through the files proxy', async ({ page }) => {
+  const token = await login()
+  await page.addInitScript((value) => window.localStorage.setItem('learnrise.token', value), token)
+
+  await page.goto('/profile')
+
+  const upload = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/profile/avatar') && response.request().method() === 'POST',
+  )
+  await page.getByTestId('profile-avatar-input').setInputFiles(AVATAR_FIXTURE)
+  expect((await upload).ok()).toBeTruthy()
+
+  const avatar = page.getByTestId('profile-avatar')
+  await expect(avatar).toHaveAttribute('src', /\/files\/avatars\//)
+  await expect
+    .poll(async () => avatar.evaluate((element) => (element as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0)
+
+  await capture(page, 'task-20-profile-avatar.png')
 })
 
 test('leaderboard shows a contiguous server rank for the top three', async ({ page }) => {

@@ -23,6 +23,10 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      '/files': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
     },
   },
 })
