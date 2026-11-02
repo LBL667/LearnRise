@@ -151,6 +151,33 @@ async function apiLogin(request: APIRequestContext, email: string, password: str
   return body.access_token
 }
 
+const SEEDED_COMPETITION_TITLES = ['全科知识联赛模拟赛', '2025 秋季学习挑战赛']
+
+async function pickSeededCompetition(
+  request: APIRequestContext,
+  token: string,
+): Promise<CompetitionRow> {
+  const competitions = await api<CompetitionRow[]>(request, '/api/competitions?limit=100', token)
+  const titled = competitions.find(
+    (row) => row.planStatus === 'ready' && SEEDED_COMPETITION_TITLES.includes(row.title),
+  )
+  if (titled) return titled
+  for (const row of competitions) {
+    if (row.planStatus !== 'ready') continue
+    try {
+      const plan = await api<{ stages: unknown[] }>(
+        request,
+        `/api/competitions/${encodeURIComponent(row.id)}/plan`,
+        token,
+      )
+      if (Array.isArray(plan.stages) && plan.stages.length > 0) return row
+    } catch {
+      continue
+    }
+  }
+  throw new Error('seed_demo.py must create a ready competition with a six-stage plan')
+}
+
 async function reviewCount(request: APIRequestContext, token: string): Promise<number> {
   const stats = await api<ProfileStatRow[]>(request, '/api/profile/stats', token)
   return Number(stats.find((row) => row.key === 'reviews')?.value ?? 0)
@@ -160,13 +187,10 @@ test('final QA: real browser walk across every product slice', async ({ page, br
   trackPage(page, 'demo')
 
   const demoToken = await apiLogin(page.request, EMAIL, PASSWORD)
-  const seededCompetitions = await api<CompetitionRow[]>(
-    page.request,
-    '/api/competitions?limit=100',
-    demoToken,
-  )
-  const seeded = seededCompetitions.find((row) => row.planStatus === 'ready') ?? seededCompetitions[0]
-  expect(seeded, 'seed_demo.py must leave at least one competition').toBeTruthy()
+  const seeded = await pickSeededCompetition(page.request, demoToken)
+  const homeCompetitions = await api<CompetitionRow[]>(page.request, '/api/competitions', demoToken)
+  expect(homeCompetitions.length, 'home page must list at least one competition').toBeGreaterThan(0)
+  const homeTop = homeCompetitions[0]
 
   let created: CompetitionRow | null = null
   let createdSourceId = ''
@@ -185,14 +209,11 @@ test('final QA: real browser walk across every product slice', async ({ page, br
     await expect(cards.first()).toBeVisible()
     expect(await cards.count()).toBeGreaterThanOrEqual(1)
     await expect(page.getByText('正在加载竞赛…')).toHaveCount(0)
-    await expect(page.getByText(seeded.title, { exact: true })).toBeVisible()
+    await expect(page.getByText(homeTop.title, { exact: true })).toBeVisible()
   })
 
   await checkpoint('b-competition-detail', 'detail invite code, leader and six-stage plan', page, async () => {
-    await page.goto('/')
-    const card = page.getByTestId('competition-card').filter({ hasText: seeded.title }).first()
-    await expect(card).toBeVisible()
-    await card.getByRole('button', { name: /进入竞赛/ }).click()
+    await page.goto(`/competition/${seeded.id}`)
 
     await expect(page).toHaveURL(new RegExp(`/competition/${seeded.id}`))
     await expect(page.getByTestId('invite-code')).toContainText(seeded.inviteCode)

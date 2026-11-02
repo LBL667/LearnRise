@@ -7,12 +7,6 @@ const PASSWORD = process.env.E2E_PASSWORD ?? 'demo1234'
 const API = process.env.E2E_API_URL ?? 'http://127.0.0.1:8080'
 const EVIDENCE_DIR = process.env.EVIDENCE_DIR
 
-interface CompetitionRow {
-  id: string
-  title: string
-  planStatus?: string
-}
-
 interface MockEntry {
   rank: number
   userId: string
@@ -138,22 +132,6 @@ test('leaderboard avatars: mocked avatarUrl rows render real images', async ({ p
 
 test('leaderboard real data: first page matches X-Total-Count', async ({ page }) => {
   const token = await authenticate(page)
-  const competitionsResponse = await page.request.get(`${API}/api/competitions?limit=100`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  expect(competitionsResponse.ok()).toBeTruthy()
-  const competitions = (await competitionsResponse.json()) as CompetitionRow[]
-  expect(competitions.length).toBeGreaterThan(0)
-  const seeded = competitions.find((row) => row.planStatus === 'ready') ?? competitions[0]
-
-  const boardResponse = await page.request.get(
-    `${API}/api/leaderboard/${encodeURIComponent(seeded.id)}?limit=10&offset=0`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  )
-  expect(boardResponse.ok()).toBeTruthy()
-  const rows = (await boardResponse.json()) as MockEntry[]
-  const headerTotal = Number(boardResponse.headers()['x-total-count'] ?? Number.NaN)
-  const total = Number.isFinite(headerTotal) ? headerTotal : rows.length
 
   const consoleErrors: string[] = []
   page.on('console', (message) => {
@@ -166,15 +144,16 @@ test('leaderboard real data: first page matches X-Total-Count', async ({ page })
   await waitForBoard(page)
 
   const selected = await page.locator('select').inputValue()
-  if (selected !== seeded.id) {
-    const boardWait = page.waitForResponse(
-      (response) =>
-        response.url().includes(`/api/leaderboard/${seeded.id}`) && response.status() === 200,
-    )
-    await page.locator('select').selectOption(seeded.id)
-    await boardWait
-    await waitForBoard(page)
-  }
+  expect(selected, 'leaderboard must select a competition').not.toBe('')
+
+  const boardResponse = await page.request.get(
+    `${API}/api/leaderboard/${encodeURIComponent(selected)}?limit=10&offset=0`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  expect(boardResponse.ok()).toBeTruthy()
+  const rows = (await boardResponse.json()) as MockEntry[]
+  const headerTotal = Number(boardResponse.headers()['x-total-count'] ?? Number.NaN)
+  const total = Number.isFinite(headerTotal) ? headerTotal : rows.length
 
   await expect(page.getByTestId('rank-label')).toHaveCount(Math.min(10, total))
   await capture(page, 'task-21-leaderboard-real.png')

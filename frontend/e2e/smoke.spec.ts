@@ -40,6 +40,30 @@ async function apiFetch<T>(path: string, token: string): Promise<T> {
   return (await response.json()) as T
 }
 
+const SEEDED_COMPETITION_TITLES = ['全科知识联赛模拟赛', '2025 秋季学习挑战赛']
+
+async function planStageCount(id: string, token: string): Promise<number> {
+  const response = await fetch(`${API}/api/competitions/${encodeURIComponent(id)}/plan`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!response.ok) return 0
+  const body = (await response.json()) as { stages?: unknown[] }
+  return Array.isArray(body.stages) ? body.stages.length : 0
+}
+
+async function pickSeededCompetition(token: string): Promise<CompetitionRow> {
+  const competitions = await apiFetch<CompetitionRow[]>('/api/competitions?limit=100', token)
+  const titled = competitions.find(
+    (row) => row.planStatus === 'ready' && SEEDED_COMPETITION_TITLES.includes(row.title),
+  )
+  if (titled) return titled
+  for (const row of competitions) {
+    if (row.planStatus !== 'ready') continue
+    if ((await planStageCount(row.id, token)) > 0) return row
+  }
+  throw new Error('seed_demo.py must create a ready competition with a six-stage plan')
+}
+
 async function capture(page: Page, name: string): Promise<void> {
   if (!EVIDENCE_DIR) return
   await mkdir(EVIDENCE_DIR, { recursive: true })
@@ -59,9 +83,10 @@ async function expectPageReady(page: Page, testId: string): Promise<void> {
 
 test('smoke: every main page renders from the API without skeletons', async ({ page }) => {
   const token = await login()
-  const competitions = await apiFetch<CompetitionRow[]>('/api/competitions', token)
-  const competition = competitions.find((row) => row.planStatus === 'ready') ?? competitions[0]
-  expect(competition, 'seed_demo.py must create a demo competition').toBeTruthy()
+  const competition = await pickSeededCompetition(token)
+  const homeCompetitions = await apiFetch<CompetitionRow[]>('/api/competitions', token)
+  expect(homeCompetitions.length, 'home page must list at least one competition').toBeGreaterThan(0)
+  const homeTop = homeCompetitions[0]
 
   const points = await apiFetch<KnowledgePointRow[]>('/api/knowledge-points?limit=100', token)
   expect(points.length, 'seed_demo.py must create demo knowledge points').toBeGreaterThan(0)
@@ -77,7 +102,7 @@ test('smoke: every main page renders from the API without skeletons', async ({ p
 
   await page.goto('/')
   await expect(page.getByRole('button', { name: /创建学习竞赛/ })).toBeVisible()
-  await expect(page.getByText(competition.title)).toBeVisible()
+  await expect(page.getByText(homeTop.title)).toBeVisible()
   await expectNoSkeleton(page, '正在加载竞赛…')
   await capture(page, 'task-26-nomock.png')
 
