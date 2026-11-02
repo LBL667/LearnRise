@@ -35,6 +35,15 @@ import type {
 const BASE = '/api'
 const DEFAULT_TIMEOUT_MS = 15_000
 export const TOKEN_STORAGE_KEY = 'learnrise.token'
+
+/** 长耗时端点的超时配置（毫秒）。 */
+export const TIMEOUTS = {
+  default: 15_000,
+  quiz: 120_000,
+  notes: 180_000,
+  agentTest: 30_000,
+  messages: 90_000,
+} as const
 const LOGIN_PATH = '/login'
 
 export class ApiError extends Error {
@@ -93,6 +102,77 @@ async function toApiError(response: Response): Promise<ApiError> {
     detail = `请求失败（${response.status}）`
   }
   return new ApiError(response.status, code, detail)
+}
+
+/**
+ * 把 FastAPI 的错误 `detail` 归一化为可展示文案，永不抛错。
+ *
+ * 覆盖字符串、`{message, raw}`、422 校验数组以及未知结构。
+ */
+export function parseApiDetail(detail: unknown): { message: string; raw?: string } {
+  try {
+    if (typeof detail === 'string') {
+      return { message: detail }
+    }
+
+    if (Array.isArray(detail)) {
+      const messages: string[] = []
+      for (const item of detail) {
+        if (typeof item === 'string') {
+          messages.push(item)
+          continue
+        }
+        if (item && typeof item === 'object') {
+          const record = item as { msg?: unknown; loc?: unknown }
+          const msg = typeof record.msg === 'string' ? record.msg : null
+          if (msg !== null) {
+            const loc = Array.isArray(record.loc) ? record.loc.map(String).join('.') : ''
+            messages.push(loc ? `${loc}: ${msg}` : msg)
+            continue
+          }
+        }
+        const serialized = safeStringify(item)
+        if (serialized !== null) messages.push(serialized)
+      }
+      const raw = safeStringify(detail) ?? undefined
+      return {
+        message: messages.length > 0 ? messages.join('; ') : '请求校验失败',
+        ...(raw === undefined ? {} : { raw }),
+      }
+    }
+
+    if (detail && typeof detail === 'object') {
+      const record = detail as { message?: unknown; raw?: unknown; detail?: unknown }
+      if (typeof record.message === 'string') {
+        return typeof record.raw === 'string'
+          ? { message: record.message, raw: record.raw }
+          : { message: record.message }
+      }
+      if (typeof record.raw === 'string') {
+        return { message: record.raw, raw: record.raw }
+      }
+      if (record.detail !== undefined && record.detail !== detail) {
+        return parseApiDetail(record.detail)
+      }
+      return { message: safeStringify(detail) ?? '请求失败' }
+    }
+
+    if (detail === null || detail === undefined) {
+      return { message: '请求失败' }
+    }
+    return { message: String(detail) }
+  } catch {
+    return { message: '请求失败' }
+  }
+}
+
+function safeStringify(value: unknown): string | null {
+  try {
+    const rendered = JSON.stringify(value)
+    return typeof rendered === 'string' ? rendered : null
+  } catch {
+    return null
+  }
 }
 
 interface RequestOptions {
