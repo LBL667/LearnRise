@@ -7,6 +7,44 @@ const PASSWORD = process.env.E2E_PASSWORD ?? 'demo1234'
 const API = process.env.E2E_API_URL ?? 'http://127.0.0.1:8080'
 const EVIDENCE_DIR = process.env.EVIDENCE_DIR
 
+type SourceSummary = { id: string; status: string }
+
+async function ensureAssistantContext(): Promise<void> {
+  const value = await token()
+  const sourcesResponse = await fetch(`${API}/api/sources`, {
+    headers: { Authorization: `Bearer ${value}` },
+  })
+  if (!sourcesResponse.ok) {
+    console.log(`[e2e] sources listing failed with ${sourcesResponse.status}; skipping note seeding`)
+    return
+  }
+  const sources = (await sourcesResponse.json()) as SourceSummary[]
+  let generated = 0
+  for (const source of sources) {
+    if (source.status !== 'ready') continue
+    const treeResponse = await fetch(`${API}/api/sources/${source.id}/tree`, {
+      headers: { Authorization: `Bearer ${value}` },
+    })
+    if (!treeResponse.ok) continue
+    const tree = (await treeResponse.json()) as unknown
+    if (Array.isArray(tree) && tree.length > 0) continue
+    const notesResponse = await fetch(`${API}/api/sources/${source.id}/notes`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${value}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    })
+    if (notesResponse.ok) generated += 1
+  }
+  console.log(`[e2e] assistant context ready: ${sources.length} sources, ${generated} notes generated`)
+}
+
+test.beforeAll(async () => {
+  await ensureAssistantContext()
+})
+
 async function capture(page: Page, name: string): Promise<void> {
   if (!EVIDENCE_DIR) return
   await mkdir(EVIDENCE_DIR, { recursive: true })
