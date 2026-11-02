@@ -9,6 +9,7 @@
 
   /* 中性色 */
   --color-page: #f4f7fc;
+  --color-surface: #ffffff;
   --color-ink: #1f2733;
   --color-ink-soft: #5b6b82;
   --color-ink-mute: #97a3b8;
@@ -42,7 +43,8 @@ body {
 
 @layer components {
   .card {
-    @apply bg-white rounded-[14px] border border-line;
+    @apply rounded-[14px] border border-line;
+    background-color: var(--color-surface);
   }
 
   .btn-primary {
@@ -58,15 +60,17 @@ body {
   }
 
   .chip {
-    @apply inline-flex items-center rounded-md border border-line bg-white px-2 py-0.5
+    @apply inline-flex items-center rounded-md border border-line px-2 py-0.5
       text-[11px] leading-4 text-ink-soft;
+    background-color: var(--color-surface);
   }
 
   .field-input {
-    @apply w-full h-9 rounded-lg border border-line bg-white px-3 text-sm text-ink
+    @apply w-full h-9 rounded-lg border border-line px-3 text-sm text-ink
       placeholder:text-ink-mute outline-none
       focus:border-primary focus:ring-2 focus:ring-primary/15 transition
       disabled:bg-[#f5f7fa] disabled:text-ink-mute disabled:cursor-not-allowed;
+    background-color: var(--color-surface);
   }
 }
 
@@ -137,4 +141,27 @@ body {
 .dot-grid {
   background-image: radial-gradient(circle, #dbe5f2 1px, transparent 1px);
   background-size: 22px 22px;
+}
+
+/* 深色主题：仅覆盖设计令牌；页面内硬编码色值仍是已知限制 */
+[data-theme="dark"] {
+  --color-page: #121722;
+  --color-surface: #1b2230;
+  --color-ink: #e6ecf5;
+  --color-ink-soft: #a7b4c8;
+  --color-ink-mute: #77839a;
+  --color-line: #28313f;
+  --color-primary-soft: #1c2a44;
+  --color-primary-soft-2: #192234;
+}
+
+[data-theme="dark"] .bg-white {
+  background-color: var(--color-surface);
+}
+
+/* 紧凑密度：由 ThemeProvider 写入 [data-density]，DataTable 无需改动即可生效 */
+[data-density="compact"] table td,
+[data-density="compact"] table th {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
 }

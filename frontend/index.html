@@ -8,6 +8,30 @@
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LearnRise - 学习竞赛平台</title>
+    <script>
+      // 首屏同步应用主题，避免深色用户看到浅色闪烁；无存储时默认浅色
+      ;(function () {
+        try {
+          var raw = window.localStorage.getItem('learnrise.ui')
+          var prefs = raw ? JSON.parse(raw) : null
+          var theme = prefs && prefs.theme
+          var resolved = theme === 'light' || theme === 'dark' || theme === 'system' ? theme : 'light'
+          if (
+            resolved === 'system' &&
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+          ) {
+            resolved = 'dark'
+          }
+          document.documentElement.dataset.theme = resolved
+          document.documentElement.dataset.density =
+            prefs && prefs.compact_tables === true ? 'compact' : 'normal'
+        } catch (error) {
+          document.documentElement.dataset.theme = 'light'
+          document.documentElement.dataset.density = 'normal'
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
