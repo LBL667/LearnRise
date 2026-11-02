@@ -1,68 +1,134 @@
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ApiError, parseApiDetail } from '@/api/client'
+import { listSources } from '@/api/sources'
+import type { SourceOut } from '@/api/types/sources'
 import { DataTable } from '@/components/ui/DataTable'
 import type { Column } from '@/components/ui/DataTable'
+import { EmptyView, ErrorView, LoadingView } from '@/components/ui/StateViews'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { EmptyView, ErrorView, LoadingView, NotFoundView } from '@/components/ui/StateViews'
 
-interface DemoSource {
-  id: string
-  name: string
-  status: string
+const COLUMNS: Column<SourceOut>[] = [
+  {
+    key: 'title',
+    header: '标题',
+    render: (row) => <span className="font-medium text-ink">{row.title}</span>,
+  },
+  {
+    key: 'filename',
+    header: '文件名',
+    render: (row) => <span className="text-ink-soft">{row.filename}</span>,
+  },
+  {
+    key: 'status',
+    header: '状态',
+    render: (row) => <StatusBadge status={row.status} />,
+  },
+  {
+    key: 'page_count',
+    header: '页数',
+    render: (row) => <span className="text-ink-soft">{row.page_count ?? '—'}</span>,
+  },
+  {
+    key: 'size_bytes',
+    header: '大小',
+    render: (row) => <span className="text-ink-soft">{formatSize(row.size_bytes)}</span>,
+  },
+  {
+    key: 'created_at',
+    header: '上传时间',
+    render: (row) => <span className="text-ink-soft">{formatTime(row.created_at)}</span>,
+  },
+]
+
+function formatSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return '—'
+  if (bytes < 1024) return `${bytes} B`
+  const kb = bytes / 1024
+  if (kb < 1024) return `${kb.toFixed(kb >= 100 ? 0 : 1)} KB`
+  const mb = kb / 1024
+  if (mb < 1024) return `${mb.toFixed(mb >= 100 ? 0 : 1)} MB`
+  return `${(mb / 1024).toFixed(1)} GB`
 }
 
-const DEMO_SOURCES: DemoSource[] = [
-  { id: 'src-1', name: '线性代数讲义.pdf', status: 'ready' },
-  { id: 'src-2', name: '概率论笔记.docx', status: 'parsing' },
-]
+function formatTime(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('zh-CN', { hour12: false })
+}
 
-const DEMO_COLUMNS: Column<DemoSource>[] = [
-  { key: 'name', header: '资料', render: (row) => <span className="font-medium text-ink">{row.name}</span> },
-  { key: 'status', header: '状态', render: (row) => <StatusBadge status={row.status} /> },
-]
-
-const DEMO_STATUSES = ['pending', 'parsing', 'embedding', 'ready', 'ready_empty', 'failed']
+function describeError(error: unknown): string {
+  if (error instanceof ApiError) {
+    const parsed = parseApiDetail(error.detail)
+    return parsed.message || error.detail
+  }
+  if (error instanceof Error && error.message) return error.message
+  return '资料加载失败，请稍后重试'
+}
 
 export default function LibraryPage() {
+  const navigate = useNavigate()
+  const [sources, setSources] = useState<SourceOut[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+    listSources()
+      .then((rows) => {
+        if (cancelled) return
+        setSources(rows)
+      })
+      .catch((caught) => {
+        if (!cancelled) setError(describeError(caught))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [reloadKey])
+
+  const retry = useCallback(() => {
+    setReloadKey((key) => key + 1)
+  }, [])
+
   return (
     <div className="mx-auto w-full max-w-[1100px] px-6 py-6" data-testid="page-library">
       <h1 className="text-[20px] font-bold text-ink">资料库</h1>
-      <p className="mt-1 text-[13px] text-ink-soft">上传的资料、解析状态与知识点树将在这里管理。</p>
+      <p className="mt-1 text-[13px] text-ink-soft">
+        上传的资料、解析状态与知识点树将在这里管理。
+      </p>
 
-      <section className="card mt-5 p-5" data-testid="ui-atoms-demo">
-        <h2 className="text-[14px] font-bold text-ink">共享 UI 组件预览</h2>
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          {DEMO_STATUSES.map((status) => (
-            <StatusBadge key={status} status={status} />
-          ))}
-          <StatusBadge status="custom-status" />
-        </div>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-line bg-white">
-            <LoadingView />
-          </div>
-          <div className="rounded-xl border border-line bg-white">
-            <EmptyView title="暂无资料" description="上传第一份资料后这里会显示内容。" />
-          </div>
-          <div className="rounded-xl border border-line bg-white">
-            <ErrorView message="资料加载失败，请稍后重试。" onRetry={() => {}} />
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-xl border border-line bg-white">
-          <NotFoundView />
-        </div>
-
-        <div className="mt-4">
-          <DataTable
-            columns={DEMO_COLUMNS}
-            rows={DEMO_SOURCES}
-            rowKey={(row) => row.id}
-            testIdPrefix="demo-source"
-            density="compact"
+      <div className="mt-5">
+        {loading ? (
+          <LoadingView />
+        ) : error ? (
+          <ErrorView message={error} onRetry={retry} />
+        ) : sources.length === 0 ? (
+          <EmptyView
+            title="暂无资料"
+            description="还没有上传任何资料。上传资料请从建赛向导进入。"
           />
-        </div>
-      </section>
+        ) : (
+          <>
+            <div className="mb-2 text-[12px] text-ink-mute" data-testid="source-count">
+              共 {sources.length} 条
+            </div>
+            <DataTable
+              columns={COLUMNS}
+              rows={sources}
+              rowKey={(row) => row.id}
+              testIdPrefix="source"
+              onRowClick={(row) => navigate(`/library/${row.id}`)}
+            />
+          </>
+        )}
+      </div>
     </div>
   )
 }
