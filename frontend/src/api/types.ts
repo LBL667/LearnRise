@@ -426,6 +426,8 @@ export interface LeaderboardEntry {
   points: number
   /** 头像渐变色相 */
   avatarHue: number
+  /** 已上传头像的签名地址；为空时回退到渐变首字头像 */
+  avatarUrl?: string | null
 }
 
 /** 前端 API 契约 —— 全部由 FastAPI 实现 */

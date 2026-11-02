@@ -1,151 +1,38 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronDown, Crown, RefreshCw } from 'lucide-react'
-import { api, ApiError } from '@/api/client'
-import { tierLogos } from '@/assets/tierLogos'
+import { api, ApiError, fetchLeaderboardPage } from '@/api/client'
 import type { Competition, LeaderboardEntry } from '@/api/types'
+import { EmptyView, ErrorView, LoadingView } from '@/components/ui/StateViews'
 import { useToast } from '@/components/ui/Toast'
+import { Podium } from '@/components/leaderboard/Podium'
+import { RankRow } from '@/components/leaderboard/RankRow'
 
-/* ==================== 月桂冠装饰 ==================== */
+const PAGE_SIZE = 10
+const MAX_ITEMS = 100
 
-const LAUREL_COLOR: Record<number, { main: string; light: string; crown?: string }> = {
-  1: { main: '#d9a53f', light: '#f0c96b', crown: '#f2b93c' },
-  2: { main: '#9fb0c6', light: '#c2cfe0' },
-  3: { main: '#c98d52', light: '#e3ad75' },
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
 }
 
-/**
- * 月桂叶弧：在 viewBox 120x120 内，沿半径 R 的圆弧摆放一串叶片。
- * side=left 从底部向左上绕，right 镜像。叶片沿切线方向旋转。
- */
-function LaurelLeaves({ side, color, r = 52 }: { side: 'left' | 'right'; color: { main: string; light: string }; r?: number }) {
-  const n = 10
-  const leaves = []
-  for (let i = 0; i < n; i++) {
-    const t = i / (n - 1)
-    // 左枝：从 210° 扫到 105°；右枝：从 -30° 扫到 75°
-    const deg = side === 'left' ? 210 - t * 105 : -30 + t * 105
-    const rad = (deg * Math.PI) / 180
-    const cx = 60 + r * Math.cos(rad)
-    const cy = 62 - r * Math.sin(rad) * 0.96
-    const rot = side === 'left' ? deg - 90 : deg + 90
-    const big = 1 - Math.abs(t - 0.5) * 0.4
-    leaves.push(
-      <ellipse
-        key={i}
-        cx={cx}
-        cy={cy}
-        rx={9 * big}
-        ry={3.6 * big}
-        fill={i % 2 === 0 ? color.main : color.light}
-        opacity={0.94}
-        transform={`rotate(${rot} ${cx} ${cy})`}
-      />,
-    )
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError ? error.detail : fallback
+}
+
+function mergeUnique(current: LeaderboardEntry[], incoming: LeaderboardEntry[]): LeaderboardEntry[] {
+  const seen = new Set(current.map((entry) => entry.userId))
+  const merged = [...current]
+  for (const entry of incoming) {
+    if (seen.has(entry.userId)) continue
+    seen.add(entry.userId)
+    merged.push(entry)
   }
-  return <>{leaves}</>
+  return merged.sort((a, b) => a.rank - b.rank)
 }
 
-/** 月桂冠头像框（1/2/3 名）：头像 + 金/银/铜月桂环绕；榜首带皇冠 */
-function LaurelAvatar({ name, hue, rank, size = 108 }: { name: string; hue: number; rank: number; size?: number }) {
-  const color = LAUREL_COLOR[rank] ?? LAUREL_COLOR[2]
-  const showCrown = rank === 1
-  const avatarSize = size * 0.58
-  return (
-    <span className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 120 120" width={size} height={size} className="absolute inset-0" aria-hidden="true">
-        <LaurelLeaves side="left" color={color} />
-        <LaurelLeaves side="right" color={color} />
-      </svg>
-      <span
-        className="absolute inline-flex items-center justify-center rounded-full font-semibold text-white"
-        style={{
-          width: avatarSize,
-          height: avatarSize,
-          left: (size - avatarSize) / 2,
-          top: (size - avatarSize) / 2 + size * 0.02,
-          fontSize: avatarSize * 0.38,
-          background: `linear-gradient(135deg, hsl(${hue} 82% 68%), hsl(${(hue + 40) % 360} 74% 52%))`,
-          boxShadow: `0 0 0 3px #fff, 0 0 0 4px ${color.main}66`,
-        }}
-      >
-        {name.slice(0, 1)}
-      </span>
-      {showCrown && (
-        <span
-          className="absolute left-1/2 -translate-x-1/2"
-          style={{ top: -size * 0.1, color: color.crown }}
-          aria-hidden="true"
-        >
-          <Crown size={size * 0.3} fill="currentColor" strokeWidth={1.2} />
-        </span>
-      )}
-    </span>
-  )
-}
-
-/** 月桂数字徽章（1/2/3 名）：月桂环绕中的大号渐变数字 */
-function LaurelNumber({ rank, size = 96 }: { rank: number; size?: number }) {
-  const color = LAUREL_COLOR[rank] ?? LAUREL_COLOR[2]
-  return (
-    <span className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 120 120" width={size} height={size} className="absolute inset-0">
-        <LaurelLeaves side="left" color={color} r={46} />
-        <LaurelLeaves side="right" color={color} r={46} />
-      </svg>
-      <span
-        data-testid="rank-label"
-        className="absolute inset-0 flex items-center justify-center font-black leading-none"
-        aria-label={`第 ${rank} 名`}
-        style={{
-          fontSize: size * 0.5,
-          background: `linear-gradient(to bottom, ${color.light}, ${color.main})`,
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-        }}
-      >
-        {rank}
-      </span>
-    </span>
-  )
-}
-
-/* ==================== 榜单 ==================== */
-
-function fmt(n: number): string {
-  return n.toLocaleString('en-US')
-}
-
-function TierBadge({ tier, division }: { tier: string; division: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-mute">
-      <img
-        src={tierLogos[tier] ?? tierLogos['初识']}
-        alt=""
-        aria-hidden="true"
-        className="h-[18px] w-[18px] select-none rounded-full object-cover"
-        draggable={false}
-      />
-      {tier}
-      <span className="font-medium text-ink-soft">{division}</span>
-    </span>
-  )
-}
-
-function PlainAvatar({ name, hue, size = 44 }: { name: string; hue: number; size?: number }) {
-  return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.36,
-        background: `linear-gradient(135deg, hsl(${hue} 82% 68%), hsl(${(hue + 40) % 360} 74% 52%))`,
-      }}
-    >
-      {name.slice(0, 1)}
-    </span>
-  )
+function computeHasMore(loaded: number, pageLength: number, total: number | null): boolean {
+  if (loaded >= MAX_ITEMS || pageLength === 0) return false
+  if (total !== null) return loaded < total
+  return pageLength === PAGE_SIZE
 }
 
 export default function LeaderboardPage() {
@@ -153,49 +40,139 @@ export default function LeaderboardPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [competitionId, setCompetitionId] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { showToast } = useToast()
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        const list = await api.listCompetitions()
-        setCompetitions(list)
-        if (list.length > 0) setCompetitionId(list[0].id)
-        else setLoading(false)
-      } catch (err) {
-        setError(err instanceof ApiError ? err.detail : '竞赛列表加载失败')
-        setLoading(false)
-      }
-    })()
+  const abortRef = useRef<AbortController | null>(null)
+  const requestSeq = useRef(0)
+  const entriesRef = useRef<LeaderboardEntry[]>([])
+  const competitionIdRef = useRef('')
+  const loadingRef = useRef(true)
+  const loadingMoreRef = useRef(false)
+  const hasMoreRef = useRef(false)
+
+  const applyEntries = useCallback((next: LeaderboardEntry[]) => {
+    entriesRef.current = next
+    setEntries(next)
   }, [])
 
-  const loadLeaderboard = useCallback(async (id: string) => {
-    if (!id) return
+  const applyHasMore = useCallback((next: boolean) => {
+    hasMoreRef.current = next
+    setHasMore(next)
+  }, [])
+
+  const loadFirstPage = useCallback(
+    async (id: string) => {
+      if (!id) return
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+      const seq = ++requestSeq.current
+
+      loadingRef.current = true
+      loadingMoreRef.current = false
+      hasMoreRef.current = false
+      setLoading(true)
+      setLoadingMore(false)
+      setHasMore(false)
+      setError(null)
+      applyEntries([])
+
+      try {
+        const page = await fetchLeaderboardPage(id, { limit: PAGE_SIZE, offset: 0 }, controller.signal)
+        if (seq !== requestSeq.current) return
+        const items = mergeUnique([], page.items)
+        applyEntries(items)
+        applyHasMore(computeHasMore(items.length, page.items.length, page.total))
+      } catch (err) {
+        if (isAbortError(err) || seq !== requestSeq.current) return
+        applyEntries([])
+        setError(errorMessage(err, '排行榜加载失败，请稍后重试'))
+      } finally {
+        if (seq === requestSeq.current) {
+          loadingRef.current = false
+          setLoading(false)
+        }
+      }
+    },
+    [applyEntries, applyHasMore],
+  )
+
+  const loadMore = useCallback(async () => {
+    const id = competitionIdRef.current
+    if (!id || loadingRef.current || loadingMoreRef.current || !hasMoreRef.current) return
+
+    const seq = requestSeq.current
+    const offset = entriesRef.current.length
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    loadingMoreRef.current = true
+    setLoadingMore(true)
+
+    try {
+      const page = await fetchLeaderboardPage(id, { limit: PAGE_SIZE, offset }, controller.signal)
+      if (seq !== requestSeq.current) return
+      const merged = mergeUnique(entriesRef.current, page.items)
+      applyEntries(merged)
+      applyHasMore(computeHasMore(merged.length, page.items.length, page.total))
+    } catch (err) {
+      if (isAbortError(err) || seq !== requestSeq.current) return
+      showToast(errorMessage(err, '加载更多失败，请稍后重试'))
+    } finally {
+      if (seq === requestSeq.current) {
+        loadingMoreRef.current = false
+        setLoadingMore(false)
+      }
+    }
+  }, [applyEntries, applyHasMore, showToast])
+
+  const loadCompetitions = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      setEntries(await api.getLeaderboard(id))
+      const list = await api.listCompetitions()
+      setCompetitions(list)
+      if (list.length === 0) {
+        loadingRef.current = false
+        setLoading(false)
+        return
+      }
+      setCompetitionId(list[0].id)
     } catch (err) {
-      setEntries([])
-      setError(err instanceof ApiError ? err.detail : '排行榜加载失败，请稍后重试')
-    } finally {
+      setError(errorMessage(err, '竞赛列表加载失败'))
+      loadingRef.current = false
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    if (competitionId) void loadLeaderboard(competitionId)
-  }, [competitionId, loadLeaderboard])
+    void loadCompetitions()
+  }, [loadCompetitions])
 
-  const byRank = [...entries].sort((a, b) => a.rank - b.rank)
-  const champion = byRank.find((entry) => entry.rank === 1)
-  const runnersUp = byRank.filter((entry) => entry.rank === 2 || entry.rank === 3)
-  const rest = byRank.filter((entry) => entry.rank > 3)
+  useEffect(() => {
+    competitionIdRef.current = competitionId
+    if (competitionId) void loadFirstPage(competitionId)
+  }, [competitionId, loadFirstPage])
+
+  useEffect(() => {
+    return () => {
+      requestSeq.current += 1
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  const sorted = [...entries].sort((a, b) => a.rank - b.rank)
+  const champion = sorted.find((entry) => entry.rank === 1)
+  const runnersUp = sorted.filter((entry) => entry.rank === 2 || entry.rank === 3)
+  const rest = sorted.filter((entry) => entry.rank > 3)
+  const showBoard = !loading && !error && entries.length > 0
+  const showEmpty = !loading && !error && entries.length === 0
 
   return (
     <div className="relative w-full px-6 py-6">
-      {/* 页面底部山峦大背景 */}
       <img
         src="/misty-mountains.jpg"
         alt=""
@@ -209,154 +186,96 @@ export default function LeaderboardPage() {
       />
 
       <div className="relative z-10">
-        {/* 标题行 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Crown size={26} className="fill-primary text-primary" />
             <h1 className="text-xl font-bold text-ink">排行榜</h1>
             <span className="ml-1 text-[13px] text-ink-mute">见证每一位探索者的成长与绽放</span>
           </div>
-          <div className="relative">
-            <select
-              className="field-input h-9 w-56 appearance-none pr-8"
-              value={competitionId}
-              onChange={(e) => setCompetitionId(e.target.value)}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <select
+                className="field-input h-9 w-56 appearance-none pr-8"
+                value={competitionId}
+                onChange={(e) => setCompetitionId(e.target.value)}
+                disabled={competitions.length === 0}
+              >
+                {competitions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-mute"
+              />
+            </div>
+            <button
+              type="button"
+              className="btn-ghost h-9 px-3"
+              onClick={() => void loadFirstPage(competitionId)}
+              disabled={loading || !competitionId}
+              aria-label="刷新排行榜"
             >
-              {competitions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-mute" />
+              <RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />
+            </button>
           </div>
         </div>
 
         {loading && (
-          <div className="card mt-5 p-10 text-center text-sm text-ink-mute" data-testid="leaderboard-loading">
-            正在加载排行榜…
+          <div className="card mt-5" data-testid="leaderboard-loading">
+            <LoadingView />
           </div>
         )}
 
         {!loading && error && (
-          <div className="card mt-5 flex flex-col items-center gap-3 p-10 text-center" data-testid="leaderboard-error">
-            <p className="text-sm text-ink-soft">{error}</p>
-            <button className="btn-ghost h-9 px-4" onClick={() => void loadLeaderboard(competitionId)}>
-              <RefreshCw size={14} />
-              重新加载
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && entries.length === 0 && (
-          <div className="card mt-5 p-10 text-center text-sm text-ink-mute" data-testid="leaderboard-empty">
-            该竞赛暂无榜单数据
-          </div>
-        )}
-
-        {/* 榜首大卡 */}
-        {!loading && !error && champion && (
-          <section className="relative mt-5 overflow-hidden rounded-[16px] border border-[#f0e0b8] bg-gradient-to-r from-[#fbf1d3] via-[#fdf8e9] to-[#f4f9ff]">
-            <img
-              src="/misty-mountains.jpg"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 right-0 h-[82%] w-[58%] select-none object-cover object-bottom opacity-85"
-              style={{
-                maskImage: 'linear-gradient(to left, black 60%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to left, black 60%, transparent 100%)',
+          <div className="card mt-5" data-testid="leaderboard-error">
+            <ErrorView
+              message={error}
+              onRetry={() => {
+                if (competitionId) void loadFirstPage(competitionId)
+                else void loadCompetitions()
               }}
-              draggable={false}
             />
-            <div className="relative z-10 flex items-center gap-8 px-10 py-7">
-              <LaurelNumber rank={champion.rank} size={104} />
-              <LaurelAvatar name={champion.name} hue={champion.avatarHue} rank={champion.rank} size={112} />
-              <div className="min-w-0">
-                <div className="truncate text-[19px] font-bold text-ink">{champion.name}</div>
-                <div className="mt-2">
-                  <TierBadge tier={champion.tier} division={champion.division} />
-                </div>
-              </div>
-              <div className="mx-3 h-14 w-px bg-[#e8d9ac]" />
-              <div className="ml-auto shrink-0 pr-6">
-                <span className="text-[15px] text-ink-soft">积分 </span>
-                <span className="text-[34px] font-bold leading-none text-primary">{fmt(champion.points)}</span>
-              </div>
-            </div>
-          </section>
+          </div>
         )}
 
-        {/* 2 / 3 名 */}
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          {runnersUp.map((e) => (
-            <div key={e.userId} className="card flex items-center gap-4 px-6 py-4" data-testid="leaderboard-runner">
-              <LaurelNumber rank={e.rank} size={64} />
-              <LaurelAvatar name={e.name} hue={e.avatarHue} rank={e.rank} size={76} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[15px] font-bold text-ink">{e.name}</div>
-                <div className="mt-1.5">
-                  <TierBadge tier={e.tier} division={e.division} />
-                </div>
-              </div>
-              <div className="shrink-0 pr-1 text-right">
-                <span className="text-[13px] text-ink-soft">积分 </span>
-                <span className="text-[22px] font-bold text-primary">{fmt(e.points)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 4-9 名 */}
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          {rest.slice(0, 6).map((e) => (
-            <div key={e.userId} className="card flex items-center gap-4 px-6 py-3.5">
-              <span
-                data-testid="rank-label"
-                aria-label={`第 ${e.rank} 名`}
-                className="w-8 shrink-0 text-center text-[22px] font-bold text-ink-soft"
-              >
-                {e.rank}
-              </span>
-              <PlainAvatar name={e.name} hue={e.avatarHue} size={44} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[14px] font-semibold text-ink">{e.name}</div>
-                <div className="mt-0.5">
-                  <TierBadge tier={e.tier} division={e.division} />
-                </div>
-              </div>
-              <div className="shrink-0 pr-1 text-right">
-                <span className="text-[12.5px] text-ink-soft">积分 </span>
-                <span className="text-[18px] font-bold text-primary">{fmt(e.points)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 第 10 名：通栏 */}
-        {!loading && !error && rest[6] && (
-          <div className="card mt-4 flex items-center gap-4 px-6 py-3.5">
-            <span
-              data-testid="rank-label"
-              aria-label={`第 ${rest[6].rank} 名`}
-              className="w-8 shrink-0 text-center text-[22px] font-bold text-ink-soft"
-            >
-              {rest[6].rank}
-            </span>
-            <PlainAvatar name={rest[6].name} hue={rest[6].avatarHue} size={44} />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[14px] font-semibold text-ink">{rest[6].name}</div>
-              <div className="mt-0.5">
-                <TierBadge tier={rest[6].tier} division={rest[6].division} />
-              </div>
-            </div>
-            <button className="btn-ghost h-8 shrink-0 px-3" onClick={() => showToast('完整榜单即将上线')}>
-              查看完整榜单
-            </button>
-            <div className="shrink-0 pr-1 text-right">
-              <span className="text-[12.5px] text-ink-soft">积分 </span>
-              <span className="text-[18px] font-bold text-primary">{fmt(rest[6].points)}</span>
-            </div>
+        {showEmpty && (
+          <div className="card mt-5" data-testid="leaderboard-empty">
+            <EmptyView title="该竞赛暂无榜单数据" description="等成员开始学习后，这里会展示连续名次与积分。" />
           </div>
+        )}
+
+        {showBoard && (
+          <>
+            <Podium champion={champion} runnersUp={runnersUp} />
+
+            {rest.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                {rest.map((entry) => (
+                  <RankRow key={entry.userId} entry={entry} />
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col items-center gap-2">
+              {hasMore ? (
+                <button
+                  type="button"
+                  className="btn-ghost h-9 px-5"
+                  onClick={() => void loadMore()}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? '加载中…' : '加载更多'}
+                </button>
+              ) : (
+                <span className="text-[13px] text-ink-mute" data-testid="leaderboard-end">
+                  已显示全部
+                </span>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

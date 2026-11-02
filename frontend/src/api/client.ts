@@ -178,6 +178,8 @@ function safeStringify(value: unknown): string | null {
 
 interface RequestOptions {
   timeoutMs?: number
+  /** 外部取消信号；组件卸载时用于中止在途请求。 */
+  signal?: AbortSignal
 }
 
 async function perform(
@@ -188,6 +190,12 @@ async function perform(
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
   const controller = new AbortController()
   const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  const externalSignal = options.signal
+  const onExternalAbort = () => controller.abort()
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort()
+    else externalSignal.addEventListener('abort', onExternalAbort)
+  }
 
   const headers = new Headers(init.headers)
   if (init.body !== undefined && !(init.body instanceof FormData)) {
@@ -215,11 +223,13 @@ async function perform(
       throw error
     }
     if (error instanceof DOMException && error.name === 'AbortError') {
+      if (externalSignal?.aborted) throw error
       throw new ApiError(0, 'TIMEOUT', `请求超时（${timeoutMs}ms）`)
     }
     throw new ApiError(0, 'NETWORK_ERROR', '网络错误，请检查连接后重试')
   } finally {
     window.clearTimeout(timer)
+    externalSignal?.removeEventListener('abort', onExternalAbort)
   }
 }
 
@@ -255,6 +265,31 @@ function query(params: Record<string, string | number | undefined>): string {
   })
   const rendered = search.toString()
   return rendered ? `?${rendered}` : ''
+}
+
+export interface LeaderboardPage {
+  items: LeaderboardEntry[]
+  /** 服务端 `X-Total-Count`；响应缺少该头时为 null。 */
+  total: number | null
+}
+
+export async function fetchLeaderboardPage(
+  competitionId: string,
+  params: { limit: number; offset: number },
+  signal?: AbortSignal,
+): Promise<LeaderboardPage> {
+  const response = await perform(
+    `/leaderboard/${encodeURIComponent(competitionId)}${query({
+      limit: params.limit,
+      offset: params.offset,
+    })}`,
+    {},
+    { signal },
+  )
+  const items = (await response.json()) as LeaderboardEntry[]
+  const header = response.headers.get('X-Total-Count')
+  const parsed = header === null ? Number.NaN : Number(header)
+  return { items, total: Number.isFinite(parsed) ? parsed : null }
 }
 
 function wrongQuestionsQuery(params: WrongQuestionQuery = {}): string {
