@@ -68,7 +68,8 @@ def _may_read(db: Session, key: str, user: User | None) -> bool:
     return True
 
 
-@router.api_route("/files/{path:path}", methods=["GET", "HEAD"])
+@router.get("/files/{path:path}")
+@router.head("/files/{path:path}")
 def read_stored_file(path: str, db: DbSession, user: OptionalUser) -> Response:
     try:
         key = sanitize_key(path)

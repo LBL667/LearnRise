@@ -7835,7 +7835,7 @@
         ]
       },
       "head": {
-        "operationId": "read_stored_file_files__path__get",
+        "operationId": "read_stored_file_files__path__head",
         "parameters": [
           {
             "in": "path",

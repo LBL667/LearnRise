@@ -1132,7 +1132,7 @@ export interface paths {
         delete?: never;
         options?: never;
         /** Read Stored File */
-        head: operations["read_stored_file_files__path__get"];
+        head: operations["read_stored_file_files__path__head"];
         patch?: never;
         trace?: never;
     };
@@ -4983,7 +4983,7 @@ export interface operations {
             };
         };
     };
-    read_stored_file_files__path__get: {
+    read_stored_file_files__path__head: {
         parameters: {
             query?: never;
             header?: never;
