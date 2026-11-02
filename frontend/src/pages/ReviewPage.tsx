@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react'
-import { CalendarClock, CheckCircle2, Flame, Layers, Link2, Loader2, RotateCw } from 'lucide-react'
+import type { FormEvent } from 'react'
+import { CalendarClock, CheckCircle2, Flame, Layers, Link2, Loader2, Plus, RotateCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { api, ApiError } from '@/api/client'
+import { api, ApiError, parseApiDetail } from '@/api/client'
+import { listKnowledgePoints } from '@/api/knowledge'
+import { createCard, listCards } from '@/api/reviewCards'
 import type { DueReviewCard, ReviewStats } from '@/api/types'
+import type { KnowledgePointOut } from '@/api/types/knowledge'
+import type { ReviewCardCreate, ReviewCardOut } from '@/api/types/review'
+import type { Column } from '@/components/ui/DataTable'
+import { DataTable } from '@/components/ui/DataTable'
+import { EmptyView, ErrorView, LoadingView } from '@/components/ui/StateViews'
 import { useToast } from '@/components/ui/Toast'
 
 const RATINGS: { value: number; label: string; className: string }[] = [
@@ -12,6 +20,68 @@ const RATINGS: { value: number; label: string; className: string }[] = [
   { value: 4, label: '良好', className: 'border-[#bfe6d2] text-[#188c5e] hover:bg-[#e5f6ec]' },
   { value: 5, label: '简单', className: 'border-[#bfe6d2] text-[#0f7a4d] hover:bg-[#dff3e8]' },
 ]
+
+const CARD_STATE_LABELS: Record<number, string> = {
+  0: '新卡',
+  1: '重学中',
+  2: '复习中',
+}
+
+const CARD_STATE_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: '新卡' },
+  { value: 1, label: '重学中' },
+  { value: 2, label: '复习中' },
+]
+
+function cardStateLabel(state: number): string {
+  return CARD_STATE_LABELS[state] ?? `未知(${state})`
+}
+
+const CARD_COLUMNS: Column<ReviewCardOut>[] = [
+  {
+    key: 'question',
+    header: '问题',
+    render: (row) => (
+      <span className="block max-w-[260px] truncate font-medium text-ink" title={row.question}>
+        {row.question}
+      </span>
+    ),
+  },
+  {
+    key: 'answer',
+    header: '答案',
+    render: (row) => (
+      <span className="block max-w-[260px] truncate text-ink-soft" title={row.answer}>
+        {row.answer}
+      </span>
+    ),
+  },
+  {
+    key: 'state',
+    header: '状态',
+    render: (row) => <span className="chip">{cardStateLabel(row.state)}</span>,
+  },
+  {
+    key: 'due_date',
+    header: '下次复习',
+    render: (row) => <span className="text-ink-soft">{row.due_date ?? '—'}</span>,
+  },
+  {
+    key: 'reps',
+    header: '复习次数',
+    render: (row) => <span className="text-ink-soft">{row.reps}</span>,
+  },
+  {
+    key: 'lapses',
+    header: '遗忘次数',
+    render: (row) => <span className="text-ink-soft">{row.lapses}</span>,
+  },
+]
+
+interface CardFormErrors {
+  question?: string
+  answer?: string
+}
 
 function predictedEntries(card: DueReviewCard): [string, number][] {
   const raw = card.predicted_intervals
@@ -44,6 +114,23 @@ export default function ReviewPage() {
   const [error, setError] = useState('')
   const { showToast } = useToast()
 
+  const [cards, setCards] = useState<ReviewCardOut[]>([])
+  const [cardsLoading, setCardsLoading] = useState(true)
+  const [cardsError, setCardsError] = useState('')
+  const [cardsReloadKey, setCardsReloadKey] = useState(0)
+  const [stateFilter, setStateFilter] = useState('')
+
+  const [formOpen, setFormOpen] = useState(false)
+  const [question, setQuestion] = useState('')
+  const [answer, setAnswer] = useState('')
+  const [knowledgePointId, setKnowledgePointId] = useState('')
+  const [formErrors, setFormErrors] = useState<CardFormErrors>({})
+  const [formError, setFormError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const [points, setPoints] = useState<KnowledgePointOut[]>([])
+  const [pointsError, setPointsError] = useState('')
+
   useEffect(() => {
     let cancelled = false
     Promise.all([api.getDueCards(), api.getReviewStats()])
@@ -62,6 +149,97 @@ export default function ReviewPage() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setCardsLoading(true)
+    setCardsError('')
+    listCards({
+      state: stateFilter === '' ? null : Number(stateFilter),
+      limit: 50,
+    })
+      .then((rows) => {
+        if (!cancelled) setCards(rows)
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          setCardsError(
+            caught instanceof ApiError
+              ? parseApiDetail(caught.detail).message
+              : '卡片列表加载失败，请重试',
+          )
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCardsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [stateFilter, cardsReloadKey])
+
+  useEffect(() => {
+    let cancelled = false
+    listKnowledgePoints({ limit: 500 })
+      .then((rows) => {
+        if (!cancelled) setPoints(rows)
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          setPointsError(
+            caught instanceof ApiError ? parseApiDetail(caught.detail).message : '知识点加载失败',
+          )
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const openCreate = () => {
+    setQuestion('')
+    setAnswer('')
+    setKnowledgePointId('')
+    setFormErrors({})
+    setFormError('')
+    setFormOpen(true)
+  }
+
+  const closeCreate = () => {
+    if (!saving) setFormOpen(false)
+  }
+
+  const submitCard = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (saving) return
+
+    const nextErrors: CardFormErrors = {}
+    if (question.trim() === '') nextErrors.question = '请填写问题'
+    if (answer.trim() === '') nextErrors.answer = '请填写答案'
+    setFormErrors(nextErrors)
+    setFormError('')
+    if (Object.keys(nextErrors).length > 0) return
+
+    const payload: ReviewCardCreate = {
+      question: question.trim(),
+      answer: answer.trim(),
+    }
+    if (knowledgePointId !== '') payload.knowledge_point_id = knowledgePointId
+
+    setSaving(true)
+    try {
+      await createCard(payload)
+      showToast('卡片创建成功', 'success')
+      setFormOpen(false)
+      setCardsReloadKey((key) => key + 1)
+    } catch (caught) {
+      setFormError(
+        caught instanceof ApiError ? parseApiDetail(caught.detail).message : '创建失败，请重试',
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const current = index < due.length ? due[index] : undefined
 
@@ -104,7 +282,7 @@ export default function ReviewPage() {
   const predicted = current ? predictedEntries(current) : []
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[980px] flex-col px-6 py-6">
+    <div className="mx-auto w-full max-w-[980px] px-6 py-6">
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-[20px] font-bold text-ink">间隔复习</h1>
@@ -125,7 +303,7 @@ export default function ReviewPage() {
         <StatCard icon={<Layers size={17} />} label="卡片总数" value={stats?.total_cards ?? 0} />
       </div>
 
-      <div className="mt-6 flex min-h-0 flex-1 flex-col">
+      <div className="mt-6 flex flex-col">
         {loading && (
           <div className="card flex flex-1 items-center justify-center text-[13px] text-ink-mute">
             正在加载复习队列…
@@ -262,6 +440,208 @@ export default function ReviewPage() {
           </div>
         )}
       </div>
+
+      <section className="mt-8" data-testid="review-cards">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-[16px] font-bold text-ink">我的复习卡片</h2>
+            <p className="mt-1 text-[12.5px] text-ink-mute" data-testid="review-cards-limit-note">
+              最多展示 50 条（后端无分页）。
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-[12.5px] text-ink-mute">
+              状态
+              <select
+                className="field-input h-9 w-[130px]"
+                data-testid="review-cards-state-filter"
+                value={stateFilter}
+                onChange={(event) => setStateFilter(event.target.value)}
+              >
+                <option value="">全部状态</option>
+                {CARD_STATE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn-primary"
+              data-testid="review-create-open"
+              onClick={openCreate}
+            >
+              <Plus size={16} />
+              新建卡片
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3">
+          {cardsLoading ? (
+            <div className="card">
+              <LoadingView />
+            </div>
+          ) : cardsError ? (
+            <div className="card">
+              <ErrorView message={cardsError} onRetry={() => setCardsReloadKey((key) => key + 1)} />
+            </div>
+          ) : cards.length === 0 ? (
+            <div className="card">
+              <EmptyView
+                title="暂无卡片"
+                description="新建一张卡片，或先完成一次练习让错题自动生成卡片。"
+              />
+            </div>
+          ) : (
+            <DataTable
+              columns={CARD_COLUMNS}
+              rows={cards}
+              rowKey={(row) => row.id}
+              testIdPrefix="review-card-list"
+              density="compact"
+            />
+          )}
+        </div>
+      </section>
+
+      {formOpen && (
+        <div className="fixed inset-0 z-[110] flex items-start justify-center overflow-y-auto bg-[rgba(31,39,51,0.42)] p-4 py-10">
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-label="新建复习卡片"
+            data-testid="review-card-form"
+            className="modal-panel w-full max-w-[520px] rounded-[14px] border border-line bg-white p-5 shadow-xl"
+            onSubmit={submitCard}
+            noValidate
+          >
+            <h2 className="text-[15px] font-bold text-ink">新建卡片</h2>
+            <p className="mt-1 text-[12px] leading-5 text-ink-mute">
+              手工补充一张复习卡片，创建后会立即出现在卡片列表中。
+            </p>
+
+            <div className="mt-4 flex flex-col gap-3">
+              <div>
+                <label
+                  htmlFor="review-card-form-question"
+                  className="mb-1 block text-[12.5px] font-medium text-ink-soft"
+                >
+                  问题 <span className="text-[#d24848]">*</span>
+                </label>
+                <textarea
+                  id="review-card-form-question"
+                  data-testid="review-card-form-question"
+                  className="field-input h-auto min-h-[72px] resize-y py-2"
+                  value={question}
+                  placeholder="要回忆的问题"
+                  onChange={(event) => {
+                    setQuestion(event.target.value)
+                    setFormErrors((prev) => ({ ...prev, question: undefined }))
+                  }}
+                  disabled={saving}
+                />
+                {formErrors.question && (
+                  <p
+                    data-testid="review-card-form-question-error"
+                    className="mt-1 text-[11.5px] leading-5 text-[#d24848]"
+                  >
+                    {formErrors.question}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="review-card-form-answer"
+                  className="mb-1 block text-[12.5px] font-medium text-ink-soft"
+                >
+                  答案 <span className="text-[#d24848]">*</span>
+                </label>
+                <textarea
+                  id="review-card-form-answer"
+                  data-testid="review-card-form-answer"
+                  className="field-input h-auto min-h-[72px] resize-y py-2"
+                  value={answer}
+                  placeholder="对应的答案"
+                  onChange={(event) => {
+                    setAnswer(event.target.value)
+                    setFormErrors((prev) => ({ ...prev, answer: undefined }))
+                  }}
+                  disabled={saving}
+                />
+                {formErrors.answer && (
+                  <p
+                    data-testid="review-card-form-answer-error"
+                    className="mt-1 text-[11.5px] leading-5 text-[#d24848]"
+                  >
+                    {formErrors.answer}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="review-card-form-kp"
+                  className="mb-1 block text-[12.5px] font-medium text-ink-soft"
+                >
+                  关联知识点（可选）
+                </label>
+                <select
+                  id="review-card-form-kp"
+                  data-testid="review-card-form-kp"
+                  className="field-input"
+                  value={knowledgePointId}
+                  onChange={(event) => setKnowledgePointId(event.target.value)}
+                  disabled={saving}
+                >
+                  <option value="">不关联知识点</option>
+                  {points.map((point) => (
+                    <option key={point.id} value={point.id}>
+                      {point.title}
+                    </option>
+                  ))}
+                </select>
+                {pointsError && (
+                  <p className="mt-1 text-[11.5px] leading-5 text-[#b0741d]">
+                    {pointsError}，可先不关联知识点
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {formError && (
+              <p
+                className="mt-3 rounded-lg bg-[#fdecec] px-3 py-2 text-[12px] leading-5 text-[#b73636]"
+                data-testid="review-card-form-error"
+              >
+                {formError}
+              </p>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="btn-gray"
+                data-testid="review-card-form-cancel"
+                onClick={closeCreate}
+                disabled={saving}
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                data-testid="review-card-form-submit"
+                disabled={saving}
+              >
+                {saving ? '创建中…' : '创建'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }

@@ -183,3 +183,49 @@ test('review card flips before rating and keyboard 3 submits and advances', asyn
   await expect(page.getByText(/下次复习：/)).toBeVisible()
   await expect(page.getByTestId('review-progress')).toHaveText(/第 2 \//)
 })
+
+test('manual card creation stores the card and shows it in the list', async ({ page }) => {
+  const token = await login()
+  await page.addInitScript((value) => window.localStorage.setItem('learnrise.token', value), token)
+
+  await page.goto('/review')
+  await expect(page.getByTestId('review-cards-limit-note')).toContainText('最多展示 50 条')
+
+  await page.getByTestId('review-create-open').click()
+  await expect(page.getByTestId('review-card-form')).toBeVisible()
+
+  await page.getByTestId('review-card-form-question').fill('QA 问题')
+  await page.getByTestId('review-card-form-answer').fill('QA 答案')
+
+  await page.getByTestId('review-card-form-submit').click()
+
+  await expect(page.getByText('卡片创建成功')).toBeVisible()
+  await expect(
+    page.getByTestId('review-card-list-row').filter({ hasText: 'QA 问题' }).first(),
+  ).toBeVisible()
+  await expect(page.getByTestId('review-card-form')).toHaveCount(0)
+  await capture(page, 'task-11-review-card-create.png')
+})
+
+test('manual card creation blocks empty question and answer without a request', async ({ page }) => {
+  const token = await login()
+  await page.addInitScript((value) => window.localStorage.setItem('learnrise.token', value), token)
+
+  await page.goto('/review')
+  await page.getByTestId('review-create-open').click()
+  await expect(page.getByTestId('review-card-form')).toBeVisible()
+
+  const posted = page
+    .waitForRequest(
+      (request) => request.method() === 'POST' && request.url().includes('/api/review/cards'),
+      { timeout: 800 },
+    )
+    .catch(() => null)
+  await page.getByTestId('review-card-form-submit').click()
+
+  await expect(page.getByTestId('review-card-form-question-error')).toHaveText('请填写问题')
+  await expect(page.getByTestId('review-card-form-answer-error')).toHaveText('请填写答案')
+  expect(await posted).toBeNull()
+  await expect(page.getByTestId('review-card-form')).toBeVisible()
+  await capture(page, 'task-11-review-card-validation.png')
+})
