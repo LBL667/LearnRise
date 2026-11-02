@@ -3,6 +3,7 @@ import { BarChart3, ChevronDown, ChevronRight, ChevronsLeft, Crown, FileText, Li
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useToast } from '../ui/Toast'
 import { useUiTheme } from '../../theme/ThemeProvider'
+import snowhill from '../../../snowhill.png'
 
 interface NavItem {
   key: string
@@ -44,7 +45,7 @@ export function Sidebar() {
       }`}
     >
       {/* 品牌区 */}
-      <div className="flex items-center gap-2.5 px-4 pb-4 pt-5">
+      <div className={`flex items-center gap-2.5 pb-4 pt-5 ${collapsed ? 'justify-center px-0' : 'pl-4 pr-9'}`}>
         <img
           src="/logo.png"
           alt="LearnRise"
@@ -61,7 +62,7 @@ export function Sidebar() {
       <button
         onClick={() => setSidebarCollapsed((v) => !v)}
         aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
-        className="absolute right-2 top-6 flex h-6 w-6 items-center justify-center rounded-md text-ink-mute hover:bg-page hover:text-ink-soft"
+        className={`absolute top-6 z-30 flex h-6 w-6 items-center justify-center text-ink-mute transition-colors hover:text-primary ${collapsed ? '-right-3 rounded-full border border-line bg-white shadow-sm hover:bg-primary-soft' : 'right-2 rounded-md hover:bg-page'}`}
       >
         <ChevronsLeft size={15} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
       </button>
@@ -138,29 +139,41 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* 底部装饰：雪山旅人插画，与侧边栏白色背景融合 */}
-      <div className="relative mt-auto overflow-hidden">
-        {!collapsed && (
-          <div className="absolute left-5 top-2 z-10 -rotate-6 text-[12px] font-medium leading-4 tracking-wide text-[#7d97bd]">
-            在竞赛中遇见
-            <br />
-            更好的自己
-          </div>
-        )}
-        <img
-          src="/mountain-traveler.jpg"
-          alt=""
-          aria-hidden="true"
-          className={`block select-none ${collapsed ? 'hidden' : ''}`}
-          style={{
-            width: '145%',
-            maxWidth: 'none',
-            maskImage: 'linear-gradient(to bottom, transparent 0%, black 30%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 30%)',
-          }}
-          draggable={false}
-        />
-      </div>
+      {/* 原山景作为背景，雪山与飘动旗面叠放在前景。 */}
+      {!collapsed && (
+        <div className="pointer-events-none relative z-10 mt-auto overflow-hidden" aria-hidden="true">
+          <img
+            src="/mountain-traveler.jpg"
+            alt=""
+            className="block select-none"
+            style={{ width: '145%', maxWidth: 'none', maskImage: 'linear-gradient(to bottom, transparent 0%, black 30%)', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 30%)' }}
+            draggable={false}
+          />
+          {pathname === '/rank' && (
+            <img
+              src="/misty-mountains.jpg"
+              alt=""
+              className="sidebar-rank-landscape fixed bottom-0 left-0 z-10 h-[190px] w-screen select-none object-cover object-bottom"
+              draggable={false}
+            />
+          )}
+          <svg className="sidebar-snowhill absolute bottom-0 left-0 z-20 block w-full select-none" viewBox="0 0 1902 827" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <mask id="sidebar-snowhill-mask" maskUnits="userSpaceOnUse">
+                <rect width="1902" height="827" fill="white" />
+                <rect x="1187" y="34" width="270" height="135" fill="black" />
+              </mask>
+              <clipPath id="sidebar-flag-clip" clipPathUnits="userSpaceOnUse">
+                <rect x="1187" y="34" width="270" height="135" />
+              </clipPath>
+            </defs>
+            <image href={snowhill} width="1902" height="827" mask="url(#sidebar-snowhill-mask)" />
+            <g clipPath="url(#sidebar-flag-clip)">
+              <image className="sidebar-snowhill-flag" href={snowhill} width="1902" height="827" />
+            </g>
+          </svg>
+        </div>
+      )}
     </aside>
   )
 }

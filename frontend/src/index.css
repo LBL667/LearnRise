@@ -165,3 +165,64 @@ body {
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
 }
+
+/* 冠军卡片：沿圆角边缘流动的彩色金光 */
+@property --champion-glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.champion-card::after {
+  content: "";
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(from var(--champion-glow-angle), #e9b544, #fff3b6, #f6a23c, #c1dd82, #b78dec, #f5ca63, #e9b544);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: champion-border-turn 6s linear infinite, champion-border-shimmer 2.8s ease-in-out infinite alternate;
+}
+@keyframes champion-border-turn {
+  to { --champion-glow-angle: 360deg; }
+}
+@keyframes champion-border-shimmer {
+  from { opacity: 0.7; filter: brightness(0.94); }
+  to { opacity: 1; filter: brightness(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .champion-card::after { animation: none; }
+}
+
+/* 排行榜的山景与内容区使用同一视口位置，跨侧栏衔接。 */
+.sidebar-rank-landscape {
+  clip-path: inset(0 calc(100% - 224px) 0 0);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 70%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 70%);
+}
+
+/* 前景雪山边缘融入后方山景，山顶和旗帜保持清晰。 */
+.sidebar-snowhill {
+  -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent 100%), linear-gradient(to right, transparent 0%, #000 12%, #000 86%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 58%, transparent 100%), linear-gradient(to right, transparent 0%, #000 12%, #000 86%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* 旗面围绕旗杆轻轻摇动，雪山保持静止。 */
+.sidebar-snowhill-flag {
+  transform-box: view-box;
+  transform-origin: 62.4% 5%;
+  animation: sidebar-flag-wave 3.2s ease-in-out infinite alternate;
+}
+@keyframes sidebar-flag-wave {
+  from { transform: skewY(-1deg) scaleX(0.99); }
+  to { transform: skewY(1deg) scaleX(1.01); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-snowhill-flag { animation: none; }
+}

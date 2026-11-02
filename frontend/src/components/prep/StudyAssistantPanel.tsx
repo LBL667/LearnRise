@@ -477,7 +477,7 @@ export function StudyAssistantPanel() {
           </div>
           <div className="flex items-end gap-3">
             <textarea
-              className="field-input h-11 max-w-[520px] flex-1 resize-none py-2.5 leading-5"
+              className="field-input h-11 min-w-0 flex-1 resize-none py-2.5 leading-5"
               placeholder="请输入你的问题，例如：制定下周的学习计划 / 分析一道错题…"
               value={input}
               onChange={(e) => setInput(e.target.value)}

@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, LogOut, Menu } from 'lucide-react'
+import { Bell, ChevronDown, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 
@@ -16,12 +16,6 @@ export function TopBar() {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-white px-5">
       <div className="flex items-center gap-3">
-        <button
-          aria-label="菜单"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft hover:bg-page"
-        >
-          <Menu size={18} />
-        </button>
         <p className="text-sm text-ink-soft">让每一次学习，都更接近更好的自己。</p>
       </div>
       <div className="flex items-center gap-3">
