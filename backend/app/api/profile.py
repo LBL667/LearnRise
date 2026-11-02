@@ -27,11 +27,12 @@ from typing import Annotated, Any, Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, File, Query, Response, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.adapters.storage.base import sanitize_key
 from app.adapters.storage.factory import build_storage
 from app.api.errors import CodedHTTPException
 from app.config import settings
@@ -73,6 +74,16 @@ PREFERENCE_DEFAULTS: dict[str, dict[str, Any]] = {
 NOT_FOUND_DETAIL = "资源不存在"
 INVALID_CURRENT_PASSWORD_DETAIL = "当前密码不正确"
 
+#: Accepted avatar image types mapped to the canonical stored extension.
+ALLOWED_AVATAR_TYPES: dict[str, str] = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/webp": ".webp",
+}
+AVATAR_UNSUPPORTED_DETAIL = "头像只支持 png / jpg / webp"
+AVATAR_TOO_LARGE_DETAIL = "头像文件超过大小上限"
+AVATAR_EMPTY_DETAIL = "头像文件为空"
+
 #: Review-count thresholds for the six display levels (lower bound inclusive).
 LEVELS: tuple[tuple[int, str], ...] = (
     (200, "卓越"),
@@ -111,6 +122,10 @@ class ProfileInfoOut(BaseModel):
     school: str | None = None
     grade: str | None = None
     avatarUrl: str | None = None
+
+
+class AvatarUploadOut(BaseModel):
+    avatarUrl: str
 
 
 class ProfileInfoUpdate(BaseModel):
@@ -436,6 +451,47 @@ def update_password(
     user.password_hash = hash_password(payload.new_password)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@profile_router.post("/avatar", response_model=AvatarUploadOut)
+def upload_avatar(
+    file: Annotated[UploadFile, File(...)], db: DbSession, user: CurrentUser
+) -> AvatarUploadOut:
+    content_type = (file.content_type or "").split(";", 1)[0].strip().lower()
+    suffix = ALLOWED_AVATAR_TYPES.get(content_type)
+    if suffix is None:
+        raise CodedHTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=AVATAR_UNSUPPORTED_DETAIL,
+            code="UNSUPPORTED_MEDIA_TYPE",
+        )
+
+    limit_bytes = int(settings.max_upload_mb) * 1024 * 1024
+    data = file.file.read(limit_bytes + 1)
+    if len(data) > limit_bytes:
+        raise CodedHTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail=AVATAR_TOO_LARGE_DETAIL,
+            code="PAYLOAD_TOO_LARGE",
+        )
+    if not data:
+        raise CodedHTTPException(
+            status_code=422, detail=AVATAR_EMPTY_DETAIL, code="EMPTY_FILE"
+        )
+
+    key = sanitize_key(f"avatars/{user.id}/avatar{suffix}")
+    storage = build_storage()
+    storage.put(key, data, content_type)
+    if user.avatar_key and user.avatar_key != key:
+        try:
+            storage.delete(user.avatar_key)
+        except Exception:
+            pass
+
+    user.avatar_key = key
+    db.commit()
+    db.refresh(user)
+    return AvatarUploadOut(avatarUrl=storage.sign(key))
 
 
 @profile_router.get("/stats", response_model=list[ProfileStatOut])

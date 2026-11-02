@@ -1,13 +1,15 @@
 """Read-only access to stored blobs.
 
-``rewards/`` keys are reward images embedded in competition cards and stay
-public. Every other key belongs to a knowledge source and is only served to its
-owner (first path segment is the user id) or to a member of the competition the
-source is shared with.
+``rewards/`` keys are reward images embedded in competition cards and
+``avatars/`` keys are user avatars; both stay public. Avatar keys are
+additionally shape-checked before being served. Every other key belongs to a
+knowledge source and is only served to its owner (first path segment is the
+user id) or to a member of the competition the source is shared with.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
@@ -23,7 +25,9 @@ from app.services.scope import resolve_scope
 
 router = APIRouter(tags=["files"])
 
-PUBLIC_PREFIXES = ("rewards/",)
+PUBLIC_PREFIXES = ("rewards/", "avatars/")
+
+_AVATAR_KEY = re.compile(r"^avatars/[0-9a-fA-F-]{36}/[A-Za-z0-9._-]+$")
 
 _CONTENT_TYPES = {
     ".png": "image/png",
@@ -64,12 +68,14 @@ def _may_read(db: Session, key: str, user: User | None) -> bool:
     return True
 
 
-@router.get("/files/{path:path}")
+@router.api_route("/files/{path:path}", methods=["GET", "HEAD"])
 def read_stored_file(path: str, db: DbSession, user: OptionalUser) -> Response:
     try:
         key = sanitize_key(path)
     except ValueError:
         raise _not_found() from None
+    if key.startswith("avatars/") and not _AVATAR_KEY.match(key):
+        raise _not_found()
     if not key or not _may_read(db, key, user):
         raise _not_found()
     try:
