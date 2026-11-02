@@ -17,7 +17,7 @@
 | 编排（Docker Compose / nginx） | ✅ 单套 compose，6 个服务全部 healthy；SSE 已确认不被缓冲 |
 | API 契约与文档 | ✅ `openapi.json` + `docs/api/` 由脚本生成，可零漂移复现（61 个 path / 69 个 operation） |
 | 前端（React） | ✅ 所有页面都读 FastAPI；本地 mock 层（`src/api/mock/`）已删除 |
-| 前端功能对齐 | ⚠️ 后端端点已全覆盖，但仍有约 **30 个端点在界面上暂无入口**，见 [待办事项](#待办事项roadmap) |
+| 前端功能对齐 | ✅ 本轮前端待办已全部补齐（Agent 设置 / 资料库 / 仪表盘 / 刷题 / 知识点讲解 / 思维导图真数据 / 陪练闭环 / 其余入口），个人中心设置与排行榜均已接真实数据；已知限制：深色模式下部分颜色仍为硬编码，未做完整主题适配 |
 | 竞赛 / 学习助手 / 试炼 / 诊断 / 个人中心 / 排行榜 | ✅ 接口与页面均已落地并接通真实数据 |
 | 演示数据 | ✅ `backend/scripts/seed_demo.py` 幂等写入 2 场竞赛、题目、错题与复习卡片 |
 | 华为云适配器 | ⛔ **未实现**，仅保留 `ports/` 抽象与 `PROVIDER_PROFILE` 开关位 |
@@ -30,18 +30,18 @@
 
 ## 待办事项（Roadmap）
 
-> 后端接口已完整覆盖存量项目（63 个端点 / 23 张表 / 468 collected 测试）。下列缺口**全部是「后端已实现、前端暂无入口」**，不是接口缺失。
+> 后端接口已完整覆盖存量项目（63 个端点 / 23 张表 / 468 collected 测试）。下列前端补齐项**本轮已全部完成**，保留为交付核对清单；后续新增入口仍按此优先级维护。
 
 ### 前端补齐（按优先级）
 
-- [ ] **P0 · Agent 设置页** —— `/api/agents` 的 7 个端点（列表 / 新建 / 详情 / 修改 / 设默认 / 删除 / 测试连接）无任何界面入口；知识点讲解与「默认 Agent」选择也依赖它。
-- [ ] **P0 · 资料库页** —— `GET /api/sources`、`GET /api/sources/{id}`、`POST /api/sources/{id}/reprocess`、`GET /api/sources/{id}/tree`、`POST /api/sources/{id}/notes`；目前上传后无法浏览、重处理或查看知识点树。
-- [ ] **P1 · 仪表盘** —— `GET /api/dashboard/summary`（到期数 / 热力图 / 掌握度雷达 / 遗忘曲线 / 难度分布）无页面；部分指标目前只出现在个人中心。
-- [ ] **P1 · 刷题页** —— `/api/quiz/generate`、`/api/quiz/{id}/answer`、`/api/quiz/{id}/attempts` 无入口；现有 `/trial` 是「考试」，与「刷题练习」不是同一功能。
-- [ ] **P1 · 知识点讲解** —— `POST /api/knowledge-points/{id}/explain`（SSE 流式 + 风格选择 + Agent 选择）无入口；`/kp/:id` 当前只渲染正文。
-- [ ] **P1 · 思维导图接真数据** —— `MindMapPanel` 仍消费本地静态数据（`src/assets/mindmapData`），应改为 `/api/sources/{id}/tree` 与 `/api/sources/{id}/notes`。
-- [ ] **P2 · 陪练闭环前端** —— `/api/assistant/practice/sessions`（创建 / 作答 / 进度 / 结束）后端已实现，界面无入口。
-- [ ] **P2 · 其余入口** —— `POST /api/assistant/exam-plan`（备考计划生成）、`POST /api/competitions/{id}/plan/generate`（规划生成按钮）、`GET|POST /api/review/cards`（手工建卡）、`GET /api/knowledge-points/search` 与 `PUT|DELETE /api/knowledge-points/{id}`（搜索 / 编辑 / 删除）、`POST /api/assistant/conversations/{id}/messages`。
+- [x] **P0 · Agent 设置页** —— `/api/agents` 的 7 个端点（列表 / 新建 / 详情 / 修改 / 设默认 / 删除 / 测试连接）已有界面入口；知识点讲解与「默认 Agent」选择也已接通。
+- [x] **P0 · 资料库页** —— `GET /api/sources`、`GET /api/sources/{id}`、`POST /api/sources/{id}/reprocess`、`GET /api/sources/{id}/tree`、`POST /api/sources/{id}/notes` 均可在 `/library` 浏览、重处理与查看知识点树。
+- [x] **P1 · 仪表盘** —— `GET /api/dashboard/summary`（到期数 / 热力图 / 掌握度雷达 / 遗忘曲线 / 难度分布）已有 `/dashboard` 页面。
+- [x] **P1 · 刷题页** —— `/api/quiz/generate`、`/api/quiz/{id}/answer`、`/api/quiz/{id}/attempts` 已有 `/quiz` 入口，与 `/trial` 考试区分。
+- [x] **P1 · 知识点讲解** —— `POST /api/knowledge-points/{id}/explain`（SSE 流式 + 风格选择 + Agent 选择）已在 `/kp/:id` 提供入口。
+- [x] **P1 · 思维导图接真数据** —— `MindMapPanel` 已改为消费 `/api/sources/{id}/tree` 与 `/api/sources/{id}/notes` 的真实数据。
+- [x] **P2 · 陪练闭环前端** —— `/api/assistant/practice/sessions`（创建 / 作答 / 进度 / 结束）已有 `/practice` 页面。
+- [x] **P2 · 其余入口** —— `POST /api/assistant/exam-plan`、`POST /api/competitions/{id}/plan/generate`、`GET|POST /api/review/cards`、`GET /api/knowledge-points/search` 与 `PUT|DELETE /api/knowledge-points/{id}`、`POST /api/assistant/conversations/{id}/messages` 均已有界面入口。
 
 ### 已完成（本轮）
 
@@ -50,7 +50,7 @@
 
 ### 补齐时必须遵守
 
-- **受保护端点**：上述约 30 个端点属于「待接前端」，清理死契约时**禁止删除**（另有 `/health`、`/files/{path}`、`/internal/reminders/run` 为基础设施端点，不面向用户界面）。
+- **受保护端点**：上述端点现已全部接入前端，清理死契约时**禁止删除**（另有 `/health`、`/files/{path}`、`/internal/reminders/run` 为基础设施端点，不面向用户界面）。
 - **新增页面**需补 Playwright 用例与截图证据（沿用 `frontend/e2e/` 与仓库外 `.sisyphus/evidence/` 的惯例）；`.vue` 文件禁止入仓。
 - **大文件**：新增大文件需在 `scripts/check_repo_hygiene.sh` 的 `ALLOWED_OVERSIZE` 登记，否则卫生闸门失败。
 - **契约生成物**：改后端字段必须重跑 `scripts/gen_api_docs.py`，否则 CI 的 docs-drift 任务失败。
