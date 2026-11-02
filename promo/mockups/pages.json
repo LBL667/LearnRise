@@ -1,0 +1,2392 @@
+{
+  "schema": "learnrise.penpot.pages.v1",
+  "generatedAt": "2026-11-02T21:00:00+08:00",
+  "source": "LearnRise/frontend/src/App.tsx + LearnRise/frontend/src/pages/*.tsx + LearnRise/frontend/src/components/** + LearnRise/frontend/src/index.css",
+  "board": {
+    "prefix": "PAGE /",
+    "width": 1440,
+    "height": 900
+  },
+  "pages": [
+    {
+      "id": "login",
+      "order": 1,
+      "name": "登录",
+      "route": "/login",
+      "layout": "auth",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "login",
+        "LoginPage",
+        "/login"
+      ],
+      "copy": {
+        "brand": "LearnRise",
+        "tagline": "登录后继续你的学习竞赛",
+        "title": "登录",
+        "emailLabel": "邮箱",
+        "emailValue": "xiaohong@example.com",
+        "passwordLabel": "密码",
+        "passwordValue": "••••••••",
+        "submit": "登录",
+        "switchHint": "没有账号？立即注册",
+        "demoHint": "演示账号：xiaohong@example.com / demo1234"
+      },
+      "dataRefs": [
+        "cast.students.0"
+      ],
+      "blocks": [
+        {
+          "id": "backdrop",
+          "type": "frame",
+          "name": "登录页背景",
+          "span": 12,
+          "at": {
+            "x": 0,
+            "y": 0,
+            "w": 1440,
+            "h": 900
+          },
+          "props": {
+            "fill": "color.primary-soft-2",
+            "radius": 0
+          }
+        },
+        {
+          "id": "brand",
+          "type": "text",
+          "name": "品牌 LearnRise",
+          "span": 12,
+          "at": {
+            "x": 600,
+            "y": 224,
+            "w": 240,
+            "h": 36
+          },
+          "props": {
+            "content": "{{copy.brand}}",
+            "size": 24,
+            "weight": 700,
+            "color": "color.ink"
+          }
+        },
+        {
+          "id": "tagline",
+          "type": "text",
+          "name": "登录副标题",
+          "span": 12,
+          "at": {
+            "x": 600,
+            "y": 266,
+            "w": 260,
+            "h": 22
+          },
+          "props": {
+            "content": "{{copy.tagline}}",
+            "size": 13,
+            "weight": 400,
+            "color": "color.ink-soft"
+          }
+        },
+        {
+          "id": "login-card",
+          "type": "card",
+          "name": "登录表单卡",
+          "span": 12,
+          "at": {
+            "x": 540,
+            "y": 316,
+            "w": 360,
+            "h": 420
+          },
+          "props": {
+            "title": "{{copy.title}}",
+            "fields": [
+              {
+                "label": "{{copy.emailLabel}}",
+                "value": "{{copy.emailValue}}"
+              },
+              {
+                "label": "{{copy.passwordLabel}}",
+                "value": "{{copy.passwordValue}}"
+              }
+            ],
+            "primaryAction": "{{copy.submit}}",
+            "secondaryText": "{{copy.switchHint}}",
+            "footnote": "{{copy.demoHint}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "order": 2,
+      "name": "竞赛空间",
+      "route": "/",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "community",
+        "arena",
+        "竞赛空间",
+        "CommunityPage",
+        "/"
+      ],
+      "copy": {
+        "navLabel": "竞赛空间",
+        "create": "创建学习竞赛",
+        "invitePlaceholder": "输入竞赛邀请码",
+        "join": "加入竞赛",
+        "cards": [
+          {
+            "title": "2026 春季 · 财务会计班级联赛",
+            "description": "以赛促学，围绕《财务会计》第 3 章展开班级联赛。",
+            "host": "王老师",
+            "members": "4/不限",
+            "start": "2026-10-26",
+            "end": "2027-01-31",
+            "award": "3 名",
+            "action": "进入竞赛"
+          },
+          {
+            "title": "一班 · 财务会计冲刺",
+            "description": "一班财务会计专项冲刺，聚焦应收款项与报表分析。",
+            "host": "王老师",
+            "members": "0/不限",
+            "start": "2026-10-26",
+            "end": "2027-01-31",
+            "award": "1 名",
+            "action": "进入竞赛"
+          },
+          {
+            "title": "二班 · 微观经济学期中",
+            "description": "二班微观经济学期中复习，覆盖弹性、消费者行为与市场结构。",
+            "host": "周老师",
+            "members": "0/不限",
+            "start": "2026-10-26",
+            "end": "2027-01-31",
+            "award": "1 名",
+            "action": "进入竞赛"
+          }
+        ]
+      },
+      "dataRefs": [
+        "cast.competitions",
+        "cast.competition"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "竞赛空间"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "toolbar",
+          "type": "toolbar",
+          "name": "新建与加入竞赛",
+          "span": 12,
+          "height": 36,
+          "props": {
+            "align": "right",
+            "actions": [
+              {
+                "type": "button",
+                "label": "+ {{copy.create}}",
+                "variant": "primary",
+                "width": 150
+              },
+              {
+                "type": "input",
+                "placeholder": "{{copy.invitePlaceholder}}",
+                "width": 224
+              },
+              {
+                "type": "button",
+                "label": "{{copy.join}}",
+                "variant": "ghost",
+                "width": 96
+              }
+            ]
+          }
+        },
+        {
+          "id": "competition-main",
+          "type": "heroCard",
+          "name": "主竞赛卡片",
+          "span": 12,
+          "height": 128,
+          "props": {
+            "item": "{{copy.cards.0}}",
+            "cover": "finance",
+            "fields": [
+              "host",
+              "members",
+              "start",
+              "end",
+              "award"
+            ],
+            "action": "{{copy.cards.0.action}}"
+          }
+        },
+        {
+          "id": "competition-class-one",
+          "type": "heroCard",
+          "name": "一班竞赛卡片",
+          "span": 12,
+          "height": 128,
+          "props": {
+            "item": "{{copy.cards.1}}",
+            "cover": "ledger",
+            "fields": [
+              "host",
+              "members",
+              "start",
+              "end",
+              "award"
+            ],
+            "action": "{{copy.cards.1.action}}"
+          }
+        },
+        {
+          "id": "competition-class-two",
+          "type": "heroCard",
+          "name": "二班竞赛卡片",
+          "span": 12,
+          "height": 128,
+          "props": {
+            "item": "{{copy.cards.2}}",
+            "cover": "micro",
+            "fields": [
+              "host",
+              "members",
+              "start",
+              "end",
+              "award"
+            ],
+            "action": "{{copy.cards.2.action}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "competition",
+      "order": 3,
+      "name": "竞赛详情",
+      "route": "/competition/:id",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "competition",
+        "competition-detail",
+        "竞赛详情",
+        "CompetitionDetailPage",
+        "/competition/:id"
+      ],
+      "copy": {
+        "back": "返回",
+        "tabs": [
+          "学习成员",
+          "学习规划"
+        ],
+        "activeTab": "学习成员",
+        "membersTitle": "成员管理 4/不限",
+        "membersSubtitle": "邀请志同道合的伙伴一起竞赛，共同进步!",
+        "inviteLabel": "邀请码",
+        "inviteCode": "LR-2026",
+        "start": "开启竞赛",
+        "startHint": "人数不限",
+        "memberRoles": {
+          "小红": "成员",
+          "小明": "成员",
+          "张三": "成员",
+          "李四": "成员"
+        },
+        "planHint": "学习规划尚未生成，队长可在详情页触发生成。"
+      },
+      "dataRefs": [
+        "cast.competition",
+        "cast.students"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "竞赛空间"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "back",
+          "type": "backLink",
+          "name": "返回",
+          "span": 12,
+          "height": 24,
+          "props": {
+            "label": "{{copy.back}}"
+          }
+        },
+        {
+          "id": "hero",
+          "type": "heroCard",
+          "name": "竞赛信息卡",
+          "span": 12,
+          "height": 142,
+          "props": {
+            "itemRef": "cast.competition",
+            "cover": "finance",
+            "fields": [
+              "host",
+              "members",
+              "start",
+              "end",
+              "award"
+            ],
+            "action": ""
+          }
+        },
+        {
+          "id": "tabs",
+          "type": "tabs",
+          "name": "详情标签页",
+          "span": 12,
+          "height": 40,
+          "props": {
+            "items": "{{copy.tabs}}",
+            "active": "{{copy.activeTab}}"
+          }
+        },
+        {
+          "id": "members",
+          "type": "card",
+          "name": "学习成员面板",
+          "span": 12,
+          "height": 360,
+          "props": {
+            "title": "{{copy.membersTitle}}",
+            "subtitle": "{{copy.membersSubtitle}}",
+            "inviteCode": "{{copy.inviteCode}}",
+            "members": "{{cast.students}}",
+            "roles": "{{copy.memberRoles}}",
+            "primaryAction": "{{copy.start}}",
+            "footnote": "{{copy.startHint}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "prep",
+      "order": 4,
+      "name": "备赛区",
+      "route": "/prep",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "prep",
+        "备赛区",
+        "PrepPage",
+        "/prep"
+      ],
+      "copy": {
+        "tabs": [
+          "学习助手",
+          "错题收藏",
+          "思维导图"
+        ],
+        "activeTab": "学习助手",
+        "assistantTitle": "学习助手",
+        "assistantSubtitle": "围绕当前资料提问，AI 会结合知识点回答。",
+        "assistantPrompts": [
+          "应收账款的入账价值包括哪些？",
+          "坏账准备的计提方法有哪些？",
+          "如何理解预防账款？"
+        ],
+        "assistantReply": "应收账款通常按实际发生额入账，包括价款、增值税、代垫运杂费等。",
+        "wrongTitle": "错题收藏",
+        "wrongSubtitle": "练习与试炼中的错题会自动收进这里。",
+        "mindmapTitle": "思维导图",
+        "mindmapSubtitle": "把知识点连成结构，点击节点可跳转详情。"
+      },
+      "dataRefs": [
+        "cast.source",
+        "cast.students.0"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "备赛区"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "tabs",
+          "type": "tabs",
+          "name": "备赛区标签页",
+          "span": 12,
+          "height": 48,
+          "props": {
+            "items": "{{copy.tabs}}",
+            "active": "{{copy.activeTab}}"
+          }
+        },
+        {
+          "id": "assistant",
+          "type": "card",
+          "name": "学习助手面板",
+          "span": 8,
+          "height": 420,
+          "props": {
+            "title": "{{copy.assistantTitle}}",
+            "subtitle": "{{copy.assistantSubtitle}}",
+            "prompts": "{{copy.assistantPrompts}}",
+            "reply": "{{copy.assistantReply}}",
+            "source": "{{cast.source.title}}"
+          }
+        },
+        {
+          "id": "wrong",
+          "type": "card",
+          "name": "错题收藏预览",
+          "span": 4,
+          "height": 200,
+          "props": {
+            "title": "{{copy.wrongTitle}}",
+            "subtitle": "{{copy.wrongSubtitle}}",
+            "lines": [
+              "应收账款的入账价值不包括？",
+              "坏账准备计提比例如何确定？",
+              "预收账款与应收账款的区别？"
+            ]
+          }
+        },
+        {
+          "id": "mindmap",
+          "type": "card",
+          "name": "思维导图预览",
+          "span": 4,
+          "height": 200,
+          "props": {
+            "title": "{{copy.mindmapTitle}}",
+            "subtitle": "{{copy.mindmapSubtitle}}",
+            "lines": [
+              "3.1 应收账款的确认",
+              "3.2 坏账准备的计提",
+              "3.3 应收款项的报表列示"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "trial",
+      "order": 5,
+      "name": "赛题试炼",
+      "route": "/trial",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "trial",
+        "赛题试炼",
+        "TrialPage",
+        "/trial"
+      ],
+      "copy": {
+        "examTitle": "综合能力模拟卷（一）",
+        "examMeta": "共 10 题 | 满分 100 分",
+        "status": "进行中",
+        "timerLabel": "剩余时间",
+        "timer": "00:59:42",
+        "progressLabel": "答题进度",
+        "progress": "3 / 10",
+        "submit": "交卷",
+        "questionOne": "应收账款的入账价值通常不包括下列哪一项？",
+        "optionsOne": [
+          "增值税销项税额",
+          "代购货方垫付的运杂费",
+          "商业折扣",
+          "现金折扣"
+        ],
+        "questionTwo": "企业计提坏账准备时，应借记的科目是（ ）。",
+        "optionsTwo": [
+          "信用减值损失",
+          "坏账准备",
+          "应收账款",
+          "管理费用"
+        ],
+        "answerLocked": "答案与解析",
+        "answerLockedHint": "交卷后可查看答案与详细解析"
+      },
+      "dataRefs": [
+        "cast.source"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "赛题试炼"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "exam-hero",
+          "type": "heroCard",
+          "name": "试卷信息卡",
+          "span": 12,
+          "height": 116,
+          "props": {
+            "title": "{{copy.examTitle}}",
+            "subtitle": "{{copy.examMeta}}",
+            "cover": "blackboard",
+            "badge": "{{copy.status}}",
+            "stats": [
+              {
+                "label": "{{copy.timerLabel}}",
+                "value": "{{copy.timer}}"
+              },
+              {
+                "label": "{{copy.progressLabel}}",
+                "value": "{{copy.progress}}"
+              }
+            ],
+            "action": "{{copy.submit}}"
+          }
+        },
+        {
+          "id": "question-one",
+          "type": "questionCard",
+          "name": "第 1 题",
+          "span": 6,
+          "height": 270,
+          "props": {
+            "index": 1,
+            "type": "单选题",
+            "score": "10 分",
+            "stem": "{{copy.questionOne}}",
+            "options": "{{copy.optionsOne}}"
+          }
+        },
+        {
+          "id": "question-two",
+          "type": "questionCard",
+          "name": "第 2 题",
+          "span": 6,
+          "height": 270,
+          "props": {
+            "index": 2,
+            "type": "单选题",
+            "score": "10 分",
+            "stem": "{{copy.questionTwo}}",
+            "options": "{{copy.optionsTwo}}"
+          }
+        },
+        {
+          "id": "answer-locked",
+          "type": "card",
+          "name": "答案与解析锁定",
+          "span": 12,
+          "height": 120,
+          "props": {
+            "title": "{{copy.answerLocked}}",
+            "subtitle": "{{copy.answerLockedHint}}",
+            "locked": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "order": 6,
+      "name": "间隔复习",
+      "route": "/review",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "review",
+        "间隔复习",
+        "ReviewPage",
+        "/review"
+      ],
+      "copy": {
+        "title": "间隔复习",
+        "subtitle": "按 DSR 调度复习到期卡片，评分会决定下次出现的时间。",
+        "dueBadge": "今日待复习 5 张",
+        "stats": [
+          {
+            "label": "待复习",
+            "value": "5"
+          },
+          {
+            "label": "今日已复习",
+            "value": "3"
+          },
+          {
+            "label": "连续天数",
+            "value": "4"
+          },
+          {
+            "label": "卡片总数",
+            "value": "5"
+          }
+        ],
+        "questionTag": "问题",
+        "question": "应收账款的入账价值包括哪些？",
+        "flipHint": "点击卡片或按 Enter 翻面查看答案",
+        "answerTag": "答案",
+        "answer": "包括价款、增值税销项税额、代购货方垫付的运杂费等。",
+        "ratingsTitle": "为这次回忆打分",
+        "ratings": [
+          "1 忘记",
+          "2 困难",
+          "3 一般",
+          "4 良好",
+          "5 简单"
+        ],
+        "ratingHint": "先翻面查看答案，评分才会解锁",
+        "cardsTitle": "我的复习卡片",
+        "cardsSubtitle": "最多展示 50 条（后端无分页）。",
+        "cardColumns": [
+          "问题",
+          "答案",
+          "状态",
+          "下次复习",
+          "复习次数",
+          "遗忘次数"
+        ],
+        "cardRows": [
+          [
+            "应收账款的入账价值包括哪些？",
+            "价款、增值税、代垫运杂费",
+            "复习中",
+            "2026-11-05",
+            "3",
+            "1"
+          ],
+          [
+            "坏账准备如何计提？",
+            "按预期信用损失法",
+            "新卡",
+            "2026-11-03",
+            "0",
+            "0"
+          ]
+        ]
+      },
+      "dataRefs": [
+        "cast.students.0.cards",
+        "cast.leaderboard.rows"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "间隔复习"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "页面标题",
+          "span": 12,
+          "height": 72,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.subtitle}}",
+            "badge": "{{copy.dueBadge}}"
+          }
+        },
+        {
+          "id": "stat-due",
+          "type": "statCard",
+          "name": "KPI 待复习",
+          "span": 3,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.0.label}}",
+            "value": "{{copy.stats.0.value}}",
+            "tone": "primary"
+          }
+        },
+        {
+          "id": "stat-reviewed",
+          "type": "statCard",
+          "name": "KPI 今日已复习",
+          "span": 3,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.1.label}}",
+            "value": "{{copy.stats.1.value}}",
+            "tone": "success"
+          }
+        },
+        {
+          "id": "stat-streak",
+          "type": "statCard",
+          "name": "KPI 连续天数",
+          "span": 3,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.2.label}}",
+            "value": "{{copy.stats.2.value}}",
+            "tone": "gold"
+          }
+        },
+        {
+          "id": "stat-total",
+          "type": "statCard",
+          "name": "KPI 卡片总数",
+          "span": 3,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.3.label}}",
+            "value": "{{copy.stats.3.value}}",
+            "tone": "primary"
+          }
+        },
+        {
+          "id": "flip-card",
+          "type": "card",
+          "name": "复习翻面卡",
+          "span": 8,
+          "height": 300,
+          "props": {
+            "eyebrow": "{{copy.questionTag}}",
+            "body": "{{copy.question}}",
+            "footnote": "{{copy.flipHint}}",
+            "answerPreview": "{{copy.answer}}"
+          }
+        },
+        {
+          "id": "rating-card",
+          "type": "card",
+          "name": "评分卡",
+          "span": 4,
+          "height": 300,
+          "props": {
+            "title": "{{copy.ratingsTitle}}",
+            "items": "{{copy.ratings}}",
+            "subtitle": "{{copy.ratingHint}}"
+          }
+        },
+        {
+          "id": "cards-table",
+          "type": "table",
+          "name": "我的复习卡片",
+          "span": 12,
+          "height": 220,
+          "props": {
+            "title": "{{copy.cardsTitle}}",
+            "subtitle": "{{copy.cardsSubtitle}}",
+            "columns": "{{copy.cardColumns}}",
+            "rows": "{{copy.cardRows}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "promotion",
+      "order": 7,
+      "name": "晋级赛",
+      "route": "/promo",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "promotion",
+        "promo",
+        "晋级赛",
+        "PromotionPage",
+        "/promo"
+      ],
+      "copy": {
+        "title": "未达到晋级赛要求",
+        "subtitle": "晋级赛面向已完成基础准备并达到相应水平的同学开放。请先完成以下要求，解锁晋级赛资格。",
+        "conditionsTitle": "晋级条件",
+        "conditions": [
+          {
+            "title": "完成备赛区学习",
+            "desc": "系统化学习基础知识，打好竞赛基础。",
+            "done": true,
+            "value": "已完成"
+          },
+          {
+            "title": "完成赛题试炼",
+            "desc": "完成规定数量的赛题，提升解题能力。",
+            "done": false,
+            "value": "8 / 10"
+          },
+          {
+            "title": "积分达到要求",
+            "desc": "累计获得不少于 100 积分。",
+            "done": false,
+            "value": "76 / 100"
+          }
+        ],
+        "primaryAction": "去备赛区",
+        "secondaryAction": "查看晋级规则"
+      },
+      "dataRefs": [
+        "cast.students.0.points"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "晋级赛"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "晋级状态",
+          "span": 12,
+          "height": 92,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.subtitle}}",
+            "center": true
+          }
+        },
+        {
+          "id": "conditions",
+          "type": "card",
+          "name": "晋级条件清单",
+          "span": 8,
+          "height": 240,
+          "props": {
+            "title": "{{copy.conditionsTitle}}",
+            "conditions": "{{copy.conditions}}"
+          }
+        },
+        {
+          "id": "actions",
+          "type": "toolbar",
+          "name": "晋级操作",
+          "span": 12,
+          "height": 40,
+          "props": {
+            "align": "center",
+            "actions": [
+              {
+                "type": "button",
+                "label": "{{copy.primaryAction}} →",
+                "variant": "primary",
+                "width": 140
+              },
+              {
+                "type": "button",
+                "label": "{{copy.secondaryAction}}",
+                "variant": "ghost",
+                "width": 150
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rank",
+      "order": 8,
+      "name": "排行榜",
+      "route": "/rank",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "rank",
+        "leaderboard",
+        "排行榜",
+        "LeaderboardPage",
+        "/rank"
+      ],
+      "copy": {
+        "title": "排行榜",
+        "subtitle": "见证每一位探索者的成长与绽放",
+        "competition": "2026 春季 · 财务会计班级联赛",
+        "refresh": "刷新",
+        "championLabel": "冠军",
+        "pointsLabel": "积分",
+        "emptyHint": "该竞赛暂无榜单数据"
+      },
+      "dataRefs": [
+        "cast.leaderboard",
+        "cast.main_competition"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "排行榜"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "页面标题",
+          "span": 12,
+          "height": 72,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.subtitle}}",
+            "action": "{{copy.refresh}}"
+          }
+        },
+        {
+          "id": "competition-select",
+          "type": "toolbar",
+          "name": "竞赛选择",
+          "span": 12,
+          "height": 36,
+          "props": {
+            "align": "left",
+            "actions": [
+              {
+                "type": "input",
+                "value": "{{copy.competition}}",
+                "width": 320
+              },
+              {
+                "type": "button",
+                "label": "{{copy.refresh}}",
+                "variant": "ghost",
+                "width": 80
+              }
+            ]
+          }
+        },
+        {
+          "id": "leaderboard",
+          "type": "leaderboard",
+          "name": "排行榜（4 人）",
+          "span": 12,
+          "height": 470,
+          "props": {
+            "rowsRef": "cast.leaderboard",
+            "rowCount": 4,
+            "names": [
+              "小红",
+              "小明",
+              "张三",
+              "李四"
+            ],
+            "points": [
+              1000,
+              960,
+              916,
+              876
+            ],
+            "excludeRoles": [
+              "teacher"
+            ],
+            "pagination": false,
+            "pointsLabel": "{{copy.pointsLabel}}",
+            "championLabel": "{{copy.championLabel}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "profile",
+      "order": 9,
+      "name": "个人中心",
+      "route": "/profile",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "profile",
+        "个人中心",
+        "ProfilePage",
+        "/profile"
+      ],
+      "copy": {
+        "title": "个人中心",
+        "refresh": "刷新",
+        "email": "xiaohong@example.com",
+        "joinedAt": "2026-10-01",
+        "competitionCount": "1 场",
+        "accountLevel": "启行",
+        "stats": [
+          {
+            "label": "总积分",
+            "value": "1000"
+          },
+          {
+            "label": "竞赛数",
+            "value": "1"
+          },
+          {
+            "label": "复习卡片",
+            "value": "5"
+          },
+          {
+            "label": "连续天数",
+            "value": "4"
+          }
+        ],
+        "recordsTitle": "我的竞赛记录",
+        "records": [
+          {
+            "title": "2026 春季 · 财务会计班级联赛",
+            "status": "进行中",
+            "joinedAt": "2026-10-26",
+            "members": "4 人",
+            "role": "成员"
+          }
+        ],
+        "studyTitle": "最近学习进度",
+        "study": [
+          {
+            "label": "备赛区学习",
+            "value": "8",
+            "total": "10",
+            "percent": "80%"
+          },
+          {
+            "label": "赛题试炼",
+            "value": "8",
+            "total": "10",
+            "percent": "80%"
+          },
+          {
+            "label": "间隔复习",
+            "value": "3",
+            "total": "5",
+            "percent": "60%"
+          },
+          {
+            "label": "刷题",
+            "value": "12",
+            "total": "20",
+            "percent": "60%"
+          }
+        ],
+        "settingsTitle": "设置",
+        "settings": [
+          "基本信息",
+          "安全设置",
+          "通知设置",
+          "学习偏好",
+          "界面设置",
+          "隐私设置"
+        ],
+        "agentLink": "Agent 设置",
+        "agentLinkHint": "配置自定义 Agent 的模型、密钥与系统提示词"
+      },
+      "dataRefs": [
+        "cast.students.0",
+        "cast.competition"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "个人中心"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "页面标题",
+          "span": 12,
+          "height": 64,
+          "props": {
+            "title": "{{copy.title}}",
+            "action": "{{copy.refresh}}"
+          }
+        },
+        {
+          "id": "profile-card",
+          "type": "card",
+          "name": "个人资料卡",
+          "span": 4,
+          "height": 300,
+          "props": {
+            "avatar": "小红",
+            "title": "小红",
+            "subtitle": "{{copy.email}}",
+            "badge": "{{copy.accountLevel}}",
+            "meta": [
+              {
+                "label": "加入时间",
+                "value": "{{copy.joinedAt}}"
+              },
+              {
+                "label": "参赛数",
+                "value": "{{copy.competitionCount}}"
+              },
+              {
+                "label": "账号等级",
+                "value": "{{copy.accountLevel}}"
+              }
+            ]
+          }
+        },
+        {
+          "id": "stat-points",
+          "type": "statCard",
+          "name": "KPI 总积分",
+          "span": 2,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.0.label}}",
+            "value": "{{copy.stats.0.value}}",
+            "tone": "primary"
+          }
+        },
+        {
+          "id": "stat-competitions",
+          "type": "statCard",
+          "name": "KPI 竞赛数",
+          "span": 2,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.1.label}}",
+            "value": "{{copy.stats.1.value}}",
+            "tone": "success"
+          }
+        },
+        {
+          "id": "stat-cards",
+          "type": "statCard",
+          "name": "KPI 复习卡片",
+          "span": 2,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.2.label}}",
+            "value": "{{copy.stats.2.value}}",
+            "tone": "violet"
+          }
+        },
+        {
+          "id": "stat-streak",
+          "type": "statCard",
+          "name": "KPI 连续天数",
+          "span": 2,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.3.label}}",
+            "value": "{{copy.stats.3.value}}",
+            "tone": "gold"
+          }
+        },
+        {
+          "id": "records",
+          "type": "table",
+          "name": "我的竞赛记录",
+          "span": 8,
+          "height": 150,
+          "props": {
+            "title": "{{copy.recordsTitle}}",
+            "columns": [
+              "竞赛",
+              "状态",
+              "加入时间",
+              "人数",
+              "角色"
+            ],
+            "rows": [
+              [
+                "2026 春季 · 财务会计班级联赛",
+                "进行中",
+                "2026-10-26",
+                "4 人",
+                "成员"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "settings",
+          "type": "card",
+          "name": "设置概览",
+          "span": 12,
+          "height": 136,
+          "props": {
+            "title": "{{copy.settingsTitle}}",
+            "chips": "{{copy.settings}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "kp",
+      "order": 10,
+      "name": "知识点",
+      "route": "/kp/:id",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "kp",
+        "knowledge",
+        "knowledge-point",
+        "知识点",
+        "KnowledgePointPage",
+        "/kp/:id"
+      ],
+      "copy": {
+        "back": "返回",
+        "searchPlaceholder": "搜索知识点标题或内容…",
+        "search": "搜索",
+        "title": "应收账款的入账价值",
+        "meta": "层级 2 · 掌握度 68%",
+        "content": "应收账款按实际发生额入账，包括价款、增值税销项税额、代购货方垫付的运杂费等。商业折扣按扣除后的金额入账，现金折扣不影响入账价值。",
+        "edit": "编辑",
+        "delete": "删除",
+        "explainTitle": "AI 讲解",
+        "styleLabel": "讲解风格",
+        "style": "简洁",
+        "agentLabel": "Agent",
+        "agent": "服务端默认",
+        "startExplain": "开始讲解",
+        "explainHint": "选择风格后点击「开始讲解」，讲解内容会流式显示在这里。"
+      },
+      "dataRefs": [
+        "cast.source"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "资料库"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "back",
+          "type": "backLink",
+          "name": "返回",
+          "span": 12,
+          "height": 24,
+          "props": {
+            "label": "{{copy.back}}"
+          }
+        },
+        {
+          "id": "search",
+          "type": "toolbar",
+          "name": "知识点搜索",
+          "span": 12,
+          "height": 36,
+          "props": {
+            "align": "left",
+            "actions": [
+              {
+                "type": "input",
+                "placeholder": "{{copy.searchPlaceholder}}",
+                "width": 520
+              },
+              {
+                "type": "button",
+                "label": "{{copy.search}}",
+                "variant": "primary",
+                "width": 96
+              }
+            ]
+          }
+        },
+        {
+          "id": "article",
+          "type": "card",
+          "name": "知识点正文",
+          "span": 12,
+          "height": 300,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.meta}}",
+            "body": "{{copy.content}}",
+            "actions": [
+              "{{copy.edit}}",
+              "{{copy.delete}}"
+            ]
+          }
+        },
+        {
+          "id": "explain",
+          "type": "card",
+          "name": "AI 讲解面板",
+          "span": 12,
+          "height": 270,
+          "props": {
+            "title": "{{copy.explainTitle}}",
+            "fields": [
+              {
+                "label": "{{copy.styleLabel}}",
+                "value": "{{copy.style}}"
+              },
+              {
+                "label": "{{copy.agentLabel}}",
+                "value": "{{copy.agent}}"
+              }
+            ],
+            "primaryAction": "{{copy.startExplain}}",
+            "footnote": "{{copy.explainHint}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "order": 11,
+      "name": "学习看板",
+      "route": "/dashboard",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "dashboard",
+        "学习看板",
+        "DashboardPage",
+        "/dashboard"
+      ],
+      "copy": {
+        "title": "学习看板",
+        "subtitle": "到期复习、记忆曲线与掌握度的一站式汇总。",
+        "refresh": "刷新",
+        "stats": [
+          {
+            "label": "今日到期",
+            "value": "5",
+            "unit": "张"
+          },
+          {
+            "label": "今日已复习",
+            "value": "3",
+            "unit": "张"
+          },
+          {
+            "label": "连续复习",
+            "value": "4",
+            "unit": "天"
+          },
+          {
+            "label": "平均掌握度",
+            "value": "72",
+            "unit": "%"
+          }
+        ],
+        "charts": [
+          {
+            "title": "学习热力图",
+            "subtitle": "近 90 天",
+            "kind": "heatmap"
+          },
+          {
+            "title": "遗忘曲线",
+            "subtitle": "未来 30 天",
+            "kind": "line"
+          },
+          {
+            "title": "掌握度雷达",
+            "subtitle": "按资料",
+            "kind": "radar"
+          },
+          {
+            "title": "难度分布",
+            "subtitle": "复习卡片",
+            "kind": "bars"
+          }
+        ]
+      },
+      "dataRefs": [
+        "cast.students.0",
+        "cast.leaderboard.rows"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "学习看板"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "页面标题",
+          "span": 12,
+          "height": 72,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.subtitle}}",
+            "action": "{{copy.refresh}}"
+          }
+        },
+        {
+          "id": "stat-due",
+          "type": "statCard",
+          "name": "KPI 今日到期",
+          "span": 3,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.0.label}}",
+            "value": "{{copy.stats.0.value}}",
+            "unit": "{{copy.stats.0.unit}}",
+            "tone": "primary"
+          }
+        },
+        {
+          "id": "stat-reviewed",
+          "type": "statCard",
+          "name": "KPI 今日已复习",
+          "span": 3,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.1.label}}",
+            "value": "{{copy.stats.1.value}}",
+            "unit": "{{copy.stats.1.unit}}",
+            "tone": "success"
+          }
+        },
+        {
+          "id": "stat-streak",
+          "type": "statCard",
+          "name": "KPI 连续复习",
+          "span": 3,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.2.label}}",
+            "value": "{{copy.stats.2.value}}",
+            "unit": "{{copy.stats.2.unit}}",
+            "tone": "gold"
+          }
+        },
+        {
+          "id": "stat-mastery",
+          "type": "statCard",
+          "name": "KPI 平均掌握度",
+          "span": 3,
+          "height": 96,
+          "props": {
+            "label": "{{copy.stats.3.label}}",
+            "value": "{{copy.stats.3.value}}",
+            "unit": "{{copy.stats.3.unit}}",
+            "tone": "primary"
+          }
+        },
+        {
+          "id": "chart-heatmap",
+          "type": "chartPlaceholder",
+          "name": "学习热力图",
+          "span": 6,
+          "height": 260,
+          "props": {
+            "title": "{{copy.charts.0.title}}",
+            "subtitle": "{{copy.charts.0.subtitle}}",
+            "kind": "heatmap"
+          }
+        },
+        {
+          "id": "chart-curve",
+          "type": "chartPlaceholder",
+          "name": "遗忘曲线",
+          "span": 6,
+          "height": 260,
+          "props": {
+            "title": "{{copy.charts.1.title}}",
+            "subtitle": "{{copy.charts.1.subtitle}}",
+            "kind": "line"
+          }
+        },
+        {
+          "id": "chart-radar",
+          "type": "chartPlaceholder",
+          "name": "掌握度雷达",
+          "span": 6,
+          "height": 260,
+          "props": {
+            "title": "{{copy.charts.2.title}}",
+            "subtitle": "{{copy.charts.2.subtitle}}",
+            "kind": "radar"
+          }
+        },
+        {
+          "id": "chart-difficulty",
+          "type": "chartPlaceholder",
+          "name": "难度分布",
+          "span": 6,
+          "height": 260,
+          "props": {
+            "title": "{{copy.charts.3.title}}",
+            "subtitle": "{{copy.charts.3.subtitle}}",
+            "kind": "bars"
+          }
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "order": 12,
+      "name": "资料库",
+      "route": "/library",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "library",
+        "资料库",
+        "LibraryPage",
+        "/library"
+      ],
+      "copy": {
+        "title": "资料库",
+        "subtitle": "上传的资料、解析状态与知识点树将在这里管理。",
+        "uploadTitle": "上传资料",
+        "uploadHint": "还没有上传任何资料。上传资料请从建赛向导进入。",
+        "uploadAction": "前往竞赛空间",
+        "count": "共 1 条",
+        "columns": [
+          "标题",
+          "文件名",
+          "状态",
+          "页数",
+          "大小",
+          "上传时间"
+        ],
+        "rows": [
+          [
+            "第3章 应收款项及预防账款",
+            "第3章 应收款项及预防账款.pdf",
+            "ready",
+            "42",
+            "2.4 MB",
+            "2026-11-02 20:05"
+          ]
+        ]
+      },
+      "dataRefs": [
+        "cast.source"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "资料库"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "页面标题",
+          "span": 12,
+          "height": 72,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.subtitle}}"
+          }
+        },
+        {
+          "id": "upload",
+          "type": "card",
+          "name": "上传入口说明",
+          "span": 12,
+          "height": 136,
+          "props": {
+            "title": "{{copy.uploadTitle}}",
+            "subtitle": "{{copy.uploadHint}}",
+            "primaryAction": "{{copy.uploadAction}}"
+          }
+        },
+        {
+          "id": "count",
+          "type": "text",
+          "name": "资料数量",
+          "span": 12,
+          "height": 22,
+          "props": {
+            "content": "{{copy.count}}",
+            "size": 12,
+            "weight": 400,
+            "color": "color.ink-mute"
+          }
+        },
+        {
+          "id": "sources",
+          "type": "table",
+          "name": "资料列表",
+          "span": 12,
+          "height": 300,
+          "props": {
+            "columns": "{{copy.columns}}",
+            "rows": "{{copy.rows}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "source",
+      "order": 13,
+      "name": "资料详情",
+      "route": "/library/:id",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "source",
+        "source-detail",
+        "资料详情",
+        "SourceDetailPage",
+        "/library/:id"
+      ],
+      "copy": {
+        "back": "返回资料库",
+        "title": "第3章 应收款项及预防账款",
+        "filename": "第3章 应收款项及预防账款.pdf",
+        "reprocess": "重新解析",
+        "meta": [
+          {
+            "label": "标题",
+            "value": "第3章 应收款项及预防账款"
+          },
+          {
+            "label": "文件名",
+            "value": "第3章 应收款项及预防账款.pdf"
+          },
+          {
+            "label": "类型",
+            "value": "application/pdf"
+          },
+          {
+            "label": "大小",
+            "value": "2.4 MB"
+          },
+          {
+            "label": "页数",
+            "value": "42"
+          },
+          {
+            "label": "状态",
+            "value": "ready"
+          },
+          {
+            "label": "创建时间",
+            "value": "2026-11-02 20:05"
+          },
+          {
+            "label": "更新时间",
+            "value": "2026-11-02 20:06"
+          }
+        ],
+        "knowledgeTitle": "知识结构",
+        "knowledgeSubtitle": "知识点树来自「生成笔记」，点击节点可查看详情。",
+        "generateNotes": "生成笔记",
+        "tree": [
+          {
+            "title": "3.1 应收账款的确认",
+            "mastery": "72%"
+          },
+          {
+            "title": "3.2 坏账准备的计提",
+            "mastery": "58%"
+          },
+          {
+            "title": "3.3 应收款项的报表列示",
+            "mastery": "64%"
+          }
+        ],
+        "emptyTree": "该资料还没有知识点，点击「生成笔记」自动生成。"
+      },
+      "dataRefs": [
+        "cast.source"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "资料库"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "back",
+          "type": "backLink",
+          "name": "返回资料库",
+          "span": 12,
+          "height": 24,
+          "props": {
+            "label": "{{copy.back}}"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "资料标题",
+          "span": 12,
+          "height": 72,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.filename}}",
+            "action": "{{copy.reprocess}}"
+          }
+        },
+        {
+          "id": "meta",
+          "type": "card",
+          "name": "资料元信息",
+          "span": 12,
+          "height": 200,
+          "props": {
+            "meta": "{{copy.meta}}"
+          }
+        },
+        {
+          "id": "knowledge",
+          "type": "card",
+          "name": "知识结构",
+          "span": 12,
+          "height": 360,
+          "props": {
+            "title": "{{copy.knowledgeTitle}}",
+            "subtitle": "{{copy.knowledgeSubtitle}}",
+            "tree": "{{copy.tree}}",
+            "primaryAction": "{{copy.generateNotes}}",
+            "footnote": "{{copy.emptyTree}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "quiz",
+      "order": 14,
+      "name": "刷题",
+      "route": "/quiz",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "quiz",
+        "刷题",
+        "QuizPage",
+        "/quiz"
+      ],
+      "copy": {
+        "title": "刷题",
+        "subtitle": "选择知识点生成题目并即时判分；答错会回到来源切片，并自动加入间隔复习。",
+        "setupTitle": "练习设置",
+        "knowledge": "知识点",
+        "knowledgeValue": "3.1 应收账款的确认",
+        "countLabel": "题目数量（1-20）",
+        "countValue": "5",
+        "typeLabel": "题型",
+        "typeValue": "选择题 / 判断题 / 简答题",
+        "difficultyLabel": "难度",
+        "difficultyValue": "中等",
+        "generate": "生成题目",
+        "sessionTitle": "本次练习（2 题）",
+        "sessionMeta": "已完成 1 / 2",
+        "questionOne": "应收账款的入账价值通常不包括下列哪一项？",
+        "optionsOne": [
+          "增值税销项税额",
+          "代购货方垫付的运杂费",
+          "商业折扣",
+          "现金折扣"
+        ],
+        "questionTwo": "企业计提坏账准备时，应借记的科目是（ ）。",
+        "optionsTwo": [
+          "信用减值损失",
+          "坏账准备",
+          "应收账款",
+          "管理费用"
+        ],
+        "resultTitle": "答案与解析",
+        "resultHint": "提交后才会显示答案与解析",
+        "resultSource": "来源：第3章 应收款项及预防账款 P18"
+      },
+      "dataRefs": [
+        "cast.source"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "刷题"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "页面标题",
+          "span": 12,
+          "height": 72,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.subtitle}}"
+          }
+        },
+        {
+          "id": "setup",
+          "type": "card",
+          "name": "练习设置面板",
+          "span": 4,
+          "height": 300,
+          "props": {
+            "title": "{{copy.setupTitle}}",
+            "fieldsColumns": 2,
+            "fields": [
+              {
+                "label": "{{copy.knowledge}}",
+                "value": "{{copy.knowledgeValue}}"
+              },
+              {
+                "label": "{{copy.countLabel}}",
+                "value": "{{copy.countValue}}"
+              },
+              {
+                "label": "{{copy.typeLabel}}",
+                "value": "{{copy.typeValue}}"
+              },
+              {
+                "label": "{{copy.difficultyLabel}}",
+                "value": "{{copy.difficultyValue}}"
+              }
+            ],
+            "primaryAction": "{{copy.generate}}"
+          }
+        },
+        {
+          "id": "question-one",
+          "type": "questionCard",
+          "name": "第 1 题",
+          "span": 8,
+          "height": 300,
+          "props": {
+            "index": 1,
+            "type": "选择题",
+            "difficulty": "中等",
+            "stem": "{{copy.questionOne}}",
+            "options": "{{copy.optionsOne}}"
+          }
+        },
+        {
+          "id": "question-two",
+          "type": "questionCard",
+          "name": "第 2 题",
+          "span": 8,
+          "height": 240,
+          "props": {
+            "index": 2,
+            "type": "选择题",
+            "difficulty": "中等",
+            "stem": "{{copy.questionTwo}}",
+            "options": "{{copy.optionsTwo}}"
+          }
+        },
+        {
+          "id": "result",
+          "type": "card",
+          "name": "答案与解析",
+          "span": 8,
+          "height": 100,
+          "props": {
+            "title": "{{copy.resultTitle}}",
+            "subtitle": "{{copy.resultHint}}",
+            "footnote": "{{copy.resultSource}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "order": 15,
+      "name": "陪练",
+      "route": "/practice",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "practice",
+        "陪练",
+        "PracticePage",
+        "/practice"
+      ],
+      "copy": {
+        "title": "陪练",
+        "subtitle": "选择知识点开始自适应练习，答完即时讲解；刷新页面也能接着做。",
+        "setupTitle": "练习设置",
+        "knowledge": "知识点（可多选）",
+        "knowledgeValue": "3.1 应收账款的确认、3.2 坏账准备的计提",
+        "difficultyLabel": "起始难度",
+        "difficultyValue": "简单",
+        "countLabel": "题目数量（可选，1-50）",
+        "countValue": "5",
+        "start": "开始练习",
+        "sessionTitle": "当前进度",
+        "sessionStats": [
+          {
+            "label": "已答",
+            "value": "3 / 5"
+          },
+          {
+            "label": "答对",
+            "value": "2"
+          },
+          {
+            "label": "当前难度",
+            "value": "中等"
+          }
+        ],
+        "end": "结束练习",
+        "question": "下列哪项不属于应收账款？",
+        "options": [
+          "应收销售货款",
+          "应收代垫运杂费",
+          "应收票据",
+          "应收增值税销项税额"
+        ],
+        "rulesTitle": "自适应规则",
+        "rules": [
+          "连续答对 2 题：难度升一档",
+          "连续答错 2 题：难度降一档",
+          "单次练习最多 50 题",
+          "刷新页面会从服务端恢复进度"
+        ],
+        "summaryTitle": "本次练习成绩",
+        "summaryValue": "75%",
+        "summaryHint": "正确率 · 答对 3 / 4 题"
+      },
+      "dataRefs": [
+        "cast.students.0"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "陪练"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "页面标题",
+          "span": 12,
+          "height": 72,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.subtitle}}"
+          }
+        },
+        {
+          "id": "setup",
+          "type": "card",
+          "name": "练习设置",
+          "span": 4,
+          "height": 420,
+          "props": {
+            "title": "{{copy.setupTitle}}",
+            "fields": [
+              {
+                "label": "{{copy.knowledge}}",
+                "value": "{{copy.knowledgeValue}}"
+              },
+              {
+                "label": "{{copy.difficultyLabel}}",
+                "value": "{{copy.difficultyValue}}"
+              },
+              {
+                "label": "{{copy.countLabel}}",
+                "value": "{{copy.countValue}}"
+              }
+            ],
+            "primaryAction": "{{copy.start}}"
+          }
+        },
+        {
+          "id": "session",
+          "type": "card",
+          "name": "当前进度",
+          "span": 8,
+          "height": 190,
+          "props": {
+            "title": "{{copy.sessionTitle}}",
+            "stats": "{{copy.sessionStats}}",
+            "primaryAction": "{{copy.end}}"
+          }
+        },
+        {
+          "id": "rules",
+          "type": "card",
+          "name": "自适应规则",
+          "span": 4,
+          "height": 250,
+          "props": {
+            "title": "{{copy.rulesTitle}}",
+            "lines": "{{copy.rules}}"
+          }
+        },
+        {
+          "id": "question",
+          "type": "questionCard",
+          "name": "当前题目",
+          "span": 8,
+          "height": 250,
+          "props": {
+            "index": 4,
+            "type": "选择题",
+            "difficulty": "中等",
+            "stem": "{{copy.question}}",
+            "options": "{{copy.options}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "agents",
+      "order": 16,
+      "name": "Agent 设置",
+      "route": "/settings/agents",
+      "layout": "app",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "aliases": [
+        "agents",
+        "agent-settings",
+        "Agent 设置",
+        "Agent设置",
+        "AgentsPage",
+        "/settings/agents"
+      ],
+      "copy": {
+        "title": "Agent 设置",
+        "subtitle": "管理自定义 Agent 的模型、密钥与系统提示词。",
+        "create": "新建 Agent",
+        "hintTitle": "使用提示",
+        "hints": [
+          "测试连接失败不影响保存；把占位 Key 的 Agent 设为默认会导致 AI 功能失败",
+          "base_url 仅支持 https 公网地址；密钥只会以掩码形式展示，编辑时留空表示不修改。"
+        ],
+        "columns": [
+          "名称",
+          "base_url",
+          "模型",
+          "temperature",
+          "API Key",
+          "系统提示词",
+          "操作"
+        ],
+        "rows": [
+          [
+            "DeepSeek 官方",
+            "https://api.deepseek.com/v1",
+            "deepseek-chat",
+            "0.7",
+            "sk-****",
+            "你是一名耐心的学习助手",
+            "测试连接 / 编辑 / 删除"
+          ],
+          [
+            "本地 Ollama",
+            "https://ollama.example.com/v1",
+            "qwen2.5:7b",
+            "0.3",
+            "****",
+            "用简洁的方式讲解知识点",
+            "测试连接 / 编辑 / 删除"
+          ]
+        ],
+        "formTitle": "新建 Agent",
+        "formFields": [
+          {
+            "label": "名称",
+            "value": "DeepSeek 官方"
+          },
+          {
+            "label": "base_url",
+            "value": "https://api.deepseek.com/v1"
+          },
+          {
+            "label": "模型",
+            "value": "deepseek-chat"
+          },
+          {
+            "label": "temperature（0–2）",
+            "value": "0.7"
+          },
+          {
+            "label": "API Key",
+            "value": "填写模型服务的 API Key"
+          },
+          {
+            "label": "系统提示词（可选）",
+            "value": "告诉 Agent 它应该如何讲解知识点"
+          }
+        ],
+        "cancel": "取消",
+        "save": "保存"
+      },
+      "dataRefs": [
+        "cast.students.0"
+      ],
+      "blocks": [
+        {
+          "id": "sidebar",
+          "type": "sidebar",
+          "name": "侧边栏",
+          "span": 12,
+          "props": {
+            "active": "个人中心"
+          }
+        },
+        {
+          "id": "topbar",
+          "type": "topbar",
+          "name": "顶栏",
+          "span": 12,
+          "props": {
+            "user": "小红"
+          }
+        },
+        {
+          "id": "header",
+          "type": "pageHeader",
+          "name": "页面标题",
+          "span": 12,
+          "height": 64,
+          "props": {
+            "title": "{{copy.title}}",
+            "subtitle": "{{copy.subtitle}}",
+            "action": "{{copy.create}}"
+          }
+        },
+        {
+          "id": "hint",
+          "type": "card",
+          "name": "使用提示",
+          "span": 12,
+          "height": 100,
+          "props": {
+            "title": "{{copy.hintTitle}}",
+            "lines": "{{copy.hints}}"
+          }
+        },
+        {
+          "id": "agents-table",
+          "type": "table",
+          "name": "Agent 列表",
+          "span": 12,
+          "height": 190,
+          "props": {
+            "columns": "{{copy.columns}}",
+            "rows": "{{copy.rows}}"
+          }
+        },
+        {
+          "id": "form",
+          "type": "card",
+          "name": "新建 Agent 表单",
+          "span": 12,
+          "height": 380,
+          "props": {
+            "title": "{{copy.formTitle}}",
+            "fields": "{{copy.formFields}}",
+            "fieldsColumns": 2,
+            "actions": [
+              "{{copy.cancel}}",
+              "{{copy.save}}"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

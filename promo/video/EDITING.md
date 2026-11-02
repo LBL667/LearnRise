@@ -1,0 +1,227 @@
+# EDITING — LearnRise 3-minute promo
+
+Project root: `/home/sky/文档/Gitprojects/remotion-video-pipeline/projects/learnrise-promo-3min`
+
+The film is **6720 frames @ 30 fps = 224.000 s**, 1920×1080, 11 scenes.
+`Film` is the master cut; `S01`…`S11` are independently renderable.
+
+The one rule: **authored copy lives in `src/content/film.ts`**. Scene files in
+`src/scenes/**` render that copy; `npm run lint-content` fails if a scene file
+contains a Chinese string/JSX run longer than 12 non-whitespace characters.
+Short data values such as `'小红 1000'` (6 non-whitespace chars) are below that
+threshold and are *not* caught — the rule is a long-copy guard, not a general
+"no CJK in scenes" rule.
+
+Scene compositions (`S01`…`S11`) are **video-only**: `Root.tsx` wraps each scene
+with `Backdrop` + `GrainOverlay` and never mounts narration. Narration audio is
+added later by `scripts/mix-audio.mjs`. A narration edit therefore never changes
+scene pixels; a `screenText`/`subline`/`kicker`/`footnote`/`dataStrip` edit does.
+
+---
+
+## Change one narration line
+
+1. Edit the scene's `narration` in `src/content/film.ts`.
+2. Rebuild the generated contract:
+   ```bash
+   npm run storyboard:build
+   ```
+3. Regenerate **only that scene's clip** and re-check the budget:
+   ```bash
+   npm run tts:all -- --scene=S05
+   npm run timeline:check
+   ```
+
+`npm run tts:all -- --scene=S05` keeps the other 10 measured rows in
+`out/audio/<profile>/narration.json`; clips are cached by a SHA-256 of voice
+parameters + text, so the other 10 MP3s are not re-synthesized. If
+`timeline:check` reports an overflow, shorten the line and repeat step 3. Do
+**not** speed up the voice and do **not** move the 6720-frame boundary.
+
+Narration is audio-only, so this does **not** require `render:scene`: scene
+compositions contain no narration audio (see the note at the top). The changed
+bytes are `out/audio/<profile>/sNN.mp3`, `narration.json`, `narration.srt` and
+the mirrored `out/learnrise-promo.srt`. To update the delivered cut, re-mux
+without re-rendering pixels:
+
+```bash
+node scripts/mix-audio.mjs --voice=yunyang \
+  --video=out/learnrise-promo-video.mp4 \
+  --output=out/learnrise-promo.mp4
+```
+
+If you also changed a visual field (`screenText`, `subline`, `kicker`,
+`footnote`, `dataStrip`), rebuild that scene:
+
+```bash
+npm run render:scene -- S05
+```
+
+Never hand-edit the SRT; it is generated from `narration.json`.
+
+---
+
+## Change one person's name or score
+
+The cast is generated, not hand-authored:
+
+1. Edit the source of record:
+   `/home/sky/竞赛/华为ICT-evidence/learnrise-promo/promo_manifest.json`
+   (`students[]`; teachers come from `users[]` where `role === "teacher"`).
+   `sync-cast` sorts `students[]` by `points` and derives `rank`. The
+   `expected_scores` / `cast` arrays are for the seeding pipeline; `sync-cast`
+   does not read them, so keep them aligned manually if you change a score.
+2. Regenerate both consumers:
+   ```bash
+   npm run sync-cast
+   ```
+   This rewrites exactly `src/content/cast.ts` **and**
+   `/home/sky/竞赛/华为ICT-evidence/learnrise-penpot/specs/cast.json`.
+   Nothing else in `src/**` or `learnrise-penpot/specs/**` is touched.
+3. Rebuild the leaderboard scene (it reads `cast.ts` via `LEADERBOARD`):
+   ```bash
+   npm run render:scene -- S09
+   ```
+4. Rebuild only the Penpot rank page (from the Penpot directory):
+   ```bash
+   cd /home/sky/竞赛/华为ICT-evidence/learnrise-penpot
+   node build-page.js rank --dry-run
+   node build-page.js rank
+   python3 export2x.py --page rank --force
+   ```
+
+Teachers stay out of `LEADERBOARD` by construction. Editing `cast.ts` directly
+is temporary: the next `sync-cast` overwrites it. The `names`/`points` snapshot
+in `specs/pages.json` (rank → leaderboard block) is dry-run readability only;
+the builder renders `rowsRef: "cast.leaderboard"`, so the rebuilt board already
+reflects the new score without editing `pages.json`.
+
+---
+
+## Change one number (API / tests / services)
+
+1. Edit `src/content/facts.ts` (`API_PATHS`, `API_OPERATIONS`,
+   `TESTS_*`, `SERVICES`).
+2. Prove it against the LearnRise baseline:
+   ```bash
+   npm run check-facts
+   ```
+   If this fails, the repository baseline disagrees — fix `facts.ts`, never the
+   baseline, and never the check script.
+3. Regenerate the storyboard copy and rebuild the affected scenes:
+   ```bash
+   npm run storyboard:build
+   npm run render:scene -- S02
+   npm run render:scene -- S11
+   ```
+
+S02's data strip and S11's narration/data strip interpolate these constants, so
+they cannot go stale independently.
+
+---
+
+## Narration dependencies (edge-tts)
+
+Narration is synthesized with **edge-tts 7.3.1**, pinned in a throwaway
+virtualenv that is *not* vendored into this project:
+
+```
+/tmp/opencode/ttsvenv/bin/edge-tts --version   # 7.3.1
+```
+
+`scripts/tts.mjs` resolves the binary in this order: `$EDGE_TTS`, then
+`/tmp/opencode/ttsvenv/bin/edge-tts`, then `edge-tts` on `PATH`. If the venv is
+gone, recreate it rather than swapping engines:
+
+```bash
+python3 -m venv /tmp/opencode/ttsvenv
+/tmp/opencode/ttsvenv/bin/pip install edge-tts==7.3.1
+```
+
+`ffmpeg`/`ffprobe` (8.x on this machine) must also be on `PATH`; ffprobe is the
+only source of narration durations and ffmpeg pads the 15-second audition pack.
+
+There is **no fallback engine** (no espeak, no alternate provider). A synthesis
+failure exits non-zero and leaves the previous clip untouched. Clips are cached
+by a SHA-256 of voice parameters + text, so re-running `tts:all` is idempotent.
+
+`npm run tts:all` writes `out/audio/<profile>/{sNN.mp3,narration.json,narration.srt}`,
+mirrors the active SRT to `out/learnrise-promo.srt`, and always refreshes
+`out/audio/samples/{yunyang,yunjian,xiaoxiao}.mp3` (15.000 s each). Use
+`--scene=S05` to regenerate one clip and `--force` to ignore the cache.
+
+---
+
+## Switch voice
+
+`src/content/voice.ts` is the only voice source. Scene files never import it,
+and scene videos do not contain narration, so a voice change never requires a
+video re-render.
+
+- Temporary A/B, no file edit:
+  ```bash
+  ACTIVE_VOICE=xiaoxiao npm run tts:all
+  ACTIVE_VOICE=xiaoxiao npm run timeline:check
+  node scripts/mix-audio.mjs --voice=xiaoxiao \
+    --video=out/learnrise-promo-video.mp4 \
+    --output=out/learnrise-promo-xiaoxiao.mp4
+  ```
+- Permanent default: change `VOICES.yunyang.voice` (or the `ACTIVE_VOICE`
+  fallback) in `src/content/voice.ts`, then:
+  ```bash
+  npm run tts:all
+  npm run timeline:check
+  node scripts/mix-audio.mjs --voice=yunyang \
+    --video=out/learnrise-promo-video.mp4 \
+    --output=out/learnrise-promo.mp4
+  ```
+
+Audio is written to `out/audio/yunyang/` and `out/audio/xiaoxiao/`, so both
+cuts coexist. `npm run tts:all` also refreshes `out/audio/samples/*` and the
+mirrored `out/learnrise-promo.srt`; those are the only outputs outside the
+active `out/audio/<profile>/` directory.
+
+---
+
+## Rebuild one scene
+
+Edit the scene component (`src/scenes/S05Quiz.tsx`, …) or its content in
+`src/content/film.ts`, then:
+
+```bash
+npm run render:scene -- S05
+```
+
+Output: `out/scenes/s05.mp4`. The master `Film` is untouched. This is a
+video-only render; narration is added by `scripts/mix-audio.mjs`.
+
+To rebuild the whole cut:
+
+```bash
+npm run render
+```
+
+Output: `out/film.mp4` (video stream; mux narration + bed separately).
+
+---
+
+## Command map
+
+| Command | What it does |
+|---|---|
+| `npm run storyboard:build` | regenerates `storyboard.json` from `film.ts` |
+| `npm run check-facts` | reconciles `facts.ts` with LearnRise baselines |
+| `npm run lint-content` | rejects hardcoded Chinese copy in scene files |
+| `npm run sync-cast` | regenerates `cast.ts` + Penpot `specs/cast.json` |
+| `npm run timeline:check` | verifies 11 windows sum to 6720 and narration fits |
+| `npm run tts:all` | regenerates all 11 narration clips for `ACTIVE_VOICE` |
+| `npm run tts:all -- --scene=S05` | regenerates one clip, keeps the other 10 measured rows |
+| `npm run render:scene -- S05` | renders one scene composition (video only) |
+| `node scripts/mix-audio.mjs --voice=yunyang --video=out/learnrise-promo-video.mp4 --output=out/learnrise-promo.mp4` | muxes narration + bed onto the rendered video (no pixel re-render) |
+| `npm run render` | renders the master `Film` to `out/film.mp4` (video-only) |
+
+Validation (no dependencies, safe before every render):
+
+```bash
+node ~/.config/opencode/skills/remotion-video/scripts/validate-storyboard.mjs storyboard.json --json
+```

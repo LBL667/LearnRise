@@ -1,0 +1,338 @@
+{
+  "schema": "learnrise.mockups.exports.v1",
+  "generatedAt": "2026-11-02T23:57:28+0800",
+  "boardPrefix": "PAGE / ",
+  "boardSize": [
+    1440,
+    900
+  ],
+  "pngScale": 2,
+  "pngSize": [
+    2880,
+    1800
+  ],
+  "svgViewBox": "0 0 1440 900",
+  "method": "PNG: Penpot plugin API Board.export({type:'png',scale:2}) via execute_code, base64 staged on globalThis and pulled in 45 KB chunks (MCP export_shape ignores scale). SVG: self-contained wrapper embedding the native 2x PNG because the Penpot 2.16 SVG exporter never creates the text foreignObject for gfont-noto-sans-sc (fails at 30 s and at a patched 180 s budget).",
+  "pages": {
+    "login": {
+      "png": {
+        "path": "out/mockups/login@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 65707,
+        "sha256": "c3caca556b0b4a37929b95ffd4bc75ae37a54a3302333a0ab123681097d30663",
+        "render_ms": 6290
+      },
+      "boardId": "855b5502-ccdf-80e3-8008-e266174e8359",
+      "ok": true,
+      "error": "export PAGE / 登录 svg failed: {'status': 'error', 'name': 'PAGE / 登录', 'id': None, 'bytes': None, 'b64len': None, 'ms': None, 'error': '#error {:message \"http error\", :data {:type :server-error, :hint \"locator.screenshot: Timeout 30000ms exceeded.\\\\nCall log:\\\\n  - waiting for locator(\\'#screenshot-text-855b5502-ccdf-80e3-8008-e2661765d709 foreignObject\\')\\\\n\", :uri \"http://localhost:9001/api/export\", :status 500}}', 'head': None, 'tail': None}",
+      "svg": {
+        "path": "out/mockups/login.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 175584,
+        "sha256": "4e64e547ab1c7a9938d7a6b538ab1aa7b8493b81c44de371f9aaab41a8ee5d19",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "exported_at": "2026-11-02T23:56:04+0800"
+    },
+    "community": {
+      "png": {
+        "path": "out/mockups/community@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 136826,
+        "sha256": "249f289513b7cd28d42e62d3edd543850452e00a112345a8162f112acc2082a5",
+        "render_ms": 10157
+      },
+      "boardId": "d733334e-d24b-804f-8008-e27d56cd245e",
+      "svg": {
+        "path": "out/mockups/community.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 365244,
+        "sha256": "b52bf4eb5a9b35bfc8c59e8827ce60cbb2717ba669e11ab3c525397ebffaba8a",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:15+0800"
+    },
+    "competition": {
+      "png": {
+        "path": "out/mockups/competition@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 136071,
+        "sha256": "0663c15fd29d95186bbe4446e80c2f5bd68a66711fffce5b5a9ba3563b8d94eb",
+        "render_ms": 3074
+      },
+      "boardId": "d733334e-d24b-804f-8008-e27d72fb8570",
+      "svg": {
+        "path": "out/mockups/competition.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 363228,
+        "sha256": "7dbd6242ce878f8fa944d727825be43228fd7e4aa21f2f605bacf3af403a15ee",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:19+0800"
+    },
+    "prep": {
+      "png": {
+        "path": "out/mockups/prep@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 180226,
+        "sha256": "8d8320c4d5ec8c45c4880ac717489bd4afec23fecf6312ea5f8f05605fac1b94",
+        "render_ms": 6314
+      },
+      "boardId": "d733334e-d24b-804f-8008-e27d773c3488",
+      "svg": {
+        "path": "out/mockups/prep.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 480974,
+        "sha256": "b06e722d671ab4bed5364d574a7d56843074bf878e3abd3c59af6357e9347d86",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:26+0800"
+    },
+    "trial": {
+      "png": {
+        "path": "out/mockups/trial@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 145458,
+        "sha256": "5c36cb308774ceb05d639752bcb7cbcaffd37d6063f3abc452908921f0fa5c44",
+        "render_ms": 3089
+      },
+      "boardId": "d733334e-d24b-804f-8008-e27d7b24ba17",
+      "svg": {
+        "path": "out/mockups/trial.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 388260,
+        "sha256": "86ae991b586f3524f84a9cc3e931ec8809cea93fcd3aabd75ff8b5038a4b8257",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:30+0800"
+    },
+    "review": {
+      "png": {
+        "path": "out/mockups/review@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 207618,
+        "sha256": "f0712718790b8aee1ac05b2ad96fbb569cc747019089215f2901932a4ccd2044",
+        "render_ms": 5502
+      },
+      "boardId": "855b5502-ccdf-80e3-8008-e2661ce244f2",
+      "svg": {
+        "path": "out/mockups/review.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 554020,
+        "sha256": "6216f4284c27d206c3c849f420225505e4b4388675c025d6a131d4f431d0570c",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:37+0800"
+    },
+    "promotion": {
+      "png": {
+        "path": "out/mockups/promotion@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 152951,
+        "sha256": "ed10f86eb1acc3301b7bd9520ed15f2645739a1e852d7dee658eee78eadecf33",
+        "render_ms": 2638
+      },
+      "boardId": "d733334e-d24b-804f-8008-e27d8354e420",
+      "svg": {
+        "path": "out/mockups/promotion.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 408238,
+        "sha256": "1a457d347b9bc88fca045158d58c01a017ec32e1ed644eda563f97e2f3db45c2",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:41+0800"
+    },
+    "rank": {
+      "png": {
+        "path": "out/mockups/rank@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 149997,
+        "sha256": "a85983f9f5ae78714c74c7c347a8b34e716db9e4ad2dc11c070a0a72db7cc9d5",
+        "kept_from_t13": true
+      },
+      "svg": {
+        "path": "out/mockups/rank.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 400358,
+        "sha256": "4fe980af39190b11485be27b4ee6573f8dca18f72fc89edcee8dc5bb42e23cd5",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "boardId": "855b5502-ccdf-80e3-8008-e266353303be"
+    },
+    "profile": {
+      "png": {
+        "path": "out/mockups/profile@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 223821,
+        "sha256": "68bcbb0780b5bffc1cb19b6ce77c1da1f53c2bdb4a38def36b4d0aa871936fd6",
+        "render_ms": 2967
+      },
+      "boardId": "d733334e-d24b-804f-8008-e27d877735ab",
+      "svg": {
+        "path": "out/mockups/profile.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 597228,
+        "sha256": "8bb23bf7261ae849273fc69708c174a6ae4e9454f7d2d0c0872b9ffe4614f58a",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:46+0800"
+    },
+    "kp": {
+      "png": {
+        "path": "out/mockups/kp@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 194022,
+        "sha256": "fea3c98211b3d8a590bd5430aa2bdcde75470d0c882a4b6f1b8163bee863bbe8",
+        "render_ms": 2939
+      },
+      "boardId": "d733334e-d24b-804f-8008-e27d9016513c",
+      "svg": {
+        "path": "out/mockups/kp.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 517758,
+        "sha256": "ba7b4e9c67bee8b1527f198cec1ffe8cd23334cac952b4f27ce9fb3525eae6bf",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:51+0800"
+    },
+    "dashboard": {
+      "png": {
+        "path": "out/mockups/dashboard@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 223288,
+        "sha256": "8ba87bf1d25c1a29a73acc861c6426718b3974d6ea9182d7b335c5baaf533bcd",
+        "render_ms": 4057
+      },
+      "boardId": "855b5502-ccdf-80e3-8008-e2679b6fb173",
+      "svg": {
+        "path": "out/mockups/dashboard.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 595812,
+        "sha256": "be2fd45f62edd109fdeb79d49b515cea7af4f2983e1bcc46af594761711dd1b2",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:56:56+0800"
+    },
+    "library": {
+      "png": {
+        "path": "out/mockups/library@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 170457,
+        "sha256": "a14af8e0e8315a671d9d083e07a9bedf8d65dd32d826d71e8c78efeb38cd53ed",
+        "render_ms": 3500
+      },
+      "boardId": "855b5502-ccdf-80e3-8008-e26df49f7b27",
+      "svg": {
+        "path": "out/mockups/library.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 454918,
+        "sha256": "c1789bcc210e766eb1b7f2ce1bc7123d9444e03cde7cdda23682725f1ddada5f",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:57:01+0800"
+    },
+    "source": {
+      "png": {
+        "path": "out/mockups/source@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 189583,
+        "sha256": "7a6309df6a6f3a149cde350b9e5ef965bba4b147144e6d042f761b0439f51d59",
+        "render_ms": 2733
+      },
+      "boardId": "d733334e-d24b-804f-8008-e27d93aba1e4",
+      "svg": {
+        "path": "out/mockups/source.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 505932,
+        "sha256": "51f635fb2aa4284a664444e4de7b9030bc6a710b8bbe032eb53a9e0cc1070b84",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:57:05+0800"
+    },
+    "quiz": {
+      "png": {
+        "path": "out/mockups/quiz@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 220991,
+        "sha256": "d265cf5f19a10200bb224d7ee24c653bdd2376b34b5f866252cb9b3e6b8c7242",
+        "render_ms": 4319
+      },
+      "boardId": "855b5502-ccdf-80e3-8008-e2661985e08e",
+      "svg": {
+        "path": "out/mockups/quiz.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 589672,
+        "sha256": "7429fb5359e53177b382173e95de8b819e418dc3e334c8061cf0d252a5aa20b6",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:57:10+0800"
+    },
+    "practice": {
+      "png": {
+        "path": "out/mockups/practice@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 239807,
+        "sha256": "d78dd69eeb30f15e3c7175ab1260fe1ac1d27c945b6faf04a1e20a51afcc51e5",
+        "render_ms": 7427
+      },
+      "boardId": "855b5502-ccdf-80e3-8008-e266391a5cc1",
+      "svg": {
+        "path": "out/mockups/practice.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 639848,
+        "sha256": "23c94b4da715543798dc335e419f56bf8d7a515f720081048f9b7773188602aa",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:57:20+0800"
+    },
+    "agents": {
+      "png": {
+        "path": "out/mockups/agents@2x.png",
+        "width": 2880,
+        "height": 1800,
+        "bytes": 226400,
+        "sha256": "cb092a70ebba4458dcbcbf7f5b29c37095309cf12d72cc99138a74f25e8c1218",
+        "render_ms": 6915
+      },
+      "boardId": "855b5502-ccdf-80e3-8008-e2663ebf2a38",
+      "svg": {
+        "path": "out/mockups/agents.svg",
+        "viewBox": "0 0 1440 900",
+        "bytes": 604108,
+        "sha256": "80e21b0189bb7c643a393c88b69b8ebe18463a7a46bb8718d4974364bf3c2441",
+        "embed": "native 2x PNG (2880x1800) base64"
+      },
+      "ok": true,
+      "exported_at": "2026-11-02T23:57:28+0800"
+    }
+  }
+}

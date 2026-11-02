@@ -1,0 +1,29 @@
+{
+  "name": "learnrise-promo-3min",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LearnRise 224s / 6720-frame promo film (11 scenes, 1920x1080, 30fps).",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "node ../../skill/remotion-video/scripts/render.mjs --project=. --composition=Film --output=out/film.mp4 --concurrency=2",
+    "render:scene": "node --import tsx scripts/render-scene.mjs",
+    "still": "remotion still",
+    "tts:all": "node --import tsx scripts/tts.mjs --all",
+    "timeline:check": "node --import tsx scripts/timeline-check.mjs",
+    "check-facts": "node scripts/check-facts.mjs",
+    "lint-content": "node scripts/lint-content.mjs",
+    "sync-cast": "node scripts/sync-cast.mjs",
+    "storyboard:build": "node --import tsx scripts/build-storyboard.mjs",
+    "fonts:check": "node ../../skill/remotion-video/scripts/font-check.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.539",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.539",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

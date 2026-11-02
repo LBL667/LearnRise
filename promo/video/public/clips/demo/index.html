@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HyperFrames demo clip</title>
+    <!--
+      Demo source for the HyperFrames pre-render adapter (T22).
+
+      Contract:
+      - 1920x1080, 3 s, 30 fps, silent — rendered once to demo.mp4 and then
+        embedded in the Remotion film as ordinary footage via <OffthreadVideo>.
+      - data-no-timeline: this composition has no GSAP timeline. Without it the
+        producer polls window.__timelines for 45 s on every render.
+      - Motion is CSS-only and a pure function of time: finite iteration count
+        plus animation-fill-mode: both. HyperFrames seeks every CSSAnimation by
+        setting animation.currentTime = t × 1000 and pausing it, so frames may
+        be captured out of order without drift.
+      - Pixel determinism needs flat fills and transform-only motion. Gradients,
+        blur/box-shadow and opacity layers rasterize with run-to-run GPU noise
+        (measured 59.9 dB instead of PSNR inf), so this clip uses solid colours
+        and translate/scale transforms only.
+      - No external scripts, no CDN GSAP, no web fonts. The CJK face resolves
+        through fontconfig with @font-face + local(), so the render is offline.
+      - No audio element: the clip stays silent and the film's music bed is the
+        only audio source.
+    -->
+    <style>
+      @font-face {
+        font-family: 'DemoSans';
+        src: local('Noto Sans SC');
+        font-weight: 100 900;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: 'DemoMono';
+        src: local('Noto Sans Mono');
+        font-weight: 100 900;
+        font-style: normal;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #05070c;
+        font-family: 'DemoSans', sans-serif;
+      }
+
+      .stage {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        background: #05070c;
+      }
+
+      .frame {
+        position: absolute;
+        inset: 72px;
+        border: 1px solid #1b2430;
+      }
+
+      .rule {
+        position: absolute;
+        left: 154px;
+        top: 190px;
+        width: 1612px;
+        height: 1px;
+        background: #1b2430;
+      }
+
+      .kicker {
+        position: absolute;
+        left: 154px;
+        top: 222px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        color: #8ea3bd;
+        font-size: 30px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .kicker__dot {
+        width: 18px;
+        height: 18px;
+        background: #4ea1ff;
+      }
+
+      .title {
+        position: absolute;
+        left: 148px;
+        top: 286px;
+        margin: 0;
+        color: #f2f6fc;
+        font-size: 168px;
+        font-weight: 800;
+        line-height: 1.04;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+
+      .subtitle {
+        position: absolute;
+        left: 154px;
+        top: 512px;
+        margin: 0;
+        color: #5cf2c0;
+        font-family: 'DemoMono', 'DemoSans', monospace;
+        font-size: 44px;
+        letter-spacing: 0.16em;
+        white-space: nowrap;
+      }
+
+      .meter {
+        position: absolute;
+        left: 154px;
+        top: 700px;
+        width: 1612px;
+        height: 14px;
+        background: #121a25;
+        overflow: hidden;
+      }
+
+      .meter__fill {
+        width: 100%;
+        height: 100%;
+        background: #4ea1ff;
+        transform: scaleX(0);
+        transform-origin: left center;
+        animation: meter-grow 3000ms linear 0ms both;
+        animation-iteration-count: 1;
+      }
+
+      .marker {
+        position: absolute;
+        top: 652px;
+        left: 154px;
+        width: 26px;
+        height: 26px;
+        background: #f2f6fc;
+        transform: translateX(0);
+        animation: marker-travel 3000ms cubic-bezier(0.45, 0, 0.55, 1) 0ms both;
+        animation-iteration-count: 1;
+      }
+
+      .readout {
+        position: absolute;
+        right: 154px;
+        top: 676px;
+        color: #8ea3bd;
+        font-family: 'DemoMono', 'DemoSans', monospace;
+        font-size: 28px;
+        letter-spacing: 0.14em;
+        white-space: nowrap;
+      }
+
+      .tick {
+        position: absolute;
+        bottom: 206px;
+        width: 1px;
+        height: 34px;
+        background: #1b2430;
+      }
+
+      .tick--a {
+        left: 154px;
+      }
+
+      .tick--b {
+        left: 960px;
+      }
+
+      .tick--c {
+        left: 1766px;
+      }
+
+      @keyframes meter-grow {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+
+      @keyframes marker-travel {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(1586px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main
+      class="stage"
+      data-composition-id="demo"
+      data-width="1920"
+      data-height="1080"
+      data-duration="3"
+      data-fps="30"
+      data-no-timeline
+    >
+      <div class="frame" aria-hidden="true"></div>
+      <div class="rule" aria-hidden="true"></div>
+
+      <div class="kicker">
+        <span class="kicker__dot"></span>
+        <span>HyperFrames · pre-rendered</span>
+      </div>
+
+      <h1 id="demo-title" class="title clip" data-start="0" data-duration="3">预渲染片段</h1>
+      <p id="demo-subtitle" class="subtitle clip" data-start="0" data-duration="3">HTML → FLAT MP4</p>
+
+      <div id="demo-marker" class="marker clip" data-start="0" data-duration="3" aria-hidden="true"></div>
+      <div class="readout">3.000 s · 30 fps</div>
+
+      <div class="meter" aria-hidden="true">
+        <div class="meter__fill"></div>
+      </div>
+
+      <div class="tick tick--a" aria-hidden="true"></div>
+      <div class="tick tick--b" aria-hidden="true"></div>
+      <div class="tick tick--c" aria-hidden="true"></div>
+    </main>
+  </body>
+</html>

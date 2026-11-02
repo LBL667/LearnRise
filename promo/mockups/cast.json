@@ -1,0 +1,105 @@
+{
+  "source": "promo_manifest.json",
+  "main_competition": {
+    "id": "e298b09b-de28-432c-9e37-7376a5f31623",
+    "title": "2026 春季 · 财务会计班级联赛",
+    "invite_code": "LR-2026",
+    "owner_email": "wang@example.com"
+  },
+  "invite_code": "LR-2026",
+  "students": [
+    {
+      "id": "46ef2e8b-4e12-41a6-ba20-5ef1ba8d1e19",
+      "name": "小红",
+      "email": "xiaohong@example.com",
+      "points": 1000,
+      "cards": 5,
+      "correct": 98,
+      "rank": 1
+    },
+    {
+      "id": "9327be5c-5a41-42e5-9d3f-bcf5db3aa492",
+      "name": "小明",
+      "email": "xiaoming@example.com",
+      "points": 960,
+      "cards": 5,
+      "correct": 94,
+      "rank": 2
+    },
+    {
+      "id": "f608d597-bd80-4da3-9726-7859193198dc",
+      "name": "张三",
+      "email": "zhangsan@example.com",
+      "points": 916,
+      "cards": 4,
+      "correct": 90,
+      "rank": 3
+    },
+    {
+      "id": "6d0d3cfb-8f48-4576-8628-b69d14258007",
+      "name": "李四",
+      "email": "lisi@example.com",
+      "points": 876,
+      "cards": 4,
+      "correct": 86,
+      "rank": 4
+    }
+  ],
+  "teachers": [
+    {
+      "id": "88f5958d-5177-4368-921c-f1d51beec28e",
+      "name": "王老师",
+      "email": "wang@example.com"
+    },
+    {
+      "id": "3d3c1f1c-35f6-4441-927b-c410bec1a895",
+      "name": "周老师",
+      "email": "zhou@example.com"
+    }
+  ],
+  "leaderboard": [
+    {
+      "id": "46ef2e8b-4e12-41a6-ba20-5ef1ba8d1e19",
+      "name": "小红",
+      "email": "xiaohong@example.com",
+      "points": 1000,
+      "cards": 5,
+      "correct": 98,
+      "rank": 1
+    },
+    {
+      "id": "9327be5c-5a41-42e5-9d3f-bcf5db3aa492",
+      "name": "小明",
+      "email": "xiaoming@example.com",
+      "points": 960,
+      "cards": 5,
+      "correct": 94,
+      "rank": 2
+    },
+    {
+      "id": "f608d597-bd80-4da3-9726-7859193198dc",
+      "name": "张三",
+      "email": "zhangsan@example.com",
+      "points": 916,
+      "cards": 4,
+      "correct": 90,
+      "rank": 3
+    },
+    {
+      "id": "6d0d3cfb-8f48-4576-8628-b69d14258007",
+      "name": "李四",
+      "email": "lisi@example.com",
+      "points": 876,
+      "cards": 4,
+      "correct": 86,
+      "rank": 4
+    }
+  ],
+  "source_document": {
+    "id": "0bc37940-7e92-4040-b507-06711fc92140",
+    "competition_id": "e298b09b-de28-432c-9e37-7376a5f31623",
+    "title": "第3章 应收款项及预防账款",
+    "filename": "第3章 应收款项及预防账款.pdf",
+    "status": "ready"
+  }
+}
