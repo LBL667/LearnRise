@@ -17,6 +17,11 @@ interface CompetitionRow {
   planStatus: string
 }
 
+interface KnowledgePointRow {
+  id: string
+  title: string
+}
+
 async function login(): Promise<string> {
   const response = await fetch(`${API}/api/auth/login`, {
     method: 'POST',
@@ -41,8 +46,15 @@ async function capture(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: join(EVIDENCE_DIR, name), fullPage: true })
 }
 
-async function expectNoSkeleton(page: Page, skeleton: string): Promise<void> {
-  await expect(page.getByText(skeleton, { exact: false })).toHaveCount(0)
+async function expectNoSkeleton(page: Page, skeleton?: string): Promise<void> {
+  await expect(page.getByText('加载中…', { exact: false })).toHaveCount(0)
+  await expect(page.getByText('正在加载', { exact: false })).toHaveCount(0)
+  if (skeleton) await expect(page.getByText(skeleton, { exact: false })).toHaveCount(0)
+}
+
+async function expectPageReady(page: Page, testId: string): Promise<void> {
+  await expect(page.getByTestId(testId)).toBeVisible()
+  await expectNoSkeleton(page)
 }
 
 test('smoke: every main page renders from the API without skeletons', async ({ page }) => {
@@ -51,8 +63,16 @@ test('smoke: every main page renders from the API without skeletons', async ({ p
   const competition = competitions.find((row) => row.planStatus === 'ready') ?? competitions[0]
   expect(competition, 'seed_demo.py must create a demo competition').toBeTruthy()
 
+  const points = await apiFetch<KnowledgePointRow[]>('/api/knowledge-points?limit=100', token)
+  expect(points.length, 'seed_demo.py must create demo knowledge points').toBeGreaterThan(0)
+  const point = points[0]
+
   const pageErrors: string[] = []
+  const consoleErrors: string[] = []
   page.on('pageerror', (error) => pageErrors.push(error.message))
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text())
+  })
   await page.addInitScript((value) => window.localStorage.setItem('learnrise.token', value), token)
 
   await page.goto('/')
@@ -111,5 +131,36 @@ test('smoke: every main page renders from the API without skeletons', async ({ p
   await expectNoSkeleton(page, '正在加载复习队列…')
   await capture(page, 'task-26-nomock-review.png')
 
+  await page.goto('/library')
+  await expectPageReady(page, 'page-library')
+  await expect(page.getByTestId('source-row').first()).toBeVisible()
+  await capture(page, 'task-14-smoke-library.png')
+
+  await page.goto('/quiz')
+  await expectPageReady(page, 'page-quiz')
+  await expect(page.getByTestId(`kp-option-${point.id}`)).toBeVisible()
+  await capture(page, 'task-14-smoke-quiz.png')
+
+  await page.goto('/practice')
+  await expectPageReady(page, 'page-practice')
+  await expect(page.getByTestId(`practice-kp-${point.id}`)).toBeVisible()
+  await capture(page, 'task-14-smoke-practice.png')
+
+  await page.goto('/dashboard')
+  await expectPageReady(page, 'page-dashboard')
+  await expect(page.getByTestId('dashboard-kpis')).toBeVisible()
+  await capture(page, 'task-14-smoke-dashboard.png')
+
+  await page.goto('/settings/agents')
+  await expectPageReady(page, 'page-agents')
+  await expect(page.getByTestId('agent-create')).toBeVisible()
+  await capture(page, 'task-14-smoke-agents.png')
+
+  await page.goto(`/kp/${point.id}`)
+  await expectPageReady(page, 'page-knowledge-point')
+  await expect(page.getByTestId('kp-title')).toBeVisible()
+  await capture(page, 'task-14-smoke-knowledge-point.png')
+
   expect(pageErrors, pageErrors.join('\n')).toEqual([])
+  expect(consoleErrors, consoleErrors.join('\n')).toEqual([])
 })
