@@ -3,6 +3,7 @@ import type { FormEvent, ReactNode } from 'react'
 import { Pencil, Plus, Star, Trash2, Zap } from 'lucide-react'
 import {
   createAgent,
+  getAgent,
   listAgents,
   removeAgent,
   setDefaultAgent,
@@ -125,6 +126,7 @@ export default function AgentsPage() {
   const [busy, setBusy] = useState<Record<string, boolean>>({})
   const [testResults, setTestResults] = useState<Record<string, AgentTestResult>>({})
 
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<AgentOut | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
@@ -198,6 +200,22 @@ export default function AgentsPage() {
     setSubmitError(null)
     setFormOpen(true)
   }, [])
+
+  const openEditFromServer = useCallback(
+    async (agent: AgentOut) => {
+      if (editingId !== null) return
+      setEditingId(agent.id)
+      try {
+        const fresh = await getAgent(agent.id)
+        openEdit(fresh)
+      } catch (error) {
+        showToast(describeError(error), 'error')
+      } finally {
+        setEditingId(null)
+      }
+    },
+    [editingId, openEdit, showToast],
+  )
 
   const closeForm = useCallback(() => {
     if (saving) return
@@ -380,11 +398,11 @@ export default function AgentsPage() {
                   type="button"
                   className={ACTION_BUTTON}
                   data-testid="agent-edit"
-                  onClick={() => openEdit(row)}
-                  disabled={deleting}
+                  onClick={() => void openEditFromServer(row)}
+                  disabled={deleting || editingId === row.id}
                 >
                   <Pencil size={13} />
-                  编辑
+                  {editingId === row.id ? '加载中…' : '编辑'}
                 </button>
                 <button
                   type="button"
@@ -439,7 +457,7 @@ export default function AgentsPage() {
         },
       },
     ],
-    [busy, deleting, openEdit, testResults],
+    [busy, deleting, editingId, openEditFromServer, testResults],
   )
 
   return (

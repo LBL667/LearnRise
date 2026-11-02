@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BarChart3, ChevronDown, ChevronRight, ChevronsLeft, Crown, FileText, Library, MessagesSquare, PencilLine, RotateCw, Trophy, User } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useToast } from '../ui/Toast'
+import { useUiTheme } from '../../theme/ThemeProvider'
 
 interface NavItem {
   key: string
@@ -26,7 +27,7 @@ const SUB_ITEMS: NavItem[] = [
 ]
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+  const { sidebarCollapsed: collapsed, setSidebarCollapsed } = useUiTheme()
   const [subOpen, setSubOpen] = useState(true)
   const { showToast } = useToast()
   const navigate = useNavigate()
@@ -58,7 +59,7 @@ export function Sidebar() {
         )}
       </div>
       <button
-        onClick={() => setCollapsed((v) => !v)}
+        onClick={() => setSidebarCollapsed((v) => !v)}
         aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
         className="absolute right-2 top-6 flex h-6 w-6 items-center justify-center rounded-md text-ink-mute hover:bg-page hover:text-ink-soft"
       >
