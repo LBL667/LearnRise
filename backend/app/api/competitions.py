@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.adapters.storage.factory import build_storage
 from app.api.errors import CodedHTTPException
 from app.db import SessionLocal
 from app.deps import CurrentUser, DbSession
@@ -94,6 +95,7 @@ class MemberOut(BaseModel):
     name: str
     role: str
     avatarHue: int
+    avatarUrl: str | None = None
 
 
 class InviteOut(BaseModel):
@@ -376,9 +378,19 @@ def list_members(competition_id: str, db: DbSession, user: CurrentUser) -> list[
         MemberOut(
             id=membership.id,
             userId=member.id,
-            name=member.display_name or member.email,
+            name=(
+                "已隐藏"
+                if (member.privacy_prefs or {}).get("name_visibility", "public")
+                == "private"
+                else member.display_name or member.email
+            ),
             role=membership.role,
             avatarHue=_hue_for(member.id),
+            avatarUrl=(
+                build_storage().sign(member.avatar_key)
+                if member.avatar_key
+                else None
+            ),
         )
         for membership, member in rows
     ]

@@ -41,8 +41,8 @@ Difficulty = Literal["easy", "medium", "hard"]
 
 class QuizGenerateRequest(BaseModel):
     knowledge_point_ids: list[str] = Field(default_factory=list)
-    type: QuizType
-    num: int
+    type: QuizType | None = None
+    num: int | None = None
     difficulty: Difficulty | None = None
 
 
@@ -75,7 +75,16 @@ def generate_quiz(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=_EMPTY_KP
         )
-    if not 1 <= payload.num <= MAX_NUM:
+
+    prefs = user.learning_prefs or {}
+    difficulty = payload.difficulty or prefs.get("default_difficulty") or "medium"
+    qtype = payload.type or (prefs.get("default_question_types") or ["choice"])[0]
+    num = (
+        payload.num
+        if payload.num is not None
+        else (prefs.get("default_quiz_num") or 5)
+    )
+    if not 1 <= num <= MAX_NUM:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=_BAD_NUM
         )
@@ -85,9 +94,9 @@ def generate_quiz(
             db,
             user_id=user.id,
             kp_ids=payload.knowledge_point_ids,
-            qtype=payload.type,
-            num=payload.num,
-            difficulty=payload.difficulty or "medium",
+            qtype=qtype,
+            num=num,
+            difficulty=difficulty,
         )
     except QuizKPNotFound:
         raise HTTPException(

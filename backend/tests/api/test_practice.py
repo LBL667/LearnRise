@@ -514,3 +514,46 @@ def test_empty_knowledge_points_is_422(
 
     assert response.status_code == 422
     assert response.json()["code"] == "VALIDATION_ERROR"
+
+
+def _put_learning_prefs(client: TestClient, user: User, body: dict[str, Any]) -> None:
+    response = client.put(
+        "/api/profile/preferences/learning", json=body, headers=_headers(user)
+    )
+    assert response.status_code == 200, response.text
+
+
+def test_create_session_uses_learning_difficulty_preference(
+    client: TestClient, db_session: Session, make_user: Callable[..., User]
+) -> None:
+    user = make_user()
+    point = _make_point(db_session, user)
+    _make_question(db_session, user, point, difficulty="easy", stem="简单题")
+    _make_question(db_session, user, point, difficulty="hard", stem="困难题")
+    _put_learning_prefs(client, user, {"default_difficulty": "hard"})
+
+    response = client.post(
+        "/api/assistant/practice/sessions",
+        json={"knowledge_point_ids": [point.id]},
+        headers=_headers(user),
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["difficulty"] == "hard"
+    assert body["current_question"]["difficulty"] == "hard"
+
+
+def test_explicit_difficulty_overrides_learning_preference(
+    client: TestClient, db_session: Session, make_user: Callable[..., User]
+) -> None:
+    user = make_user()
+    point = _make_point(db_session, user)
+    _make_question(db_session, user, point, difficulty="easy", stem="简单题")
+    _make_question(db_session, user, point, difficulty="hard", stem="困难题")
+    _put_learning_prefs(client, user, {"default_difficulty": "hard"})
+
+    body = _start(client, user, point, difficulty="easy")
+
+    assert body["difficulty"] == "easy"
+    assert body["current_question"]["difficulty"] == "easy"

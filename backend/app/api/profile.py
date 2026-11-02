@@ -229,6 +229,7 @@ class LeaderboardEntryOut(BaseModel):
     division: str
     points: int
     avatarHue: int
+    avatarUrl: str | None = None
 
 
 def _today_local() -> date:
@@ -280,6 +281,10 @@ def _avatar_url(user: User) -> str | None:
     if not user.avatar_key:
         return None
     return build_storage().sign(user.avatar_key)
+
+
+def _privacy(user: User) -> dict[str, Any]:
+    return {**PREFERENCE_DEFAULTS["privacy"], **(user.privacy_prefs or {})}
 
 
 def _merged_jsonb(stored: dict | None, changes: dict[str, Any]) -> dict:
@@ -759,10 +764,18 @@ def get_leaderboard(
     scored.sort(key=lambda item: (-item[2], item[1], item[0]))
     response.headers["X-Total-Count"] = str(len(scored))
 
+    by_id = {row.id: row for row in rows}
     output: list[LeaderboardEntryOut] = []
     page = scored[offset : offset + limit]
     for absolute_rank, (user_id, name, score) in enumerate(page, start=offset + 1):
         tier, division = _tier_for(score)
+        entry_user = by_id[user_id]
+        privacy = _privacy(entry_user)
+        if (
+            privacy["leaderboard_anonymous"] is True
+            or privacy["name_visibility"] == "private"
+        ):
+            name = "匿名用户"
         output.append(
             LeaderboardEntryOut(
                 rank=absolute_rank,
@@ -772,6 +785,7 @@ def get_leaderboard(
                 division=division,
                 points=score,
                 avatarHue=_hue_for(user_id),
+                avatarUrl=_avatar_url(entry_user),
             )
         )
     return output

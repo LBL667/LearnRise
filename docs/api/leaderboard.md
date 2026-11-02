@@ -38,6 +38,7 @@
 | `division` | `string` | 是 |
 | `points` | `integer` | 是 |
 | `avatarHue` | `integer` | 是 |
+| `avatarUrl` | `string \| null` | 否 |
 
 #### 错误状态码
 

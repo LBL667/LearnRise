@@ -262,6 +262,7 @@ curl -X GET 'http://localhost:8000/api/competitions/{competition_id}' \
 | `name` | `string` | 是 |
 | `role` | `string` | 是 |
 | `avatarHue` | `integer` | 是 |
+| `avatarUrl` | `string \| null` | 否 |
 
 #### 错误状态码
 

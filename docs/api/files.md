@@ -3,13 +3,14 @@
 # files files
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：1。
+> 端点数量：2。
 
 ## 端点总览
 
 | 方法 | 路径 | 摘要 |
 |---|---|---|
 | `GET` | `/files/{path}` | Read Stored File |
+| `HEAD` | `/files/{path}` | Read Stored File |
 
 ## 端点详情
 
@@ -39,6 +40,35 @@
 
 ```bash
 curl -X GET 'http://localhost:8000/files/{path}' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `HEAD /files/{path}`
+
+- **标签**: `files`
+- **摘要**: Read Stored File
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `path` | `path` | `string` | 是 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| — | 无固定字段 | — |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X HEAD 'http://localhost:8000/files/{path}' \
   -H 'Authorization: Bearer $TOKEN'
 ```
 

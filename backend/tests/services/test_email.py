@@ -313,3 +313,27 @@ def test_email_contains_previews(
     for offset in range(1, 6):
         assert f"预览题目{offset}" in html
     assert "预览题目0" not in html
+
+
+def test_opted_out_user_is_never_selected(
+    smtp_server: CaptureHandler,
+    db_session: Session,
+    make_user: Callable[..., User],
+) -> None:
+    """``email_reminders_enabled=False`` produces no row and no mail."""
+    opted_out = make_user("退订用户")
+    opted_in = make_user("订阅用户")
+    opted_out.email_reminders_enabled = False
+    db_session.commit()
+    _make_card(db_session, opted_out, due_date=TEST_DAY, question="退订题目")
+    _make_card(db_session, opted_in, due_date=TEST_DAY, question="订阅题目")
+
+    result = run_reminders(now=NOW)
+
+    assert result["status"] == "ok"
+    assert _reminders(db_session, opted_out) == []
+    assert _envelopes_for(smtp_server, opted_out) == []
+    rows = _reminders(db_session, opted_in)
+    assert len(rows) == 1
+    assert rows[0].status == "sent"
+    assert len(_envelopes_for(smtp_server, opted_in)) == 1

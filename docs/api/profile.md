@@ -3,19 +3,56 @@
 # profile profile
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：5。
+> 端点数量：12。
 
 ## 端点总览
 
 | 方法 | 路径 | 摘要 |
 |---|---|---|
+| `POST` | `/api/profile/avatar` | Upload Avatar |
 | `GET` | `/api/profile/competition-records` | Get Competition Records |
 | `GET` | `/api/profile/info` | Get Profile Info |
-| `GET` | `/api/profile/settings` | Get Setting Groups |
+| `PUT` | `/api/profile/info` | Update Profile Info |
+| `PUT` | `/api/profile/password` | Update Password |
+| `GET` | `/api/profile/preferences` | Get Preferences |
+| `PUT` | `/api/profile/preferences/learning` | Update Learning Prefs |
+| `PUT` | `/api/profile/preferences/notifications` | Update Notification Prefs |
+| `PUT` | `/api/profile/preferences/privacy` | Update Privacy Prefs |
+| `PUT` | `/api/profile/preferences/ui` | Update Ui Prefs |
 | `GET` | `/api/profile/stats` | Get Profile Stats |
 | `GET` | `/api/profile/study-progress` | Get Study Progress |
 
 ## 端点详情
+
+### `POST /api/profile/avatar`
+
+- **标签**: `profile`
+- **摘要**: Upload Avatar
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`multipart/form-data`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `file` | `string(binary)` | 是 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `avatarUrl` | `string` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X POST 'http://localhost:8000/api/profile/avatar' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -F 'file=@/path/to/file'
+```
 
 ### `GET /api/profile/competition-records`
 
@@ -62,6 +99,9 @@ curl -X GET 'http://localhost:8000/api/profile/competition-records' \
 | `level` | `string` | 是 |
 | `joinedAt` | `string` | 是 |
 | `competitionCount` | `integer` | 是 |
+| `school` | `string \| null` | 否 |
+| `grade` | `string \| null` | 否 |
+| `avatarUrl` | `string \| null` | 否 |
 
 #### 错误状态码
 
@@ -74,22 +114,101 @@ curl -X GET 'http://localhost:8000/api/profile/info' \
   -H 'Authorization: Bearer $TOKEN'
 ```
 
-### `GET /api/profile/settings`
+### `PUT /api/profile/info`
 
 - **标签**: `profile`
-- **摘要**: Get Setting Groups
+- **摘要**: Update Profile Info
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `display_name` | `string \| null` | 否 | — |
+| `school` | `string \| null` | 否 | — |
+| `grade` | `string \| null` | 否 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `id` | `string` | 是 |
+| `name` | `string` | 是 |
+| `email` | `string` | 是 |
+| `avatarHue` | `integer` | 是 |
+| `level` | `string` | 是 |
+| `joinedAt` | `string` | 是 |
+| `competitionCount` | `integer` | 是 |
+| `school` | `string \| null` | 否 |
+| `grade` | `string \| null` | 否 |
+| `avatarUrl` | `string \| null` | 否 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X PUT 'http://localhost:8000/api/profile/info' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"display_name": "string", "grade": "string", "school": "string"}'
+```
+
+### `PUT /api/profile/password`
+
+- **标签**: `profile`
+- **摘要**: Update Password
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `current_password` | `string` | 是 | — |
+| `new_password` | `string` | 是 | — |
+
+#### 响应字段（204）
+
+无响应体。
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X PUT 'http://localhost:8000/api/profile/password' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"current_password": "string", "new_password": "string"}'
+```
+
+### `GET /api/profile/preferences`
+
+- **标签**: `profile`
+- **摘要**: Get Preferences
 - **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
 
 #### 响应字段（200）
 
 | 字段 | 类型 | 必填 |
 |---|---|---|
-| `title` | `string` | 是 |
-| `items` | `array<SettingItemOut>` | 是 |
-| `items[].label` | `string` | 是 |
-| `items[].description` | `string` | 是 |
-| `items[].icon` | `enum["user", "shield", "bell", "sliders", "monitor", "lock"]` | 是 |
-| `items[].value` | `string \| null` | 否 |
+| `notifications` | `NotificationPrefsOut` | 是 |
+| `notifications.email_reminders_enabled` | `boolean` | 是 |
+| `learning` | `LearningPrefsOut` | 是 |
+| `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
+| `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
+| `learning.default_quiz_num` | `integer` | 是 |
+| `ui` | `UiPrefsOut` | 是 |
+| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
+| `ui.sidebar_collapsed` | `boolean` | 是 |
+| `ui.compact_tables` | `boolean` | 是 |
+| `privacy` | `PrivacyPrefsOut` | 是 |
+| `privacy.leaderboard_anonymous` | `boolean` | 是 |
+| `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
 
 #### 错误状态码
 
@@ -98,8 +217,185 @@ curl -X GET 'http://localhost:8000/api/profile/info' \
 #### curl 示例
 
 ```bash
-curl -X GET 'http://localhost:8000/api/profile/settings' \
+curl -X GET 'http://localhost:8000/api/profile/preferences' \
   -H 'Authorization: Bearer $TOKEN'
+```
+
+### `PUT /api/profile/preferences/learning`
+
+- **标签**: `profile`
+- **摘要**: Update Learning Prefs
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `default_difficulty` | `enum["easy", "medium", "hard"] \| null` | 否 | — |
+| `default_question_types` | `array<enum["choice", "judge", "short_answer"]> \| null` | 否 | — |
+| `default_quiz_num` | `integer \| null` | 否 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `notifications` | `NotificationPrefsOut` | 是 |
+| `notifications.email_reminders_enabled` | `boolean` | 是 |
+| `learning` | `LearningPrefsOut` | 是 |
+| `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
+| `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
+| `learning.default_quiz_num` | `integer` | 是 |
+| `ui` | `UiPrefsOut` | 是 |
+| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
+| `ui.sidebar_collapsed` | `boolean` | 是 |
+| `ui.compact_tables` | `boolean` | 是 |
+| `privacy` | `PrivacyPrefsOut` | 是 |
+| `privacy.leaderboard_anonymous` | `boolean` | 是 |
+| `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X PUT 'http://localhost:8000/api/profile/preferences/learning' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"default_difficulty": "easy", "default_question_types": [], "default_quiz_num": 0}'
+```
+
+### `PUT /api/profile/preferences/notifications`
+
+- **标签**: `profile`
+- **摘要**: Update Notification Prefs
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `email_reminders_enabled` | `boolean \| null` | 否 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `notifications` | `NotificationPrefsOut` | 是 |
+| `notifications.email_reminders_enabled` | `boolean` | 是 |
+| `learning` | `LearningPrefsOut` | 是 |
+| `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
+| `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
+| `learning.default_quiz_num` | `integer` | 是 |
+| `ui` | `UiPrefsOut` | 是 |
+| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
+| `ui.sidebar_collapsed` | `boolean` | 是 |
+| `ui.compact_tables` | `boolean` | 是 |
+| `privacy` | `PrivacyPrefsOut` | 是 |
+| `privacy.leaderboard_anonymous` | `boolean` | 是 |
+| `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X PUT 'http://localhost:8000/api/profile/preferences/notifications' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"email_reminders_enabled": false}'
+```
+
+### `PUT /api/profile/preferences/privacy`
+
+- **标签**: `profile`
+- **摘要**: Update Privacy Prefs
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `leaderboard_anonymous` | `boolean \| null` | 否 | — |
+| `name_visibility` | `enum["public", "members", "private"] \| null` | 否 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `notifications` | `NotificationPrefsOut` | 是 |
+| `notifications.email_reminders_enabled` | `boolean` | 是 |
+| `learning` | `LearningPrefsOut` | 是 |
+| `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
+| `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
+| `learning.default_quiz_num` | `integer` | 是 |
+| `ui` | `UiPrefsOut` | 是 |
+| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
+| `ui.sidebar_collapsed` | `boolean` | 是 |
+| `ui.compact_tables` | `boolean` | 是 |
+| `privacy` | `PrivacyPrefsOut` | 是 |
+| `privacy.leaderboard_anonymous` | `boolean` | 是 |
+| `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X PUT 'http://localhost:8000/api/profile/preferences/privacy' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"leaderboard_anonymous": false, "name_visibility": "public"}'
+```
+
+### `PUT /api/profile/preferences/ui`
+
+- **标签**: `profile`
+- **摘要**: Update Ui Prefs
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 请求体字段（`application/json`）
+
+| 字段 | 类型 | 必填 | 默认值 |
+|---|---|---|---|
+| `theme` | `enum["light", "dark", "system"] \| null` | 否 | — |
+| `sidebar_collapsed` | `boolean \| null` | 否 | — |
+| `compact_tables` | `boolean \| null` | 否 | — |
+
+#### 响应字段（200）
+
+| 字段 | 类型 | 必填 |
+|---|---|---|
+| `notifications` | `NotificationPrefsOut` | 是 |
+| `notifications.email_reminders_enabled` | `boolean` | 是 |
+| `learning` | `LearningPrefsOut` | 是 |
+| `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
+| `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
+| `learning.default_quiz_num` | `integer` | 是 |
+| `ui` | `UiPrefsOut` | 是 |
+| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
+| `ui.sidebar_collapsed` | `boolean` | 是 |
+| `ui.compact_tables` | `boolean` | 是 |
+| `privacy` | `PrivacyPrefsOut` | 是 |
+| `privacy.leaderboard_anonymous` | `boolean` | 是 |
+| `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X PUT 'http://localhost:8000/api/profile/preferences/ui' \
+  -H 'Authorization: Bearer $TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"compact_tables": false, "sidebar_collapsed": false, "theme": "light"}'
 ```
 
 ### `GET /api/profile/stats`

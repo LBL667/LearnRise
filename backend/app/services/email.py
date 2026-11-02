@@ -268,6 +268,7 @@ def _run_locked(db: Session, moment: datetime) -> dict[str, object]:
         .where(
             ReviewCard.due_date.is_not(None),
             ReviewCard.due_date <= day,
+            User.email_reminders_enabled.is_(True),
         )
         .group_by(User.id)
         .order_by(User.id)

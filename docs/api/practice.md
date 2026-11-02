@@ -27,9 +27,9 @@
 | 字段 | 类型 | 必填 | 默认值 |
 |---|---|---|---|
 | `knowledge_point_ids` | `array<string>` | 是 | — |
-| `difficulty` | `enum["easy", "medium", "hard"]` | 否 | "easy" |
+| `difficulty` | `enum["easy", "medium", "hard"] \| null` | 否 | — |
 | `competition_id` | `string \| null` | 否 | — |
-| `count` | `integer` | 否 | 1 |
+| `count` | `integer \| null` | 否 | — |
 
 #### 响应字段（201）
 

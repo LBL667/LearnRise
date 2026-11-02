@@ -532,3 +532,41 @@ def test_create_rejects_end_time_more_than_two_years_away(
         "detail": "结束时间不能超过两年",
         "code": "VALIDATION_ERROR",
     }
+
+
+def test_members_respect_name_visibility_and_expose_avatar(
+    client: TestClient, db_session: Session, make_user: Callable[..., User]
+) -> None:
+    owner = make_user("队长")
+    public_user = make_user("公开队员")
+    members_user = make_user("成员队员")
+    private_user = make_user("私密队员")
+    headers = _login(client, owner)
+    competition = _create_competition(client, headers)
+    for user in (public_user, members_user, private_user):
+        joined = client.post(
+            "/api/competitions/join",
+            json={"invite_code": competition["inviteCode"]},
+            headers=_login(client, user),
+        )
+        assert joined.status_code == 200, joined.text
+
+    members_user.privacy_prefs = {"name_visibility": "members"}
+    private_user.privacy_prefs = {"name_visibility": "private"}
+    private_user.avatar_key = f"avatars/{private_user.id}/avatar.png"
+    db_session.commit()
+
+    response = client.get(
+        f"/api/competitions/{competition['id']}/members", headers=headers
+    )
+
+    assert response.status_code == 200, response.text
+    entries = {entry["userId"]: entry for entry in response.json()}
+    assert entries[owner.id]["name"] == "队长"
+    assert entries[public_user.id]["name"] == "公开队员"
+    assert entries[members_user.id]["name"] == "成员队员"
+    assert entries[private_user.id]["name"] == "已隐藏"
+    avatar_url = entries[private_user.id]["avatarUrl"]
+    assert avatar_url is not None
+    assert avatar_url.endswith(f"/files/avatars/{private_user.id}/avatar.png")
+    assert entries[public_user.id]["avatarUrl"] is None

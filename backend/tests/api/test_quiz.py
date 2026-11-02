@@ -509,3 +509,79 @@ def test_num_distribution(
     for row in rows:
         counts[row.knowledge_point_id] += 1
     assert counts == {first.id: 2, second.id: 2}
+
+
+def _put_learning_prefs(client: TestClient, user: User, body: dict[str, Any]) -> None:
+    response = client.put(
+        "/api/profile/preferences/learning", json=body, headers=_headers(user)
+    )
+    assert response.status_code == 200, response.text
+
+
+def test_generate_uses_learning_preferences_when_fields_omitted(
+    client: TestClient,
+    db_session: Session,
+    make_user: Callable[..., User],
+    patch_quiz: PatchQuiz,
+) -> None:
+    user = make_user()
+    source = _make_source(db_session, user)
+    point = _make_kp(db_session, user, source)
+    _put_learning_prefs(
+        client,
+        user,
+        {
+            "default_difficulty": "hard",
+            "default_question_types": ["short_answer"],
+            "default_quiz_num": 2,
+        },
+    )
+    items = [_short(f"解析 {index}") for index in range(2)]
+    fake, _embedder, _store = patch_quiz.apply([_payload(items)], source)
+
+    response = client.post(
+        "/api/quiz/generate",
+        json={"knowledge_point_ids": [point.id]},
+        headers=_headers(user),
+    )
+
+    assert response.status_code == 201, response.text
+    created = response.json()["created"]
+    assert len(created) == 2
+    assert {item["type"] for item in created} == {"short_answer"}
+    prompt = "\n".join(message.content for message in fake.calls[0])
+    assert "2 道简答题" in prompt
+    assert "难度 hard" in prompt
+
+
+def test_explicit_generate_params_override_learning_preferences(
+    client: TestClient,
+    db_session: Session,
+    make_user: Callable[..., User],
+    patch_quiz: PatchQuiz,
+) -> None:
+    user = make_user()
+    source = _make_source(db_session, user)
+    point = _make_kp(db_session, user, source)
+    _put_learning_prefs(
+        client,
+        user,
+        {
+            "default_difficulty": "hard",
+            "default_question_types": ["short_answer"],
+            "default_quiz_num": 2,
+        },
+    )
+    fake, _embedder, _store = patch_quiz.apply([_payload([_choice()])], source)
+
+    response = _post(
+        client, user, kp_ids=[point.id], qtype="choice", num=1, difficulty="easy"
+    )
+
+    assert response.status_code == 201, response.text
+    created = response.json()["created"]
+    assert len(created) == 1
+    assert created[0]["type"] == "choice"
+    prompt = "\n".join(message.content for message in fake.calls[0])
+    assert "1 道选择题" in prompt
+    assert "难度 easy" in prompt

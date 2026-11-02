@@ -606,6 +606,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Avatar */
+        post: operations["upload_avatar_api_profile_avatar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/competition-records": {
         parameters: {
             query?: never;
@@ -632,6 +649,41 @@ export interface paths {
         };
         /** Get Profile Info */
         get: operations["get_profile_info_api_profile_info_get"];
+        /** Update Profile Info */
+        put: operations["update_profile_info_api_profile_info_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Password */
+        put: operations["update_password_api_profile_password_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Preferences */
+        get: operations["get_preferences_api_profile_preferences_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -640,16 +692,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/profile/settings": {
+    "/api/profile/preferences/learning": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Setting Groups */
-        get: operations["get_setting_groups_api_profile_settings_get"];
-        put?: never;
+        get?: never;
+        /** Update Learning Prefs */
+        put: operations["update_learning_prefs_api_profile_preferences_learning_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/preferences/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Notification Prefs */
+        put: operations["update_notification_prefs_api_profile_preferences_notifications_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/preferences/privacy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Privacy Prefs */
+        put: operations["update_privacy_prefs_api_profile_preferences_privacy_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/preferences/ui": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Ui Prefs */
+        put: operations["update_ui_prefs_api_profile_preferences_ui_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1028,7 +1131,8 @@ export interface paths {
         post?: never;
         delete?: never;
         options?: never;
-        head?: never;
+        /** Read Stored File */
+        head: operations["read_stored_file_files__path__get"];
         patch?: never;
         trace?: never;
     };
@@ -1186,6 +1290,16 @@ export interface components {
             id: string;
             /** Response Time Ms */
             response_time_ms: number | null;
+        };
+        /** AvatarUploadOut */
+        AvatarUploadOut: {
+            /** Avatarurl */
+            avatarUrl: string;
+        };
+        /** Body_upload_avatar_api_profile_avatar_post */
+        Body_upload_avatar_api_profile_avatar_post: {
+            /** File */
+            file: string;
         };
         /** Body_upload_reward_image_api_uploads_reward_image_post */
         Body_upload_reward_image_api_uploads_reward_image_post: {
@@ -1689,6 +1803,8 @@ export interface components {
         LeaderboardEntryOut: {
             /** Avatarhue */
             avatarHue: number;
+            /** Avatarurl */
+            avatarUrl?: string | null;
             /** Division */
             division: string;
             /** Name */
@@ -1701,6 +1817,27 @@ export interface components {
             tier: string;
             /** Userid */
             userId: string;
+        };
+        /** LearningPrefsOut */
+        LearningPrefsOut: {
+            /**
+             * Default Difficulty
+             * @enum {string}
+             */
+            default_difficulty: "easy" | "medium" | "hard";
+            /** Default Question Types */
+            default_question_types: ("choice" | "judge" | "short_answer")[];
+            /** Default Quiz Num */
+            default_quiz_num: number;
+        };
+        /** LearningPrefsUpdate */
+        LearningPrefsUpdate: {
+            /** Default Difficulty */
+            default_difficulty?: ("easy" | "medium" | "hard") | null;
+            /** Default Question Types */
+            default_question_types?: ("choice" | "judge" | "short_answer")[] | null;
+            /** Default Quiz Num */
+            default_quiz_num?: number | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1716,6 +1853,8 @@ export interface components {
         MemberOut: {
             /** Avatarhue */
             avatarHue: number;
+            /** Avatarurl */
+            avatarUrl?: string | null;
             /** Id */
             id: string;
             /** Name */
@@ -1766,12 +1905,29 @@ export interface components {
             /** Source Id */
             source_id: string;
         };
+        /** NotificationPrefsOut */
+        NotificationPrefsOut: {
+            /** Email Reminders Enabled */
+            email_reminders_enabled: boolean;
+        };
+        /** NotificationPrefsUpdate */
+        NotificationPrefsUpdate: {
+            /** Email Reminders Enabled */
+            email_reminders_enabled?: boolean | null;
+        };
         /** OptionOut */
         OptionOut: {
             /** Key */
             key: string;
             /** Text */
             text: string;
+        };
+        /** PasswordUpdate */
+        PasswordUpdate: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
         };
         /** PlanOut */
         PlanOut: {
@@ -1788,14 +1944,42 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** PreferencesOut */
+        PreferencesOut: {
+            learning: components["schemas"]["LearningPrefsOut"];
+            notifications: components["schemas"]["NotificationPrefsOut"];
+            privacy: components["schemas"]["PrivacyPrefsOut"];
+            ui: components["schemas"]["UiPrefsOut"];
+        };
+        /** PrivacyPrefsOut */
+        PrivacyPrefsOut: {
+            /** Leaderboard Anonymous */
+            leaderboard_anonymous: boolean;
+            /**
+             * Name Visibility
+             * @enum {string}
+             */
+            name_visibility: "public" | "members" | "private";
+        };
+        /** PrivacyPrefsUpdate */
+        PrivacyPrefsUpdate: {
+            /** Leaderboard Anonymous */
+            leaderboard_anonymous?: boolean | null;
+            /** Name Visibility */
+            name_visibility?: ("public" | "members" | "private") | null;
+        };
         /** ProfileInfoOut */
         ProfileInfoOut: {
             /** Avatarhue */
             avatarHue: number;
+            /** Avatarurl */
+            avatarUrl?: string | null;
             /** Competitioncount */
             competitionCount: number;
             /** Email */
             email: string;
+            /** Grade */
+            grade?: string | null;
             /** Id */
             id: string;
             /** Joinedat */
@@ -1804,6 +1988,26 @@ export interface components {
             level: string;
             /** Name */
             name: string;
+            /** School */
+            school?: string | null;
+        };
+        /**
+         * ProfileInfoUpdate
+         * @description PATCH-style body for :func:`update_profile_info`.
+         *
+         *     Only fields present in the request are applied (``exclude_unset``). An
+         *     explicit ``null`` on ``school`` / ``grade`` clears it; an explicit ``null``
+         *     (or blank) ``display_name`` leaves the current value untouched because the
+         *     column is non-nullable and drives the display fallback to the email local
+         *     part.
+         */
+        ProfileInfoUpdate: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Grade */
+            grade?: string | null;
+            /** School */
+            school?: string | null;
         };
         /** ProfileStatOut */
         ProfileStatOut: {
@@ -1837,12 +2041,9 @@ export interface components {
             /** Knowledge Point Ids */
             knowledge_point_ids?: string[];
             /** Num */
-            num: number;
-            /**
-             * Type
-             * @enum {string}
-             */
-            type: "choice" | "judge" | "short_answer";
+            num?: number | null;
+            /** Type */
+            type?: ("choice" | "judge" | "short_answer") | null;
         };
         /** QuizGenerateResponse */
         QuizGenerateResponse: {
@@ -2093,17 +2294,10 @@ export interface components {
         SessionCreate: {
             /** Competition Id */
             competition_id?: string | null;
-            /**
-             * Count
-             * @default 1
-             */
-            count: number;
-            /**
-             * Difficulty
-             * @default easy
-             * @enum {string}
-             */
-            difficulty: "easy" | "medium" | "hard";
+            /** Count */
+            count?: number | null;
+            /** Difficulty */
+            difficulty?: ("easy" | "medium" | "hard") | null;
             /** Knowledge Point Ids */
             knowledge_point_ids: string[];
         };
@@ -2146,27 +2340,6 @@ export interface components {
             session_id: string;
             /** Status */
             status: string;
-        };
-        /** SettingGroupOut */
-        SettingGroupOut: {
-            /** Items */
-            items: components["schemas"]["SettingItemOut"][];
-            /** Title */
-            title: string;
-        };
-        /** SettingItemOut */
-        SettingItemOut: {
-            /** Description */
-            description: string;
-            /**
-             * Icon
-             * @enum {string}
-             */
-            icon: "user" | "shield" | "bell" | "sliders" | "monitor" | "lock";
-            /** Label */
-            label: string;
-            /** Value */
-            value?: string | null;
         };
         /** SourceChunkOut */
         SourceChunkOut: {
@@ -2296,6 +2469,27 @@ export interface components {
             heading?: string | null;
             /** Page */
             page?: number | null;
+        };
+        /** UiPrefsOut */
+        UiPrefsOut: {
+            /** Compact Tables */
+            compact_tables: boolean;
+            /** Sidebar Collapsed */
+            sidebar_collapsed: boolean;
+            /**
+             * Theme
+             * @enum {string}
+             */
+            theme: "light" | "dark" | "system";
+        };
+        /** UiPrefsUpdate */
+        UiPrefsUpdate: {
+            /** Compact Tables */
+            compact_tables?: boolean | null;
+            /** Sidebar Collapsed */
+            sidebar_collapsed?: boolean | null;
+            /** Theme */
+            theme?: ("light" | "dark" | "system") | null;
         };
         /** UploadAccepted */
         UploadAccepted: {
@@ -3800,6 +3994,39 @@ export interface operations {
             };
         };
     };
+    upload_avatar_api_profile_avatar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_avatar_api_profile_avatar_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvatarUploadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_competition_records_api_profile_competition_records_get: {
         parameters: {
             query?: never;
@@ -3840,7 +4067,71 @@ export interface operations {
             };
         };
     };
-    get_setting_groups_api_profile_settings_get: {
+    update_profile_info_api_profile_info_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileInfoUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileInfoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_password_api_profile_password_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_preferences_api_profile_preferences_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3855,7 +4146,139 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SettingGroupOut"][];
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+        };
+    };
+    update_learning_prefs_api_profile_preferences_learning_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearningPrefsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_notification_prefs_api_profile_preferences_notifications_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPrefsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_privacy_prefs_api_profile_preferences_privacy_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrivacyPrefsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ui_prefs_api_profile_preferences_ui_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UiPrefsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -4517,6 +4940,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_stored_file_files__path__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
             };
             /** @description Validation Error */
             422: {

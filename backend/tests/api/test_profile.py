@@ -426,3 +426,53 @@ def test_leaderboard_paginates_with_global_rank(
     assert second_page.status_code == 200, second_page.text
     assert second_page.headers["X-Total-Count"] == "3"
     assert [entry["rank"] for entry in second_page.json()] == [3]
+
+
+def _put_privacy(client: TestClient, user: User, body: dict) -> None:
+    response = client.put(
+        "/api/profile/preferences/privacy", json=body, headers=_headers(user)
+    )
+    assert response.status_code == 200, response.text
+
+
+def test_leaderboard_masks_anonymous_and_private_names(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    leader = make_user("队长")
+    second = make_user("队员乙")
+    competition = _create_competition(client, leader, "匿名竞赛")
+    _join(client, second, competition["inviteCode"])
+    _put_privacy(client, leader, {"leaderboard_anonymous": True})
+    _put_privacy(client, second, {"name_visibility": "private"})
+
+    response = client.get(
+        f"/api/leaderboard/{competition['id']}", headers=_headers(leader)
+    )
+
+    assert response.status_code == 200, response.text
+    names = {entry["userId"]: entry["name"] for entry in response.json()}
+    assert names[leader.id] == "匿名用户"
+    assert names[second.id] == "匿名用户"
+
+
+def test_leaderboard_exposes_avatar_url(
+    client: TestClient, db_session: Session, make_user: Callable[..., User]
+) -> None:
+    leader = make_user("队长")
+    second = make_user("队员乙")
+    competition = _create_competition(client, leader, "头像竞赛")
+    _join(client, second, competition["inviteCode"])
+    leader.avatar_key = f"avatars/{leader.id}/avatar.png"
+    db_session.commit()
+
+    response = client.get(
+        f"/api/leaderboard/{competition['id']}", headers=_headers(leader)
+    )
+
+    assert response.status_code == 200, response.text
+    entries = {entry["userId"]: entry for entry in response.json()}
+    avatar_url = entries[leader.id]["avatarUrl"]
+    assert avatar_url is not None
+    assert avatar_url.endswith(f"/files/avatars/{leader.id}/avatar.png")
+    assert entries[second.id]["avatarUrl"] is None
+    assert entries[leader.id]["name"] == "队长"

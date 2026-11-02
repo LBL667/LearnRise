@@ -379,6 +379,33 @@
         "title": "AttemptOut",
         "type": "object"
       },
+      "AvatarUploadOut": {
+        "properties": {
+          "avatarUrl": {
+            "title": "Avatarurl",
+            "type": "string"
+          }
+        },
+        "required": [
+          "avatarUrl"
+        ],
+        "title": "AvatarUploadOut",
+        "type": "object"
+      },
+      "Body_upload_avatar_api_profile_avatar_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_avatar_api_profile_avatar_post",
+        "type": "object"
+      },
       "Body_upload_reward_image_api_uploads_reward_image_post": {
         "properties": {
           "file": {
@@ -1647,6 +1674,17 @@
             "title": "Avatarhue",
             "type": "integer"
           },
+          "avatarUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatarurl"
+          },
           "division": {
             "title": "Division",
             "type": "string"
@@ -1684,6 +1722,97 @@
         "title": "LeaderboardEntryOut",
         "type": "object"
       },
+      "LearningPrefsOut": {
+        "properties": {
+          "default_difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Default Difficulty",
+            "type": "string"
+          },
+          "default_question_types": {
+            "items": {
+              "enum": [
+                "choice",
+                "judge",
+                "short_answer"
+              ],
+              "type": "string"
+            },
+            "title": "Default Question Types",
+            "type": "array"
+          },
+          "default_quiz_num": {
+            "title": "Default Quiz Num",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "default_difficulty",
+          "default_question_types",
+          "default_quiz_num"
+        ],
+        "title": "LearningPrefsOut",
+        "type": "object"
+      },
+      "LearningPrefsUpdate": {
+        "properties": {
+          "default_difficulty": {
+            "anyOf": [
+              {
+                "enum": [
+                  "easy",
+                  "medium",
+                  "hard"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Difficulty"
+          },
+          "default_question_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "choice",
+                    "judge",
+                    "short_answer"
+                  ],
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Question Types"
+          },
+          "default_quiz_num": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Quiz Num"
+          }
+        },
+        "title": "LearningPrefsUpdate",
+        "type": "object"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -1708,6 +1837,17 @@
           "avatarHue": {
             "title": "Avatarhue",
             "type": "integer"
+          },
+          "avatarUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatarurl"
           },
           "id": {
             "title": "Id",
@@ -1857,6 +1997,36 @@
         "title": "NotesResponse",
         "type": "object"
       },
+      "NotificationPrefsOut": {
+        "properties": {
+          "email_reminders_enabled": {
+            "title": "Email Reminders Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "email_reminders_enabled"
+        ],
+        "title": "NotificationPrefsOut",
+        "type": "object"
+      },
+      "NotificationPrefsUpdate": {
+        "properties": {
+          "email_reminders_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Reminders Enabled"
+          }
+        },
+        "title": "NotificationPrefsUpdate",
+        "type": "object"
+      },
       "OptionOut": {
         "properties": {
           "key": {
@@ -1873,6 +2043,26 @@
           "text"
         ],
         "title": "OptionOut",
+        "type": "object"
+      },
+      "PasswordUpdate": {
+        "properties": {
+          "current_password": {
+            "title": "Current Password",
+            "type": "string"
+          },
+          "new_password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "New Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "PasswordUpdate",
         "type": "object"
       },
       "PlanOut": {
@@ -1911,11 +2101,102 @@
         "title": "PlanOut",
         "type": "object"
       },
+      "PreferencesOut": {
+        "properties": {
+          "learning": {
+            "$ref": "#/components/schemas/LearningPrefsOut"
+          },
+          "notifications": {
+            "$ref": "#/components/schemas/NotificationPrefsOut"
+          },
+          "privacy": {
+            "$ref": "#/components/schemas/PrivacyPrefsOut"
+          },
+          "ui": {
+            "$ref": "#/components/schemas/UiPrefsOut"
+          }
+        },
+        "required": [
+          "notifications",
+          "learning",
+          "ui",
+          "privacy"
+        ],
+        "title": "PreferencesOut",
+        "type": "object"
+      },
+      "PrivacyPrefsOut": {
+        "properties": {
+          "leaderboard_anonymous": {
+            "title": "Leaderboard Anonymous",
+            "type": "boolean"
+          },
+          "name_visibility": {
+            "enum": [
+              "public",
+              "members",
+              "private"
+            ],
+            "title": "Name Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "leaderboard_anonymous",
+          "name_visibility"
+        ],
+        "title": "PrivacyPrefsOut",
+        "type": "object"
+      },
+      "PrivacyPrefsUpdate": {
+        "properties": {
+          "leaderboard_anonymous": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leaderboard Anonymous"
+          },
+          "name_visibility": {
+            "anyOf": [
+              {
+                "enum": [
+                  "public",
+                  "members",
+                  "private"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Visibility"
+          }
+        },
+        "title": "PrivacyPrefsUpdate",
+        "type": "object"
+      },
       "ProfileInfoOut": {
         "properties": {
           "avatarHue": {
             "title": "Avatarhue",
             "type": "integer"
+          },
+          "avatarUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatarurl"
           },
           "competitionCount": {
             "title": "Competitioncount",
@@ -1924,6 +2205,17 @@
           "email": {
             "title": "Email",
             "type": "string"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade"
           },
           "id": {
             "title": "Id",
@@ -1940,6 +2232,17 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
           }
         },
         "required": [
@@ -1952,6 +2255,50 @@
           "competitionCount"
         ],
         "title": "ProfileInfoOut",
+        "type": "object"
+      },
+      "ProfileInfoUpdate": {
+        "description": "PATCH-style body for :func:`update_profile_info`.\n\nOnly fields present in the request are applied (``exclude_unset``). An\nexplicit ``null`` on ``school`` / ``grade`` clears it; an explicit ``null``\n(or blank) ``display_name`` leaves the current value untouched because the\ncolumn is non-nullable and drives the display fallback to the email local\npart.",
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          }
+        },
+        "title": "ProfileInfoUpdate",
         "type": "object"
       },
       "ProfileStatOut": {
@@ -2048,23 +2395,33 @@
             "type": "array"
           },
           "num": {
-            "title": "Num",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num"
           },
           "type": {
-            "enum": [
-              "choice",
-              "judge",
-              "short_answer"
+            "anyOf": [
+              {
+                "enum": [
+                  "choice",
+                  "judge",
+                  "short_answer"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Type",
-            "type": "string"
+            "title": "Type"
           }
         },
-        "required": [
-          "type",
-          "num"
-        ],
         "title": "QuizGenerateRequest",
         "type": "object"
       },
@@ -2751,21 +3108,33 @@
             "title": "Competition Id"
           },
           "count": {
-            "default": 1,
-            "maximum": 50.0,
-            "minimum": 1.0,
-            "title": "Count",
-            "type": "integer"
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
           },
           "difficulty": {
-            "default": "easy",
-            "enum": [
-              "easy",
-              "medium",
-              "hard"
+            "anyOf": [
+              {
+                "enum": [
+                  "easy",
+                  "medium",
+                  "hard"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Difficulty",
-            "type": "string"
+            "title": "Difficulty"
           },
           "knowledge_point_ids": {
             "items": {
@@ -2903,69 +3272,6 @@
           "progress"
         ],
         "title": "SessionStartOut",
-        "type": "object"
-      },
-      "SettingGroupOut": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/SettingItemOut"
-            },
-            "title": "Items",
-            "type": "array"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "items"
-        ],
-        "title": "SettingGroupOut",
-        "type": "object"
-      },
-      "SettingItemOut": {
-        "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "icon": {
-            "enum": [
-              "user",
-              "shield",
-              "bell",
-              "sliders",
-              "monitor",
-              "lock"
-            ],
-            "title": "Icon",
-            "type": "string"
-          },
-          "label": {
-            "title": "Label",
-            "type": "string"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          }
-        },
-        "required": [
-          "label",
-          "description",
-          "icon"
-        ],
-        "title": "SettingItemOut",
         "type": "object"
       },
       "SourceChunkOut": {
@@ -3308,6 +3614,78 @@
           "content"
         ],
         "title": "TrialSourceChunkOut",
+        "type": "object"
+      },
+      "UiPrefsOut": {
+        "properties": {
+          "compact_tables": {
+            "title": "Compact Tables",
+            "type": "boolean"
+          },
+          "sidebar_collapsed": {
+            "title": "Sidebar Collapsed",
+            "type": "boolean"
+          },
+          "theme": {
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ],
+            "title": "Theme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theme",
+          "sidebar_collapsed",
+          "compact_tables"
+        ],
+        "title": "UiPrefsOut",
+        "type": "object"
+      },
+      "UiPrefsUpdate": {
+        "properties": {
+          "compact_tables": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compact Tables"
+          },
+          "sidebar_collapsed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Collapsed"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
+          }
+        },
+        "title": "UiPrefsUpdate",
         "type": "object"
       },
       "UploadAccepted": {
@@ -5878,6 +6256,52 @@
         ]
       }
     },
+    "/api/profile/avatar": {
+      "post": {
+        "operationId": "upload_avatar_api_profile_avatar_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_avatar_api_profile_avatar_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarUploadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Upload Avatar",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
     "/api/profile/competition-records": {
       "get": {
         "operationId": "get_competition_records_api_profile_competition_records_get",
@@ -5932,21 +6356,100 @@
         "tags": [
           "profile"
         ]
-      }
-    },
-    "/api/profile/settings": {
-      "get": {
-        "operationId": "get_setting_groups_api_profile_settings_get",
+      },
+      "put": {
+        "operationId": "update_profile_info_api_profile_info_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileInfoUpdate"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SettingGroupOut"
-                  },
-                  "title": "Response Get Setting Groups Api Profile Settings Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/ProfileInfoOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Profile Info",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/password": {
+      "put": {
+        "operationId": "update_password_api_profile_password_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Password",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/preferences": {
+      "get": {
+        "operationId": "get_preferences_api_profile_preferences_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesOut"
                 }
               }
             },
@@ -5958,7 +6461,191 @@
             "OAuth2PasswordBearer": []
           }
         ],
-        "summary": "Get Setting Groups",
+        "summary": "Get Preferences",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/preferences/learning": {
+      "put": {
+        "operationId": "update_learning_prefs_api_profile_preferences_learning_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningPrefsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Learning Prefs",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/preferences/notifications": {
+      "put": {
+        "operationId": "update_notification_prefs_api_profile_preferences_notifications_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPrefsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Notification Prefs",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/preferences/privacy": {
+      "put": {
+        "operationId": "update_privacy_prefs_api_profile_preferences_privacy_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivacyPrefsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Privacy Prefs",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/preferences/ui": {
+      "put": {
+        "operationId": "update_ui_prefs_api_profile_preferences_ui_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UiPrefsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Ui Prefs",
         "tags": [
           "profile"
         ]
@@ -7105,6 +7792,49 @@
     },
     "/files/{path}": {
       "get": {
+        "operationId": "read_stored_file_files__path__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Stored File",
+        "tags": [
+          "files"
+        ]
+      },
+      "head": {
         "operationId": "read_stored_file_files__path__get",
         "parameters": [
           {

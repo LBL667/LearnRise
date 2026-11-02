@@ -67,11 +67,11 @@ def _not_found() -> CodedHTTPException:
 
 class SessionCreate(BaseModel):
     knowledge_point_ids: list[str] = Field(min_length=1)
-    difficulty: Difficulty = "easy"
+    difficulty: Difficulty | None = None
     competition_id: str | None = None
     # Client-side hint kept for contract symmetry; the loop is server-driven and
     # bounded by ``PRACTICE_MAX_ITEMS`` regardless of this value.
-    count: int = Field(default=1, ge=1, le=PRACTICE_MAX_ITEMS)
+    count: int | None = Field(default=None, ge=1, le=PRACTICE_MAX_ITEMS)
 
 
 class AnswerIn(BaseModel):
@@ -317,13 +317,18 @@ def create_session(
     if payload.competition_id is not None:
         resolve_scope(db, user, payload.competition_id)
 
+    prefs = user.learning_prefs or {}
+    difficulty = payload.difficulty or prefs.get("default_difficulty") or "easy"
+    count = payload.count or prefs.get("default_quiz_num") or 1
+    count = max(1, min(int(count), PRACTICE_MAX_ITEMS))
+
     points = _load_visible_points(db, user, payload.knowledge_point_ids)
     point_ids = [point.id for point in points]
 
     question = _pick_question(
         db,
         knowledge_point_ids=point_ids,
-        difficulty=payload.difficulty,
+        difficulty=difficulty,
         exclude_ids=[],
     )
     if question is None:
@@ -336,7 +341,7 @@ def create_session(
     session = PracticeSession(
         user_id=user.id,
         competition_id=payload.competition_id,
-        difficulty=payload.difficulty,
+        difficulty=difficulty,
         status="active",
     )
     try:
