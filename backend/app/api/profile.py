@@ -13,8 +13,8 @@ Profile aggregates are computed with SQL counts/means (no fixture constants):
   and the current review streak;
 * ``competition-records`` -- memberships joined to competitions;
 * ``study-progress`` -- knowledge-point / review-card / trial completion;
-* ``settings`` -- the static preference catalogue served by the API so the
-  frontend no longer imports it from mock data;
+* ``preferences`` -- the four preference groups (notifications / learning /
+  ui / privacy), merged from the user row and its JSONB columns;
 * ``leaderboard`` -- members ordered by ``10 * correct answers + 4 * reviews``
   inside the competition, with a contiguous server-side ``rank``.
 """
@@ -55,7 +55,20 @@ profile_router = APIRouter(prefix="/api/profile", tags=["profile"])
 leaderboard_router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
 
 TONE = Literal["primary", "success", "warning", "violet"]
-SETTING_ICON = Literal["user", "shield", "bell", "sliders", "monitor", "lock"]
+DIFFICULTY = Literal["easy", "medium", "hard"]
+QUESTION_TYPE = Literal["choice", "judge", "short_answer"]
+THEME = Literal["light", "dark", "system"]
+NAME_VISIBILITY = Literal["public", "members", "private"]
+
+PREFERENCE_DEFAULTS: dict[str, dict[str, Any]] = {
+    "learning": {
+        "default_difficulty": "medium",
+        "default_question_types": ["choice"],
+        "default_quiz_num": 5,
+    },
+    "ui": {"theme": "light", "sidebar_collapsed": False, "compact_tables": False},
+    "privacy": {"leaderboard_anonymous": False, "name_visibility": "public"},
+}
 
 NOT_FOUND_DETAIL = "资源不存在"
 INVALID_CURRENT_PASSWORD_DETAIL = "当前密码不正确"
@@ -144,16 +157,53 @@ class StudyProgressOut(BaseModel):
     percent: int
 
 
-class SettingItemOut(BaseModel):
-    label: str
-    description: str
-    icon: SETTING_ICON
-    value: str | None = None
+class NotificationPrefsUpdate(BaseModel):
+    email_reminders_enabled: bool | None = None
 
 
-class SettingGroupOut(BaseModel):
-    title: str
-    items: list[SettingItemOut]
+class LearningPrefsUpdate(BaseModel):
+    default_difficulty: DIFFICULTY | None = None
+    default_question_types: list[QUESTION_TYPE] | None = Field(default=None, min_length=1)
+    default_quiz_num: int | None = Field(default=None, ge=1, le=20)
+
+
+class UiPrefsUpdate(BaseModel):
+    theme: THEME | None = None
+    sidebar_collapsed: bool | None = None
+    compact_tables: bool | None = None
+
+
+class PrivacyPrefsUpdate(BaseModel):
+    leaderboard_anonymous: bool | None = None
+    name_visibility: NAME_VISIBILITY | None = None
+
+
+class NotificationPrefsOut(BaseModel):
+    email_reminders_enabled: bool
+
+
+class LearningPrefsOut(BaseModel):
+    default_difficulty: DIFFICULTY
+    default_question_types: list[QUESTION_TYPE]
+    default_quiz_num: int
+
+
+class UiPrefsOut(BaseModel):
+    theme: THEME
+    sidebar_collapsed: bool
+    compact_tables: bool
+
+
+class PrivacyPrefsOut(BaseModel):
+    leaderboard_anonymous: bool
+    name_visibility: NAME_VISIBILITY
+
+
+class PreferencesOut(BaseModel):
+    notifications: NotificationPrefsOut
+    learning: LearningPrefsOut
+    ui: UiPrefsOut
+    privacy: PrivacyPrefsOut
 
 
 class LeaderboardEntryOut(BaseModel):
@@ -215,6 +265,24 @@ def _avatar_url(user: User) -> str | None:
     if not user.avatar_key:
         return None
     return build_storage().sign(user.avatar_key)
+
+
+def _merged_jsonb(stored: dict | None, changes: dict[str, Any]) -> dict:
+    return {**(stored or {}), **changes}
+
+
+def _preferences_payload(db: Session, user: User) -> PreferencesOut:
+    learning = {**PREFERENCE_DEFAULTS["learning"], **(user.learning_prefs or {})}
+    ui = {**PREFERENCE_DEFAULTS["ui"], **(user.ui_prefs or {})}
+    privacy = {**PREFERENCE_DEFAULTS["privacy"], **(user.privacy_prefs or {})}
+    return PreferencesOut(
+        notifications=NotificationPrefsOut(
+            email_reminders_enabled=user.email_reminders_enabled
+        ),
+        learning=LearningPrefsOut(**learning),
+        ui=UiPrefsOut(**ui),
+        privacy=PrivacyPrefsOut(**privacy),
+    )
 
 
 def _profile_info(db: Session, user: User) -> ProfileInfoOut:
@@ -539,52 +607,57 @@ def get_study_progress(db: DbSession, user: CurrentUser) -> list[StudyProgressOu
     ]
 
 
-@profile_router.get("/settings", response_model=list[SettingGroupOut])
-def get_setting_groups(user: CurrentUser) -> list[SettingGroupOut]:
-    return [
-        SettingGroupOut(
-            title="账号设置",
-            items=[
-                SettingItemOut(
-                    label="基本信息",
-                    description="修改昵称、学校、年级等个人信息",
-                    icon="user",
-                    value=_display_name(user),
-                ),
-                SettingItemOut(
-                    label="安全设置",
-                    description="修改密码、绑定邮箱、账号安全",
-                    icon="shield",
-                    value=user.email,
-                ),
-                SettingItemOut(
-                    label="通知设置",
-                    description="管理系统通知、邮件提醒",
-                    icon="bell",
-                ),
-            ],
-        ),
-        SettingGroupOut(
-            title="偏好设置",
-            items=[
-                SettingItemOut(
-                    label="学习偏好",
-                    description="选择感兴趣的学科方向和难度范围",
-                    icon="sliders",
-                ),
-                SettingItemOut(
-                    label="界面设置",
-                    description="调整网站主题、显示偏好",
-                    icon="monitor",
-                ),
-                SettingItemOut(
-                    label="隐私设置",
-                    description="管理个人资料的可见范围",
-                    icon="lock",
-                ),
-            ],
-        ),
-    ]
+@profile_router.get("/preferences", response_model=PreferencesOut)
+def get_preferences(db: DbSession, user: CurrentUser) -> PreferencesOut:
+    return _preferences_payload(db, user)
+
+
+@profile_router.put("/preferences/notifications", response_model=PreferencesOut)
+def update_notification_prefs(
+    payload: NotificationPrefsUpdate, db: DbSession, user: CurrentUser
+) -> PreferencesOut:
+    changes = payload.model_dump(exclude_unset=True, exclude_none=True)
+    if "email_reminders_enabled" in changes:
+        user.email_reminders_enabled = bool(changes["email_reminders_enabled"])
+        db.commit()
+        db.refresh(user)
+    return _preferences_payload(db, user)
+
+
+@profile_router.put("/preferences/learning", response_model=PreferencesOut)
+def update_learning_prefs(
+    payload: LearningPrefsUpdate, db: DbSession, user: CurrentUser
+) -> PreferencesOut:
+    changes = payload.model_dump(exclude_unset=True, exclude_none=True)
+    if changes:
+        user.learning_prefs = _merged_jsonb(user.learning_prefs, changes)
+        db.commit()
+        db.refresh(user)
+    return _preferences_payload(db, user)
+
+
+@profile_router.put("/preferences/ui", response_model=PreferencesOut)
+def update_ui_prefs(
+    payload: UiPrefsUpdate, db: DbSession, user: CurrentUser
+) -> PreferencesOut:
+    changes = payload.model_dump(exclude_unset=True, exclude_none=True)
+    if changes:
+        user.ui_prefs = _merged_jsonb(user.ui_prefs, changes)
+        db.commit()
+        db.refresh(user)
+    return _preferences_payload(db, user)
+
+
+@profile_router.put("/preferences/privacy", response_model=PreferencesOut)
+def update_privacy_prefs(
+    payload: PrivacyPrefsUpdate, db: DbSession, user: CurrentUser
+) -> PreferencesOut:
+    changes = payload.model_dump(exclude_unset=True, exclude_none=True)
+    if changes:
+        user.privacy_prefs = _merged_jsonb(user.privacy_prefs, changes)
+        db.commit()
+        db.refresh(user)
+    return _preferences_payload(db, user)
 
 
 @leaderboard_router.get("/{competition_id}", response_model=list[LeaderboardEntryOut])

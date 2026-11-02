@@ -321,15 +321,13 @@ def test_study_progress_has_percentages(
     assert mastered["value"] == 1
 
 
-def test_settings_are_served_by_the_api(client: TestClient, make_user: Callable[..., User]) -> None:
+def test_settings_endpoint_was_removed(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
     user = make_user("设置用户")
     response = client.get("/api/profile/settings", headers=_headers(user))
-    assert response.status_code == 200, response.text
-    groups = response.json()
-    icons = [item["icon"] for group in groups for item in group["items"]]
-    assert icons == ["user", "shield", "bell", "sliders", "monitor", "lock"]
-    assert {group["title"] for group in groups} == {"账号设置", "偏好设置"}
-    assert groups[0]["items"][0]["value"] == "设置用户"
+    assert response.status_code == 404, response.text
+    assert response.json()["code"] == "NOT_FOUND"
 
 
 def test_leaderboard_orders_by_points_with_contiguous_rank(
@@ -394,10 +392,13 @@ def test_profile_endpoints_require_auth(client: TestClient) -> None:
         "/api/profile/stats",
         "/api/profile/competition-records",
         "/api/profile/study-progress",
-        "/api/profile/settings",
+        "/api/profile/preferences",
     ):
         response = client.get(path)
         assert response.status_code == 401, path
+
+    removed = client.get("/api/profile/settings")
+    assert removed.status_code == 404, removed.text
 
 
 def test_leaderboard_paginates_with_global_rank(
