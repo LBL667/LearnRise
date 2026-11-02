@@ -1,11 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ApiError, api } from '@/api/client'
+import { ApiError, api, parseApiDetail } from '@/api/client'
+import { generatePlan } from '@/api/plans'
 import type { Competition, CompetitionPlan, Member } from '@/api/types'
 import { CoverArt } from '@/components/competition/CoverArt'
 import { MembersPanel } from '@/components/members/MembersPanel'
 import { PlanPanel } from '@/components/plan/PlanPanel'
+import { useToast } from '@/components/ui/Toast'
+
+const POLL_INTERVAL_MS = 1_500
+const POLL_TIMEOUT_MS = 90_000
+
+function describePlanGenerateError(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 403) return '仅队长可生成规划'
+    if (error.status === 409 && (error.code === 'NO_SOURCE' || error.code === 'NO_CONTEXT')) {
+      return '请先在建赛时绑定资料'
+    }
+    return parseApiDetail(error.detail).message
+  }
+  return '学习规划生成失败，请稍后重试'
+}
 
 type TabKey = 'members' | 'plan'
 
@@ -20,6 +36,110 @@ export default function CompetitionDetailPage() {
   const [error, setError] = useState('')
   const [notFound, setNotFound] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [generating, setGenerating] = useState(false)
+  const [planError, setPlanError] = useState('')
+  const { showToast } = useToast()
+  const aliveRef = useRef(true)
+  const autoResumedRef = useRef(false)
+  const pollTimer = useRef<number | null>(null)
+  const pollDeadline = useRef(0)
+
+  const stopPolling = useCallback(() => {
+    if (pollTimer.current !== null) {
+      window.clearTimeout(pollTimer.current)
+      pollTimer.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    aliveRef.current = true
+    autoResumedRef.current = false
+    return () => {
+      aliveRef.current = false
+      stopPolling()
+    }
+  }, [id, stopPolling])
+
+  const pollPlan = useCallback(() => {
+    stopPolling()
+    const tick = async () => {
+      if (!aliveRef.current) return
+      if (Date.now() > pollDeadline.current) {
+        setGenerating(false)
+        setPlanError('规划生成超时，请稍后刷新查看')
+        return
+      }
+      try {
+        const latest = await api.getCompetition(id)
+        if (!aliveRef.current) return
+        if (!latest) {
+          pollTimer.current = window.setTimeout(() => void tick(), POLL_INTERVAL_MS)
+          return
+        }
+        setCompetition(latest)
+        if (latest.planStatus === 'ready') {
+          try {
+            const nextPlan = await api.getPlan(id)
+            if (!aliveRef.current) return
+            setPlan(nextPlan)
+            setPlanError('')
+            showToast('学习规划已生成', 'success')
+          } catch (error) {
+            if (!aliveRef.current) return
+            setPlanError(
+              error instanceof ApiError
+                ? parseApiDetail(error.detail).message
+                : '学习规划读取失败，请刷新重试',
+            )
+          }
+          setGenerating(false)
+          return
+        }
+        if (latest.planStatus === 'failed') {
+          setGenerating(false)
+          setPlanError('学习规划生成失败，请稍后重试')
+          return
+        }
+        pollTimer.current = window.setTimeout(() => void tick(), POLL_INTERVAL_MS)
+      } catch (error) {
+        if (!aliveRef.current) return
+        if (error instanceof ApiError && (error.status === 401 || error.status === 404)) {
+          setGenerating(false)
+          setPlanError(parseApiDetail(error.detail).message)
+          return
+        }
+        pollTimer.current = window.setTimeout(() => void tick(), POLL_INTERVAL_MS)
+      }
+    }
+    void tick()
+  }, [id, showToast, stopPolling])
+
+  const handleGeneratePlan = useCallback(async () => {
+    if (generating) return
+    setPlanError('')
+    setGenerating(true)
+    autoResumedRef.current = true
+    try {
+      await generatePlan(id)
+      if (!aliveRef.current) return
+      setCompetition((prev) => (prev ? { ...prev, planStatus: 'generating' } : prev))
+      pollDeadline.current = Date.now() + POLL_TIMEOUT_MS
+      pollPlan()
+    } catch (error) {
+      if (!aliveRef.current) return
+      setGenerating(false)
+      setPlanError(describePlanGenerateError(error))
+    }
+  }, [generating, id, pollPlan])
+
+  useEffect(() => {
+    if (autoResumedRef.current) return
+    if (competition?.planStatus !== 'generating') return
+    autoResumedRef.current = true
+    setGenerating(true)
+    pollDeadline.current = Date.now() + POLL_TIMEOUT_MS
+    pollPlan()
+  }, [competition?.planStatus, pollPlan])
 
   useEffect(() => {
     let cancelled = false
@@ -165,7 +285,18 @@ export default function CompetitionDetailPage() {
             onMembersChange={setMembers}
           />
         ) : (
-          <PlanPanel plan={plan} />
+          <PlanPanel
+            competitionId={competition.id}
+            plan={plan}
+            canGenerate={
+              competition.currentUserRole === 'leader' ||
+              String(competition.currentUserRole ?? '') === 'owner'
+            }
+            planStatus={competition.planStatus}
+            generating={generating}
+            planError={planError}
+            onGenerate={() => void handleGeneratePlan()}
+          />
         )}
       </div>
     </div>
