@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AlertTriangle, ChevronLeft, Loader2, RotateCw } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
-import { api, ApiError, parseApiDetail } from '@/api/client'
-import { getSource, reprocessSource } from '@/api/sources'
-import type { SourceDetail } from '@/api/types/sources'
+import { AlertTriangle, ChevronLeft, FileText, Loader2, RotateCw } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { api, ApiError, parseApiDetail, TIMEOUTS } from '@/api/client'
+import { createSourceNotes, getSource, getSourceTree, reprocessSource } from '@/api/sources'
+import type { SourceDetail, TreeNode } from '@/api/types/sources'
 import { ErrorView, LoadingView, NotFoundView } from '@/components/ui/StateViews'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { useToast } from '@/components/ui/Toast'
 
 const POLL_INTERVAL_MS = 800
 const POLL_TIMEOUT_MS = 120_000
@@ -51,8 +52,57 @@ function DetailItem({ label, children }: { label: string; children: React.ReactN
   )
 }
 
+interface TreeNodesProps {
+  nodes: TreeNode[]
+  depth: number
+  visited: Set<string>
+  highlighted: Set<string>
+  onOpen: (id: string) => void
+}
+
+function TreeNodes({ nodes, depth, visited, highlighted, onOpen }: TreeNodesProps) {
+  return (
+    <ul className={depth === 0 ? 'space-y-1' : 'mt-1 space-y-1 border-l border-line pl-4'}>
+      {nodes.map((node) => {
+        if (visited.has(node.id)) return null
+        const nextVisited = new Set(visited)
+        nextVisited.add(node.id)
+        const mastery = Math.max(0, Math.min(100, Math.round(node.mastery_score * 100)))
+        return (
+          <li key={node.id}>
+            <button
+              type="button"
+              data-testid="tree-node"
+              onClick={() => onOpen(node.id)}
+              className={`flex w-full items-center justify-between gap-3 rounded-lg border border-transparent px-2.5 py-1.5 text-left text-[13px] text-ink transition hover:border-line hover:bg-page ${
+                highlighted.has(node.id) ? 'border-primary/40 bg-primary-soft-2' : ''
+              }`}
+            >
+              <span className="truncate">{node.title}</span>
+              <span className="chip shrink-0" title="掌握度">
+                {mastery}%
+              </span>
+            </button>
+            {node.children && node.children.length > 0 && (
+              <TreeNodes
+                nodes={node.children}
+                depth={depth + 1}
+                visited={nextVisited}
+                highlighted={highlighted}
+                onOpen={onOpen}
+              />
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 export default function SourceDetailPage() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
   const [source, setSource] = useState<SourceDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -60,6 +110,12 @@ export default function SourceDetailPage() {
   const [actionError, setActionError] = useState('')
   const [processing, setProcessing] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [tree, setTree] = useState<TreeNode[]>([])
+  const [treeLoading, setTreeLoading] = useState(true)
+  const [treeError, setTreeError] = useState('')
+  const [treeReloadKey, setTreeReloadKey] = useState(0)
+  const [notesPending, setNotesPending] = useState(false)
+  const [newRootIds, setNewRootIds] = useState<Set<string>>(new Set())
   const pollRef = useRef<PollSession | null>(null)
 
   const cancelPolling = useCallback(() => {
@@ -102,6 +158,43 @@ export default function SourceDetailPage() {
   const retry = useCallback(() => {
     setReloadKey((key) => key + 1)
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setTreeLoading(true)
+    setTreeError('')
+    getSourceTree(id)
+      .then((nodes) => {
+        if (!cancelled) setTree(nodes)
+      })
+      .catch((caught) => {
+        if (cancelled) return
+        setTree([])
+        setTreeError(describeError(caught))
+      })
+      .finally(() => {
+        if (!cancelled) setTreeLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id, treeReloadKey])
+
+  const handleGenerateNotes = useCallback(async () => {
+    if (!source || notesPending) return
+    setNotesPending(true)
+    setActionError('')
+    try {
+      const result = await createSourceNotes(source.id, {}, { timeoutMs: TIMEOUTS.notes })
+      showToast(`${result.knowledge_points_created} 个知识点已生成`, 'success')
+      setNewRootIds(new Set(result.root_ids))
+      setTreeReloadKey((key) => key + 1)
+    } catch (caught) {
+      setActionError(describeError(caught))
+    } finally {
+      setNotesPending(false)
+    }
+  }, [source, notesPending, showToast])
 
   const waitForJob = useCallback(async (jobId: string, session: PollSession) => {
     const startedAt = Date.now()
@@ -237,12 +330,67 @@ export default function SourceDetailPage() {
             )}
           </section>
 
-          {/* T10 将在此区块追加知识点树与笔记入口，本任务不实现。 */}
           <section className="card mt-4 p-5" data-testid="source-knowledge-section">
-            <h2 className="text-[14px] font-bold text-ink">知识点与笔记</h2>
-            <p className="mt-1 text-[13px] text-ink-mute">
-              知识点树与结构化笔记将在后续版本展示。
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-[14px] font-bold text-ink">知识结构</h2>
+                <p className="mt-1 text-[12.5px] text-ink-mute">
+                  知识点树来自「生成笔记」，点击节点可查看详情。
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-primary gap-1.5"
+                data-testid="source-generate-notes"
+                onClick={() => void handleGenerateNotes()}
+                disabled={notesPending || source.status === 'failed'}
+              >
+                {notesPending ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <FileText size={15} />
+                )}
+                {notesPending ? '生成中…' : '生成笔记'}
+              </button>
+            </div>
+
+            <div className="mt-4" data-testid="source-tree">
+              {treeLoading ? (
+                <p
+                  className="py-6 text-center text-[13px] text-ink-mute"
+                  data-testid="source-tree-loading"
+                >
+                  正在加载知识点…
+                </p>
+              ) : treeError ? (
+                <div className="flex flex-col items-center gap-2 py-6 text-center">
+                  <p className="text-[13px] text-ink-soft">{treeError}</p>
+                  <button
+                    type="button"
+                    className="btn-ghost h-8 px-3 text-[12.5px]"
+                    data-testid="source-tree-retry"
+                    onClick={() => setTreeReloadKey((key) => key + 1)}
+                  >
+                    重试
+                  </button>
+                </div>
+              ) : tree.length === 0 ? (
+                <p
+                  className="py-6 text-center text-[13px] text-ink-mute"
+                  data-testid="source-tree-empty"
+                >
+                  该资料还没有知识点，点击「生成笔记」自动生成。
+                </p>
+              ) : (
+                <TreeNodes
+                  nodes={tree}
+                  depth={0}
+                  visited={new Set()}
+                  highlighted={newRootIds}
+                  onOpen={(kpId) => navigate(`/kp/${kpId}`)}
+                />
+              )}
+            </div>
           </section>
         </>
       ) : null}

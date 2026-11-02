@@ -74,7 +74,8 @@ test('smoke: every main page renders from the API without skeletons', async ({ p
   await expect(page.getByTestId('wrong-diagnostics')).toBeVisible()
   await expect(page.getByTestId('wrong-question-item').first()).toBeVisible()
   await page.getByRole('button', { name: '思维导图' }).click()
-  await expect(page.getByText('高等数学·微分学思维导图')).toBeVisible()
+  await expect(page.getByTestId('mindmap-region')).toBeVisible()
+  await expectNoSkeleton(page, '正在加载思维导图…')
   await expectNoSkeleton(page, '正在加载错题…')
   await capture(page, 'task-26-nomock-prep.png')
 
