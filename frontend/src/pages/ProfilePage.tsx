@@ -27,21 +27,6 @@ const STAT_BG: Record<ProfileStat['tone'], string> = {
   red: 'bg-gradient-to-br from-[#ff8f6b] to-[#f2635c]',
 }
 
-function SectionHeader({ title, onViewMore }: { title: string; onViewMore: () => void }) {
-  return (
-    <div className="flex items-center justify-between">
-      <h3 className="text-[15px] font-bold text-ink">{title}</h3>
-      <button
-        className="flex items-center gap-0.5 text-[12.5px] text-ink-mute transition hover:text-primary"
-        onClick={onViewMore}
-      >
-        查看更多
-        <ChevronRight size={13} />
-      </button>
-    </div>
-  )
-}
-
 function GradePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [open, setOpen] = useState(false)
   const [level, setLevel] = useState<'高中' | '大学'>(value.startsWith('高中') ? '高中' : '大学')
@@ -202,7 +187,7 @@ export default function ProfilePage() {
 
           {/* 我的竞赛记录 */}
           <section className="card flex min-h-0 flex-1 flex-col p-4">
-            <SectionHeader title="我的竞赛记录" onViewMore={() => showToast('全部竞赛记录即将上线')} />
+            <h3 className="text-[15px] font-bold text-ink">我的竞赛记录</h3>
             <div className="mt-1 min-h-0 flex-1 divide-y divide-line overflow-y-auto" tabIndex={0} aria-label="竞赛记录列表">
               {records.map((r) => (
                 <div key={r.id} className="flex items-center gap-4 py-2">

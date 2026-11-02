@@ -39,7 +39,7 @@ export function Sidebar() {
       }`}
     >
       {/* 品牌区 */}
-      <div className="flex items-center gap-2.5 px-4 pb-4 pt-5">
+      <div className={`flex items-center gap-2.5 pb-4 pt-5 ${collapsed ? 'justify-center px-0' : 'pl-4 pr-9'}`}>
         <img
           src="/logo.png"
           alt="LearnRise"
@@ -56,7 +56,7 @@ export function Sidebar() {
       <button
         onClick={() => setCollapsed((v) => !v)}
         aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
-        className="absolute right-2 top-6 flex h-6 w-6 items-center justify-center rounded-md text-ink-mute hover:bg-page hover:text-ink-soft"
+        className={`absolute top-6 z-30 flex h-6 w-6 items-center justify-center text-ink-mute transition-colors hover:text-primary ${collapsed ? '-right-3 rounded-full border border-line bg-white shadow-sm hover:bg-primary-soft' : 'right-2 rounded-md hover:bg-page'}`}
       >
         <ChevronsLeft size={15} className={`transition-transform ${collapsed ? 'rotate-180' : ''}`} />
       </button>
