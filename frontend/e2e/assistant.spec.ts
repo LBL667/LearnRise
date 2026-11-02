@@ -1,8 +1,17 @@
-import { expect, test } from '@playwright/test'
+import { mkdir } from 'node:fs/promises'
+import { join } from 'node:path'
+import { expect, test, type Page } from '@playwright/test'
 
 const EMAIL = process.env.E2E_EMAIL ?? 'demo@example.com'
 const PASSWORD = process.env.E2E_PASSWORD ?? 'demo1234'
 const API = process.env.E2E_API_URL ?? 'http://127.0.0.1:8080'
+const EVIDENCE_DIR = process.env.EVIDENCE_DIR
+
+async function capture(page: Page, name: string): Promise<void> {
+  if (!EVIDENCE_DIR) return
+  await mkdir(EVIDENCE_DIR, { recursive: true })
+  await page.screenshot({ path: join(EVIDENCE_DIR, `${name}.png`), fullPage: true })
+}
 
 async function token(): Promise<string> {
   const response = await fetch(`${API}/api/auth/login`, {
@@ -62,9 +71,7 @@ test('assistant sends socratic mode and reveals the reference answer', async ({ 
   await socratic.click()
   await expect(socratic).toHaveAttribute('aria-pressed', 'true')
 
-  if (process.env.EVIDENCE_DIR) {
-    await page.screenshot({ path: process.env.EVIDENCE_DIR, fullPage: true })
-  }
+  await capture(page, 'assistant-socratic-mode')
 
   const streamRequest = page.waitForRequest(
     (request) =>
@@ -89,4 +96,80 @@ test('assistant sends socratic mode and reveals the reference answer', async ({ 
 
   await reveal.click()
   await expect(page.getByText(/参考答案：/).last()).toBeVisible({ timeout: 20_000 })
+})
+
+async function openAssistantWithFailedStream(page: Page): Promise<void> {
+  const value = await token()
+  await page.addInitScript((t) => window.localStorage.setItem('learnrise.token', t), value)
+
+  await page.route('**/api/assistant/conversations/*/stream', (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ detail: 'stream unavailable' }),
+    }),
+  )
+
+  await page.goto('/prep')
+  await page.getByRole('button', { name: '学习助手' }).click()
+}
+
+test('assistant falls back to the non-stream reply when streaming fails', async ({ page }) => {
+  await openAssistantWithFailedStream(page)
+  await page.route('**/api/assistant/conversations/*/messages', (route) => {
+    if (route.request().method() !== 'POST') return route.fallback()
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        message_id: 'fallback-answer-1',
+        role: 'assistant',
+        content: '普通回复：特征值刻画了矩阵在特征方向上的伸缩倍数。',
+        citations: [],
+        created_at: new Date().toISOString(),
+        rewritten: false,
+      }),
+    })
+  })
+
+  const input = page.getByPlaceholder(/请输入你的问题/)
+  await input.fill('什么是特征值？')
+  await input.press('Enter')
+
+  const fallback = page.getByTestId('assistant-fallback')
+  await expect(fallback).toBeVisible({ timeout: 30_000 })
+  await capture(page, 'assistant-fallback-button')
+
+  await fallback.click()
+  await expect(page.getByText('普通回复：特征值刻画了矩阵在特征方向上的伸缩倍数。')).toBeVisible({
+    timeout: 20_000,
+  })
+  await capture(page, 'assistant-fallback-answer')
+})
+
+test('assistant fallback surfaces a readable message when context is missing', async ({ page }) => {
+  await openAssistantWithFailedStream(page)
+  await page.route('**/api/assistant/conversations/*/messages', (route) => {
+    if (route.request().method() !== 'POST') return route.fallback()
+    return route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'NO_CONTEXT',
+        detail: '没有检索到可引用的资料，请先上传并解析文档',
+      }),
+    })
+  })
+
+  const input = page.getByPlaceholder(/请输入你的问题/)
+  await input.fill('什么是特征值？')
+  await input.press('Enter')
+
+  const fallback = page.getByTestId('assistant-fallback')
+  await expect(fallback).toBeVisible({ timeout: 30_000 })
+
+  await fallback.click()
+  await expect(page.getByText('请先上传或选择资料')).toBeVisible({ timeout: 20_000 })
+  await expect(fallback).toBeEnabled()
+  await capture(page, 'assistant-fallback-no-context')
 })

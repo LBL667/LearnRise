@@ -19,9 +19,11 @@ import {
   getConversation,
   listConversations,
   revealAnswer,
+  sendMessage,
   streamMessage,
 } from '@/api/assistant'
 import type { AssistantMode } from '@/api/assistant'
+import { ApiError } from '@/api/client'
 import type { AssistantCitation, ChatItem, PlanCard } from '@/api/types'
 import { useToast } from '../ui/Toast'
 
@@ -112,6 +114,13 @@ export function StudyAssistantPanel() {
   const [input, setInput] = useState('')
   const [thinking, setThinking] = useState(false)
   const [revealing, setRevealing] = useState(false)
+  const [fallback, setFallback] = useState<{
+    assistantId: string
+    conversationId: string
+    content: string
+  } | null>(null)
+  const [fallbackPending, setFallbackPending] = useState(false)
+  const [fallbackError, setFallbackError] = useState<string | null>(null)
   const [mode, setMode] = useState<AssistantMode>('concise')
   const [suggestions, setSuggestions] = useState<string[]>(() =>
     ASSISTANT_FEATURES.map((feature) => feature.question),
@@ -177,6 +186,8 @@ export function StudyAssistantPanel() {
       ])
       setInput('')
       setThinking(true)
+      setFallback(null)
+      setFallbackError(null)
 
       const controller = new AbortController()
       abortRef.current?.abort()
@@ -216,12 +227,54 @@ export function StudyAssistantPanel() {
             item.id === assistantId ? { ...item, text: item.text || `（${message}）` } : item,
           ),
         )
+        if (!controller.signal.aborted) {
+          setFallback({ assistantId, conversationId, content: trimmed })
+        }
       } finally {
         setThinking(false)
       }
     },
     [thinking, showToast, mode],
   )
+
+  const runFallback = useCallback(async () => {
+    if (!fallback || fallbackPending) return
+    setFallbackPending(true)
+    setFallbackError(null)
+    try {
+      const answer = await sendMessage(fallback.conversationId, fallback.content, mode)
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: answer.message_id,
+          role: 'ai',
+          text: answer.content,
+          time: formatClock(answer.created_at) || nowTime(),
+          citations: answer.citations,
+        },
+      ])
+      setFallback(null)
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.code === 'NO_CONTEXT') {
+        setFallbackError('请先上传或选择资料')
+      } else if (caught instanceof ApiError && caught.status === 404) {
+        showToast('会话不存在，已返回助手列表', 'error')
+        conversationRef.current = null
+        setMessages([])
+        setFallback(null)
+      } else {
+        const message =
+          caught instanceof ApiError
+            ? caught.detail
+            : caught instanceof Error
+              ? caught.message
+              : '普通回复失败'
+        setFallbackError(message)
+      }
+    } finally {
+      setFallbackPending(false)
+    }
+  }, [fallback, fallbackPending, mode, showToast])
 
   const reveal = useCallback(async () => {
     const conversationId = conversationRef.current
@@ -338,6 +391,20 @@ export function StudyAssistantPanel() {
                       </div>
                     )}
                   </div>
+                  {fallback?.assistantId === m.id && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]">
+                      <button
+                        type="button"
+                        data-testid="assistant-fallback"
+                        className="rounded-md border border-line bg-white px-2.5 py-1 text-[12px] font-medium text-primary transition-colors hover:bg-primary-soft disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={fallbackPending}
+                        onClick={() => void runFallback()}
+                      >
+                        {fallbackPending ? '正在获取普通回复…' : '发送失败？改用普通回复'}
+                      </button>
+                      {fallbackError && <span className="text-[#e25050]">{fallbackError}</span>}
+                    </div>
+                  )}
                   <div className="mt-1.5 flex items-center gap-4 text-[12px] text-ink-mute">
                     <span>{m.time}</span>
                     <button

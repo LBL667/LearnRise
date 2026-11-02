@@ -1,4 +1,4 @@
-import { getToken, request } from './client'
+import { getToken, request, TIMEOUTS } from './client'
 import type {
   AssistantCitation,
   AssistantConversation,
@@ -18,6 +18,16 @@ export interface RevealResult {
 export interface ConversationDetail {
   conversation: AssistantConversation
   messages: AssistantMessageDto[]
+}
+
+/** 非流式 `POST /conversations/{id}/messages` 的返回体（后端 `AnswerOut`）。 */
+export interface AnswerResult {
+  message_id: string
+  role: string
+  content: string
+  citations: AssistantCitation[]
+  created_at: string
+  rewritten?: boolean
 }
 
 export interface StreamHandlers {
@@ -69,6 +79,25 @@ export async function revealAnswer(
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+/**
+ * 非流式兜底：流式失败后改用普通回复。
+ *
+ * 超时使用 `TIMEOUTS.messages`（90s），与长耗时问答端点一致。
+ */
+export async function sendMessage(
+  conversationId: string,
+  content: string,
+  mode?: AssistantMode,
+  signal?: AbortSignal,
+): Promise<AnswerResult> {
+  const payload = mode === undefined ? { content } : { content, mode }
+  return request<AnswerResult>(
+    `/assistant/conversations/${conversationId}/messages`,
+    { method: 'POST', body: JSON.stringify(payload) },
+    { timeoutMs: TIMEOUTS.messages, signal },
+  )
 }
 
 export async function streamMessage(
