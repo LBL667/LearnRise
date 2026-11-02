@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Award,
   Bell,
+  Bot,
   CalendarDays,
   ChevronRight,
   FileText,
@@ -18,6 +19,7 @@ import {
   User,
   Users,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { api, ApiError } from '@/api/client'
 import type {
   CompetitionRecord,
@@ -361,6 +363,21 @@ export default function ProfilePage() {
               <SettingsCard key={g.title} group={g} />
             ))}
           </div>
+
+          <Link
+            to="/settings/agents"
+            className="card flex items-center gap-3 p-5 transition hover:border-primary/40"
+            data-testid="profile-agent-settings"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+              <Bot size={17} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13.5px] font-semibold text-ink">Agent 设置</span>
+              <span className="block truncate text-[12px] text-ink-mute">配置自定义 Agent 的模型、密钥与系统提示词</span>
+            </span>
+            <ChevronRight size={15} className="shrink-0 text-ink-mute" />
+          </Link>
         </div>
       </div>
     </div>

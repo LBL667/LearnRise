@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart3, ChevronDown, ChevronRight, ChevronsLeft, Crown, FileText, PencilLine, RotateCw, Trophy, User } from 'lucide-react'
+import { BarChart3, ChevronDown, ChevronRight, ChevronsLeft, Crown, FileText, Library, MessagesSquare, PencilLine, RotateCw, Trophy, User } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useToast } from '../ui/Toast'
 
@@ -19,6 +19,10 @@ const SUB_ITEMS: NavItem[] = [
   { key: 'review', label: '间隔复习', icon: RotateCw, path: '/review' },
   { key: 'promo', label: '晋级赛', icon: BarChart3, path: '/promo' },
   { key: 'rank', label: '排行榜', icon: Crown, path: '/rank' },
+  { key: 'library', label: '资料库', icon: Library, path: '/library' },
+  { key: 'quiz', label: '刷题', icon: PencilLine, path: '/quiz' },
+  { key: 'practice', label: '陪练', icon: MessagesSquare, path: '/practice' },
+  { key: 'dashboard', label: '学习看板', icon: BarChart3, path: '/dashboard' },
 ]
 
 export function Sidebar() {
