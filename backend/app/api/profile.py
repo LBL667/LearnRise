@@ -27,11 +27,12 @@ from typing import Annotated, Any, Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Query, Response
-from pydantic import BaseModel
+from fastapi import APIRouter, Query, Response, status
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.adapters.storage.factory import build_storage
 from app.api.errors import CodedHTTPException
 from app.config import settings
 from app.deps import CurrentUser, DbSession
@@ -47,6 +48,7 @@ from app.models import (
     TrialExam,
     User,
 )
+from app.security.password import hash_password, verify_password
 
 router = APIRouter()
 profile_router = APIRouter(prefix="/api/profile", tags=["profile"])
@@ -56,6 +58,7 @@ TONE = Literal["primary", "success", "warning", "violet"]
 SETTING_ICON = Literal["user", "shield", "bell", "sliders", "monitor", "lock"]
 
 NOT_FOUND_DETAIL = "资源不存在"
+INVALID_CURRENT_PASSWORD_DETAIL = "当前密码不正确"
 
 #: Review-count thresholds for the six display levels (lower bound inclusive).
 LEVELS: tuple[tuple[int, str], ...] = (
@@ -92,6 +95,29 @@ class ProfileInfoOut(BaseModel):
     level: str
     joinedAt: str
     competitionCount: int
+    school: str | None = None
+    grade: str | None = None
+    avatarUrl: str | None = None
+
+
+class ProfileInfoUpdate(BaseModel):
+    """PATCH-style body for :func:`update_profile_info`.
+
+    Only fields present in the request are applied (``exclude_unset``). An
+    explicit ``null`` on ``school`` / ``grade`` clears it; an explicit ``null``
+    (or blank) ``display_name`` leaves the current value untouched because the
+    column is non-nullable and drives the display fallback to the email local
+    part.
+    """
+
+    display_name: str | None = Field(default=None, min_length=1, max_length=128)
+    school: str | None = Field(default=None, max_length=64)
+    grade: str | None = Field(default=None, max_length=32)
+
+
+class PasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=128)
 
 
 class ProfileStatOut(BaseModel):
@@ -176,6 +202,42 @@ def _iso_date(value: datetime | None) -> str:
     if value is None:
         return ""
     return value.date().isoformat()
+
+
+def _clean_optional(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
+def _avatar_url(user: User) -> str | None:
+    if not user.avatar_key:
+        return None
+    return build_storage().sign(user.avatar_key)
+
+
+def _profile_info(db: Session, user: User) -> ProfileInfoOut:
+    competition_count = int(
+        db.scalar(
+            select(func.count())
+            .select_from(CompetitionMember)
+            .where(CompetitionMember.user_id == user.id)
+        )
+        or 0
+    )
+    return ProfileInfoOut(
+        id=user.id,
+        name=_display_name(user),
+        email=user.email,
+        avatarHue=_hue_for(user.id),
+        level=_level_for(_review_count(db, user.id)),
+        joinedAt=_iso_date(user.created_at),
+        competitionCount=competition_count,
+        school=user.school,
+        grade=user.grade,
+        avatarUrl=_avatar_url(user),
+    )
 
 
 def _status_for(competition: Competition, now: datetime) -> str:
@@ -268,23 +330,44 @@ def _competition_points(db: Session, *, competition_id: str, user_ids: list[str]
 
 @profile_router.get("/info", response_model=ProfileInfoOut)
 def get_profile_info(db: DbSession, user: CurrentUser) -> ProfileInfoOut:
-    competition_count = int(
-        db.scalar(
-            select(func.count())
-            .select_from(CompetitionMember)
-            .where(CompetitionMember.user_id == user.id)
+    return _profile_info(db, user)
+
+
+@profile_router.put("/info", response_model=ProfileInfoOut)
+def update_profile_info(
+    payload: ProfileInfoUpdate, db: DbSession, user: CurrentUser
+) -> ProfileInfoOut:
+    changes = payload.model_dump(exclude_unset=True)
+
+    display_name = changes.get("display_name")
+    if isinstance(display_name, str) and display_name.strip():
+        user.display_name = display_name.strip()
+
+    if "school" in changes:
+        user.school = _clean_optional(changes["school"])
+    if "grade" in changes:
+        user.grade = _clean_optional(changes["grade"])
+
+    if changes:
+        db.commit()
+        db.refresh(user)
+    return _profile_info(db, user)
+
+
+@profile_router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
+def update_password(
+    payload: PasswordUpdate, db: DbSession, user: CurrentUser
+) -> Response:
+    if not verify_password(payload.current_password, user.password_hash):
+        raise CodedHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=INVALID_CURRENT_PASSWORD_DETAIL,
+            code="INVALID_CURRENT_PASSWORD",
         )
-        or 0
-    )
-    return ProfileInfoOut(
-        id=user.id,
-        name=_display_name(user),
-        email=user.email,
-        avatarHue=_hue_for(user.id),
-        level=_level_for(_review_count(db, user.id)),
-        joinedAt=_iso_date(user.created_at),
-        competitionCount=competition_count,
-    )
+
+    user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @profile_router.get("/stats", response_model=list[ProfileStatOut])
