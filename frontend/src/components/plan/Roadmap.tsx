@@ -11,7 +11,6 @@ const STAGE_ICONS = {
 } as const
 
 const STEP_GAP = 26
-const CARD_W = 152
 
 /** 阶梯间的虚线箭头 */
 function Connector({ offset }: { offset: number }) {

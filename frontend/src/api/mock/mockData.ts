@@ -798,6 +798,13 @@ export const competitionRecords: CompetitionRecord[] = [
     award: '全国二等奖',
     rankText: '排名 12 / 642',
   },
+  { id: 'cr-04', cover: 'geometry', title: '英语词汇冲顶挑战赛', level: '高中', timeRange: '2025-07-12 09:00 - 2025-07-20 18:00', award: '优秀奖', rankText: '排名 38 / 912' },
+  { id: 'cr-05', cover: 'aurora', title: '数学思维探索赛', level: '高中', timeRange: '2025-06-05 09:00 - 2025-06-18 18:00', award: '省级二等奖', rankText: '排名 24 / 680' },
+  { id: 'cr-06', cover: 'blackboard', title: '物理实验创意挑战', level: '高中', timeRange: '2025-05-08 09:00 - 2025-05-22 18:00', award: '市级一等奖', rankText: '排名 8 / 430' },
+  { id: 'cr-07', cover: 'wave', title: '编程算法实践赛', level: '大学', timeRange: '2025-04-13 09:00 - 2025-04-27 18:00', award: '优秀奖', rankText: '排名 56 / 730' },
+  { id: 'cr-08', cover: 'geometry', title: '历史知识挑战赛', level: '高中', timeRange: '2025-03-15 09:00 - 2025-03-29 18:00', award: '市级二等奖', rankText: '排名 19 / 520' },
+  { id: 'cr-09', cover: 'aurora', title: '科学素养联赛', level: '大学', timeRange: '2025-02-10 09:00 - 2025-02-24 18:00', award: '省级三等奖', rankText: '排名 31 / 790' },
+  { id: 'cr-10', cover: 'blackboard', title: '新年学习挑战赛', level: '高中', timeRange: '2025-01-06 09:00 - 2025-01-20 18:00', award: '优秀奖', rankText: '排名 46 / 610' },
 ]
 
 export const studyProgress: StudyProgressItem[] = [

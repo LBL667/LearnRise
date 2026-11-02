@@ -1,110 +1,34 @@
-import { useEffect, useState } from 'react'
-import { ChevronDown, Crown } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, ChevronDown, Crown } from 'lucide-react'
 import { api } from '@/api/client'
 import { tierLogos } from '@/api/mock/mockData'
 import type { Competition, LeaderboardEntry } from '@/api/types'
 import { useToast } from '@/components/ui/Toast'
+import goldRankLogo from '../../rank_number/1.png'
+import silverRankLogo from '../../rank_number/2.png'
+import bronzeRankLogo from '../../rank_number/3.png'
+import goldAvatarFrame from '../../rank_number/avatar_border_gold_transparent.png'
+import silverAvatarFrame from '../../rank_number/avatar_border_silver_transparent.png'
+import bronzeAvatarFrame from '../../rank_number/avatar_border_bronze_transparent.png'
 
-/* ==================== 月桂冠装饰 ==================== */
+/* ==================== 排名徽章 ==================== */
 
-const LAUREL_COLOR: Record<number, { main: string; light: string; crown?: string }> = {
-  1: { main: '#d9a53f', light: '#f0c96b', crown: '#f2b93c' },
-  2: { main: '#9fb0c6', light: '#c2cfe0' },
-  3: { main: '#c98d52', light: '#e3ad75' },
+const RANK_LOGOS: Record<number, string> = {
+  1: goldRankLogo,
+  2: silverRankLogo,
+  3: bronzeRankLogo,
 }
 
-/**
- * 月桂叶弧：在 viewBox 120x120 内，沿半径 R 的圆弧摆放一串叶片。
- * side=left 从底部向左上绕，right 镜像。叶片沿切线方向旋转。
- */
-function LaurelLeaves({ side, color, r = 52 }: { side: 'left' | 'right'; color: { main: string; light: string }; r?: number }) {
-  const n = 10
-  const leaves = []
-  for (let i = 0; i < n; i++) {
-    const t = i / (n - 1)
-    // 左枝：从 210° 扫到 105°；右枝：从 -30° 扫到 75°
-    const deg = side === 'left' ? 210 - t * 105 : -30 + t * 105
-    const rad = (deg * Math.PI) / 180
-    const cx = 60 + r * Math.cos(rad)
-    const cy = 62 - r * Math.sin(rad) * 0.96
-    const rot = side === 'left' ? deg - 90 : deg + 90
-    const big = 1 - Math.abs(t - 0.5) * 0.4
-    leaves.push(
-      <ellipse
-        key={i}
-        cx={cx}
-        cy={cy}
-        rx={9 * big}
-        ry={3.6 * big}
-        fill={i % 2 === 0 ? color.main : color.light}
-        opacity={0.94}
-        transform={`rotate(${rot} ${cx} ${cy})`}
-      />,
-    )
-  }
-  return <>{leaves}</>
-}
-
-/** 月桂冠头像框（1/2/3 名）：头像 + 金/银/铜月桂环绕；榜首带皇冠 */
-function LaurelAvatar({ name, hue, rank, size = 108 }: { name: string; hue: number; rank: number; size?: number }) {
-  const color = LAUREL_COLOR[rank] ?? LAUREL_COLOR[2]
-  const showCrown = rank === 1
-  const avatarSize = size * 0.58
+function RankLogo({ rank, size = 96 }: { rank: number; size?: number }) {
   return (
-    <span className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 120 120" width={size} height={size} className="absolute inset-0" aria-hidden="true">
-        <LaurelLeaves side="left" color={color} />
-        <LaurelLeaves side="right" color={color} />
-      </svg>
-      <span
-        className="absolute inline-flex items-center justify-center rounded-full font-semibold text-white"
-        style={{
-          width: avatarSize,
-          height: avatarSize,
-          left: (size - avatarSize) / 2,
-          top: (size - avatarSize) / 2 + size * 0.02,
-          fontSize: avatarSize * 0.38,
-          background: `linear-gradient(135deg, hsl(${hue} 82% 68%), hsl(${(hue + 40) % 360} 74% 52%))`,
-          boxShadow: `0 0 0 3px #fff, 0 0 0 4px ${color.main}66`,
-        }}
-      >
-        {name.slice(0, 1)}
-      </span>
-      {showCrown && (
-        <span
-          className="absolute left-1/2 -translate-x-1/2"
-          style={{ top: -size * 0.1, color: color.crown }}
-          aria-hidden="true"
-        >
-          <Crown size={size * 0.3} fill="currentColor" strokeWidth={1.2} />
-        </span>
-      )}
-    </span>
-  )
-}
-
-/** 月桂数字徽章（1/2/3 名）：月桂环绕中的大号渐变数字 */
-function LaurelNumber({ rank, size = 96 }: { rank: number; size?: number }) {
-  const color = LAUREL_COLOR[rank] ?? LAUREL_COLOR[2]
-  return (
-    <span className="relative shrink-0" style={{ width: size, height: size }} aria-hidden="true">
-      <svg viewBox="0 0 120 120" width={size} height={size} className="absolute inset-0">
-        <LaurelLeaves side="left" color={color} r={46} />
-        <LaurelLeaves side="right" color={color} r={46} />
-      </svg>
-      <span
-        className="absolute inset-0 flex items-center justify-center font-black leading-none"
-        style={{
-          fontSize: size * 0.5,
-          background: `linear-gradient(to bottom, ${color.light}, ${color.main})`,
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-        }}
-      >
-        {rank}
-      </span>
-    </span>
+    <img
+      src={RANK_LOGOS[rank]}
+      alt={`第 ${rank} 名`}
+      width={size}
+      height={size}
+      className="shrink-0 select-none object-contain"
+      draggable={false}
+    />
   )
 }
 
@@ -146,6 +70,86 @@ function PlainAvatar({ name, hue, size = 44 }: { name: string; hue: number; size
   )
 }
 
+const AVATAR_FRAMES: Record<number, string> = {
+  1: goldAvatarFrame,
+  2: silverAvatarFrame,
+  3: bronzeAvatarFrame,
+}
+
+// 头像框图片的装饰形状不同，圆心并不都在图片的正中心。
+const AVATAR_FRAME_LAYOUT: Record<number, { x: number; y: number; scale: number }> = {
+  1: { x: 0.495, y: 0.542, scale: 0.63 },
+  2: { x: 0.502, y: 0.506, scale: 0.65 },
+  3: { x: 0.503, y: 0.488, scale: 0.67 },
+}
+
+function RankedAvatar({ name, hue, rank, size }: { name: string; hue: number; rank: number; size: number }) {
+  const frame = AVATAR_FRAMES[rank]
+  if (!frame) return <PlainAvatar name={name} hue={hue} size={size} />
+  const layout = AVATAR_FRAME_LAYOUT[rank]
+
+  return (
+    <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
+      <span className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${layout.x * 100}%`, top: `${layout.y * 100}%` }}>
+        <PlainAvatar name={name} hue={hue} size={size * layout.scale} />
+      </span>
+      <img src={frame} alt="" aria-hidden="true" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain" />
+    </span>
+  )
+}
+
+function CompetitionPicker({ competitions, value, onChange }: { competitions: Competition[]; value: string; onChange: (id: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const closeOutside = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    return () => document.removeEventListener('pointerdown', closeOutside)
+  }, [open])
+
+  const selected = competitions.find((competition) => competition.id === value)
+  return (
+    <div ref={rootRef} className="competition-picker" onKeyDown={(event) => {
+      if (event.key === 'Escape' && open) {
+        event.preventDefault()
+        setOpen(false)
+        triggerRef.current?.focus()
+      }
+      if (open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+        event.preventDefault()
+        const options = Array.from(rootRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? [])
+        const current = options.indexOf(document.activeElement as HTMLButtonElement)
+        const next = current < 0 ? (event.key === 'ArrowDown' ? 0 : options.length - 1) : (current + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length
+        options[next]?.focus()
+      }
+    }} onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
+    }}>
+      <button ref={triggerRef} type="button" className="competition-picker__trigger" aria-label="选择赛事" aria-haspopup="listbox" aria-expanded={open} aria-controls="competition-options" onClick={() => setOpen(!open)}>
+        <span className="competition-picker__label">{selected?.title ?? '选择赛事'}</span>
+        <ChevronDown size={16} className={`competition-picker__chevron ${open ? 'is-open' : ''}`} aria-hidden="true" />
+      </button>
+      <div id="competition-options" role="listbox" aria-label="赛事列表" aria-hidden={!open} inert={!open} className={`competition-picker__menu ${open ? 'is-open' : ''}`}>
+        {competitions.map((competition) => (
+          <button key={competition.id} type="button" role="option" aria-selected={competition.id === value} className="competition-picker__option" onClick={() => {
+            onChange(competition.id)
+            setOpen(false)
+            triggerRef.current?.focus()
+          }}>
+            <span>{competition.title}</span>
+            {competition.id === value && <Check size={16} aria-hidden="true" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [competitions, setCompetitions] = useState<Competition[]>([])
@@ -166,9 +170,10 @@ export default function LeaderboardPage() {
     })()
   }, [competitionId])
 
-  const champion = entries[0]
-  const runnersUp = entries.slice(1, 3)
-  const rest = entries.slice(3)
+  const sortedEntries = [...entries].sort((a, b) => a.rank - b.rank)
+  const champion = sortedEntries.find((entry) => entry.rank === 1)
+  const runnersUp = sortedEntries.filter((entry) => entry.rank === 2 || entry.rank === 3)
+  const rest = sortedEntries.filter((entry) => entry.rank > 3)
 
   return (
     <div className="relative w-full px-6 py-6">
@@ -193,39 +198,28 @@ export default function LeaderboardPage() {
             <h1 className="text-xl font-bold text-ink">排行榜</h1>
             <span className="ml-1 text-[13px] text-ink-mute">见证每一位探索者的成长与绽放</span>
           </div>
-          <div className="relative">
-            <select
-              className="field-input h-9 w-56 appearance-none pr-8"
-              value={competitionId}
-              onChange={(e) => setCompetitionId(e.target.value)}
-            >
-              {competitions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-mute" />
-          </div>
+          <CompetitionPicker competitions={competitions} value={competitionId} onChange={setCompetitionId} />
         </div>
 
         {/* 榜首大卡 */}
         {champion && (
-          <section className="relative mt-5 overflow-hidden rounded-[16px] border border-[#f0e0b8] bg-gradient-to-r from-[#fbf1d3] via-[#fdf8e9] to-[#f4f9ff]">
+          <section className="champion-card relative mt-5 overflow-hidden rounded-[16px] border border-[#f0e0b8] bg-gradient-to-r from-[#fbf1d3] via-[#fdf8e9] to-[#f4f9ff]">
             <img
               src="/misty-mountains.jpg"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 right-0 h-[82%] w-[58%] select-none object-cover object-bottom opacity-85"
+              className="pointer-events-none absolute inset-y-0 right-0 h-full w-[58%] select-none object-cover object-bottom opacity-80"
               style={{
-                maskImage: 'linear-gradient(to left, black 60%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to left, black 60%, transparent 100%)',
+                maskImage: 'linear-gradient(to left, black 45%, transparent 100%), linear-gradient(to bottom, transparent, black 35%)',
+                maskComposite: 'intersect',
+                WebkitMaskImage: 'linear-gradient(to left, black 45%, transparent 100%), linear-gradient(to bottom, transparent, black 35%)',
+                WebkitMaskComposite: 'source-in',
               }}
               draggable={false}
             />
-            <div className="relative z-10 flex items-center gap-8 px-10 py-7">
-              <LaurelNumber rank={1} size={104} />
-              <LaurelAvatar name={champion.name} hue={champion.avatarHue} rank={1} size={112} />
+            <div className="relative z-10 flex items-center gap-8 px-10 py-4">
+              <RankLogo rank={1} size={104} />
+              <RankedAvatar name={champion.name} hue={champion.avatarHue} rank={champion.rank} size={112} />
               <div className="min-w-0">
                 <div className="truncate text-[19px] font-bold text-ink">{champion.name}</div>
                 <div className="mt-2">
@@ -245,8 +239,8 @@ export default function LeaderboardPage() {
         <div className="mt-4 grid grid-cols-2 gap-4">
           {runnersUp.map((e) => (
             <div key={e.rank} className="card flex items-center gap-4 px-6 py-4">
-              <LaurelNumber rank={e.rank} size={64} />
-              <LaurelAvatar name={e.name} hue={e.avatarHue} rank={e.rank} size={76} />
+              <RankLogo rank={e.rank} size={76} />
+              <RankedAvatar name={e.name} hue={e.avatarHue} rank={e.rank} size={76} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[15px] font-bold text-ink">{e.name}</div>
                 <div className="mt-1.5">

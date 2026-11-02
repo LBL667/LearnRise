@@ -1,6 +1,8 @@
 import { Bell, ChevronDown, Menu } from 'lucide-react'
+import { useProfileAvatar } from '../members/AvatarPicker'
 
 export function TopBar() {
+  const avatar = useProfileAvatar()
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-white px-5">
       <div className="flex items-center gap-3">
@@ -21,12 +23,12 @@ export function TopBar() {
           <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#f26d6d]" />
         </button>
         <button className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-page">
-          <span
+          {avatar ? <img src={avatar} alt="" className="h-8 w-8 rounded-full bg-primary-soft object-cover" /> : <span
             className="flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-white"
             style={{ background: 'linear-gradient(135deg, hsl(212 85% 68%), hsl(232 78% 55%))' }}
           >
             林
-          </span>
+          </span>}
           <span className="text-sm font-medium text-ink">林同学</span>
           <ChevronDown size={14} className="text-ink-mute" />
         </button>

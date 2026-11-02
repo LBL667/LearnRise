@@ -39,7 +39,6 @@ import {
   profileStats,
   settingGroups,
   studyProgress,
-  tierLogos,
   trialExam,
   userProgress as seedProgress,
   wrongQuestions,

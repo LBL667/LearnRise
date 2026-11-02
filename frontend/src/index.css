@@ -138,3 +138,196 @@ body {
   background-image: radial-gradient(circle, #dbe5f2 1px, transparent 1px);
   background-size: 22px 22px;
 }
+
+/* 排行榜赛事选择：轻盈的磨砂玻璃与柔和弹性 */
+.competition-picker {
+  position: relative;
+  z-index: 30;
+  width: 224px;
+  flex-shrink: 0;
+}
+.competition-picker__trigger,
+.competition-picker__menu {
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(239, 246, 255, 0.66));
+  box-shadow: 0 8px 26px rgba(65, 100, 155, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+}
+.competition-picker__trigger {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px 0 16px;
+  color: var(--color-ink);
+  font-size: 14px;
+  cursor: pointer;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+.competition-picker__trigger:hover { box-shadow: 0 10px 30px rgba(65, 100, 155, 0.2), inset 0 1px 1px white; }
+.competition-picker__trigger:active { transform: scale(0.98); }
+.competition-picker__trigger:focus-visible, .competition-picker__option:focus-visible { outline: 2px solid #2e7cf6; outline-offset: 2px; }
+.competition-picker__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.competition-picker__chevron { flex: none; color: #8193ad; transition: transform 240ms ease; }
+.competition-picker__chevron.is-open { transform: rotate(180deg); }
+.competition-picker__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max(100%, 260px);
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.94);
+  transform-origin: top right;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 180ms ease, visibility 0s linear 180ms;
+}
+.competition-picker__menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  transition: opacity 180ms ease, transform 420ms cubic-bezier(0.2, 1.5, 0.4, 1), visibility 0s;
+}
+.competition-picker__option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 11px 12px;
+  color: var(--color-ink);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.competition-picker__option:hover, .competition-picker__option:focus-visible { background: rgba(217, 232, 255, 0.72); }
+.competition-picker__option[aria-selected="true"] { color: var(--color-primary); font-weight: 600; background: rgba(225, 237, 255, 0.7); }
+.competition-picker__option svg { flex: none; }
+@media (prefers-reduced-motion: reduce) {
+  .competition-picker__trigger, .competition-picker__menu, .competition-picker__chevron, .competition-picker__option { transition: none; }
+}
+
+/* 冠军卡片：沿圆角边缘流动的彩色金光 */
+@property --champion-glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.champion-card::after {
+  content: "";
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(from var(--champion-glow-angle), #e9b544, #fff3b6, #f6a23c, #c1dd82, #b78dec, #f5ca63, #e9b544);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: champion-border-turn 6s linear infinite, champion-border-shimmer 2.8s ease-in-out infinite alternate;
+}
+@keyframes champion-border-turn {
+  to { --champion-glow-angle: 360deg; }
+}
+@keyframes champion-border-shimmer {
+  from { opacity: 0.7; filter: brightness(0.94); }
+  to { opacity: 1; filter: brightness(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .champion-card::after { animation: none; }
+}
+
+/* 排行榜的山景与内容区使用同一视口位置，跨侧栏衔接。 */
+.sidebar-rank-landscape {
+  clip-path: inset(0 calc(100% - 224px) 0 0);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 70%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 70%);
+}
+
+/* 前景雪山边缘融入后方山景，山顶和旗帜保持清晰。 */
+.sidebar-snowhill {
+  -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent 100%), linear-gradient(to right, transparent 0%, #000 12%, #000 86%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 58%, transparent 100%), linear-gradient(to right, transparent 0%, #000 12%, #000 86%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* 旗面围绕旗杆轻轻摇动，雪山保持静止。 */
+.sidebar-snowhill-flag {
+  transform-box: view-box;
+  transform-origin: 62.4% 5%;
+  animation: sidebar-flag-wave 3.2s ease-in-out infinite alternate;
+}
+@keyframes sidebar-flag-wave {
+  from { transform: skewY(-1deg) scaleX(0.99); }
+  to { transform: skewY(1deg) scaleX(1.01); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-snowhill-flag { animation: none; }
+}
+
+
+.avatar-picker-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; }
+.avatar-picker-overlay::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: rgba(30,42,57,.26); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: avatar-fade .35s ease both; }
+.avatar-picker { position: relative; width: min(520px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 28px; border: 1px solid rgba(255,255,255,.95); border-radius: 30px; background: rgba(255,255,255,.97); box-shadow: 0 22px 70px rgba(25,45,60,.23); animation: avatar-fade .28s ease-out both; outline: none; }
+.avatar-picker__header, .avatar-picker__header > div { display: flex; align-items: center; }
+.avatar-picker__header { justify-content: space-between; }
+.avatar-picker__header > div { gap: 12px; color: #00a4b0; }
+.avatar-picker__header h2 { color: #1f2733; font-size: 23px; font-weight: 700; }
+.avatar-picker__header > button { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 50%; color: #7c8895; cursor: pointer; }
+.avatar-picker__header > button:hover { background: #eff5f6; }
+.avatar-picker__intro { margin-top: 9px; color: #78838e; font-size: 14px; }
+.avatar-picker__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 24px; }
+.avatar-picker__choice { position: relative; display: grid; width: 100%; aspect-ratio: 1; place-items: center; border: 3px solid transparent; border-radius: 50%; padding: 2px; cursor: pointer; transition: transform .18s ease, border-color .18s ease; }
+.avatar-picker__choice:hover { transform: translateY(-3px); }
+.avatar-picker__choice.is-selected { border-color: #00a4b0; }
+.avatar-picker__choice img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.avatar-picker__check { position: absolute; right: 0; bottom: 0; display: grid; width: 25px; height: 25px; place-items: center; border: 2px solid white; border-radius: 50%; background: #00a4b0; color: white; }
+.avatar-picker__upload { display: flex; width: 100%; aspect-ratio: 1; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1.5px dashed #91d9db; border-radius: 50%; background: #edfafa; color: #009ea8; font-size: 12px; cursor: pointer; }
+.avatar-picker__upload:hover { background: #dff6f6; }
+.avatar-picker__error { margin-top: 14px; color: #d34343; font-size: 13px; }
+.avatar-picker__actions { display: flex; justify-content: center; gap: 14px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e4e9ed; }
+.avatar-picker__actions button { width: 130px; border: 1px solid #d3dbe2; border-radius: 14px; padding: 10px; color: #5c6670; font-weight: 600; cursor: pointer; }
+.avatar-picker__actions button:last-child { border-color: #00a4b0; background: #00a4b0; color: white; }
+.avatar-picker__actions button:disabled { opacity: .45; cursor: not-allowed; }
+.avatar-picker button:focus-visible { outline: 2px solid #009ea8; outline-offset: 3px; }
+@keyframes avatar-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 420px) { .avatar-picker { padding: 22px; } .avatar-picker__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } }
+@media (prefers-reduced-motion: reduce) { .avatar-picker, .avatar-picker-overlay::before { animation: none; } }
+
+.grade-picker { position: fixed; z-index: 500; width: min(264px, calc(100vw - 24px)); isolation: isolate; }
+.grade-picker::before { content: ''; position: absolute; inset: -34px; z-index: -1; pointer-events: none; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); mask-image: radial-gradient(ellipse, black 38%, transparent 74%); -webkit-mask-image: radial-gradient(ellipse, black 38%, transparent 74%); }
+.grade-picker__content { padding: 16px; border: 1px solid rgba(255,255,255,.92); border-radius: 22px; background: rgba(247,251,255,.9); box-shadow: 0 14px 40px rgba(68,99,147,.22), inset 0 1px white; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.grade-picker__title { font-weight: 700; font-size: 14px; color: #273448; }
+.grade-picker button { border-radius: 12px; padding: 8px; background: rgba(232,240,252,.8); color: #576b86; font-size: 13px; cursor: pointer; }
+.grade-picker button:hover, .grade-picker button[aria-pressed="true"] { background: #dbeaff; color: #2675ed; }
+.grade-picker button:focus-visible { outline: 2px solid #2e7cf6; outline-offset: 2px; }
+/* 学段使用分段切换，具体年级使用独立选项。 */
+.grade-picker--right { transform-origin: left top; }
+.grade-picker--left { transform-origin: right top; }
+.grade-picker__content { animation: grade-picker-enter 260ms cubic-bezier(.22,1.18,.36,1) both; transform-origin: inherit; }
+.grade-picker__section-label { margin-top: 14px; color: #8b9bb1; font-size: 11px; font-weight: 600; letter-spacing: .04em; }
+.grade-picker__section-label--grades { margin-top: 15px; padding-top: 13px; border-top: 1px solid rgba(169,190,215,.28); }
+.grade-picker__levels { display: flex; gap: 2px; margin-top: 7px; padding: 3px; border-radius: 13px; background: rgba(220,232,248,.75); }
+.grade-picker__levels button { flex: 1; padding: 7px; border-radius: 10px; background: transparent; color: #71839b; font-weight: 600; }
+.grade-picker__levels button[aria-pressed="true"] { background: rgba(255,255,255,.96); color: #2675ed; box-shadow: 0 2px 7px rgba(67,102,150,.14); }
+.grade-picker__grades { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-top: 7px; }
+.grade-picker__grades button { display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(198,215,237,.7); background: rgba(255,255,255,.6); text-align: left; font-weight: 500; }
+.grade-picker__grades button[aria-pressed="true"] { border-color: #8db9f5; background: #e4f0ff; color: #2675ed; }
+@keyframes grade-picker-enter { from { opacity: 0; transform: translateX(-8px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
+.grade-picker--left .grade-picker__content { animation-name: grade-picker-enter-left; }
+@keyframes grade-picker-enter-left { from { opacity: 0; transform: translateX(8px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .grade-picker__content { animation: none; } }
