@@ -149,7 +149,7 @@ export const SCENES: readonly FilmScene[] = [
     kicker: '04 / 可溯源',
     screenText: ['答错，也要知道错在哪一句。'],
     subline: 'RAG top-3 出题 · chunk 级溯源 · 自动建卡',
-    footnote: '讲解永远锚定你自己的资料',
+    footnote: '演示环境使用 mock 模型；题目文本不代表真实模型输出，出处切片来自已入库资料',
     narration:
       '接下来是最关键的一步：出题。选定知识点，AI 会先在你的资料里检索最相关的三段原文，再据此生成题目。答错时，它不只告诉你正确答案，还会把错因定位到原文的哪一页、哪一句。每一道错题，都会自动进入复习队列。',
     visual:
@@ -166,7 +166,7 @@ export const SCENES: readonly FilmScene[] = [
     kicker: '05 / 会追问',
     screenText: ['不直接给答案，先让你想明白。'],
     subline: '苏格拉底模式 · 揭晓答案 · SSE 逐字输出',
-    footnote: 'SSE：token / done / error，不缓冲',
+    footnote: '演示环境使用 mock 模型；题目文本不代表真实模型输出，出处切片来自已入库资料',
     narration:
       '遇到不懂的地方，可以进入苏格拉底模式。它不直接给答案，而是一步步追问，直到你自己想明白；想不通，再点揭晓。讲解以流式输出，第一个字几乎立刻出现，不用盯着转圈。你还可以为它配置不同的模型和人格。',
     visual:
