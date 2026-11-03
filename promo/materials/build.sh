@@ -94,11 +94,11 @@ build_one() {
   local src out raw qdf qpdf_final
   case "${target}" in
     micro)
-      src="${SCRIPT_DIR}/src/micro-ch3.md"
+      src="${SCRIPT_DIR}/micro-ch3.md"
       out="${SCRIPT_DIR}/微观经济学 第3章 弹性与消费者行为.pdf"
       ;;
     fixed-income)
-      src="${SCRIPT_DIR}/src/fixed-income-ch2.md"
+      src="${SCRIPT_DIR}/fixed-income-ch2.md"
       out="${SCRIPT_DIR}/固定收益证券 第2章 债券定价与久期.pdf"
       ;;
     *)

@@ -3,8 +3,11 @@
  * Deterministic narration + music mix for the LearnRise promo.
  *
  *   node scripts/mix-audio.mjs --voice=yunyang \
- *     --video=out/learnrise-promo-video.mp4 \
+ *     --video=out/film.mp4 \
  *     --output=out/learnrise-promo.mp4
+ *
+ * (Default --video is out/film.mp4, i.e. the `npm run render` output; pass
+ * --video=out/learnrise-promo-video.mp4 for a legacy already-muxed stream.)
  *
  * Chain: 11 edge-tts clips placed at their scene windows -> voice loudnorm
  * (I=-14:TP=-2:LRA=11); the 224 s deterministic bed -> loudnorm to -25 LUFS ->
@@ -46,7 +49,7 @@ if (!['yunyang', 'xiaoxiao'].includes(voice)) {
   process.exit(2);
 }
 
-const videoArg = flag('video') ?? 'out/learnrise-promo-video.mp4';
+const videoArg = flag('video') ?? 'out/film.mp4';
 const outputArg = flag('output') ?? 'out/learnrise-promo.mp4';
 const video = path.resolve(ROOT, videoArg);
 const output = path.resolve(ROOT, outputArg);

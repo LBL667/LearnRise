@@ -45,8 +45,9 @@ the mirrored `out/learnrise-promo.srt`. To update the delivered cut, re-mux
 without re-rendering pixels:
 
 ```bash
+npm run render            # 先把 master 渲染到 out/film.mp4
 node scripts/mix-audio.mjs --voice=yunyang \
-  --video=out/learnrise-promo-video.mp4 \
+  --video=out/film.mp4 \
   --output=out/learnrise-promo.mp4
 ```
 
@@ -163,7 +164,7 @@ video re-render.
   ACTIVE_VOICE=xiaoxiao npm run tts:all
   ACTIVE_VOICE=xiaoxiao npm run timeline:check
   node scripts/mix-audio.mjs --voice=xiaoxiao \
-    --video=out/learnrise-promo-video.mp4 \
+    --video=out/film.mp4 \
     --output=out/learnrise-promo-xiaoxiao.mp4
   ```
 - Permanent default: change `VOICES.yunyang.voice` (or the `ACTIVE_VOICE`
@@ -172,7 +173,7 @@ video re-render.
   npm run tts:all
   npm run timeline:check
   node scripts/mix-audio.mjs --voice=yunyang \
-    --video=out/learnrise-promo-video.mp4 \
+    --video=out/film.mp4 \
     --output=out/learnrise-promo.mp4
   ```
 
@@ -201,7 +202,8 @@ To rebuild the whole cut:
 npm run render
 ```
 
-Output: `out/film.mp4` (video stream; mux narration + bed separately).
+Output: `out/film.mp4` (video stream; mux narration + bed separately, see
+`scripts/mix-audio.mjs`; its `--video` default matches this filename).
 
 ---
 
@@ -217,7 +219,7 @@ Output: `out/film.mp4` (video stream; mux narration + bed separately).
 | `npm run tts:all` | regenerates all 11 narration clips for `ACTIVE_VOICE` |
 | `npm run tts:all -- --scene=S05` | regenerates one clip, keeps the other 10 measured rows |
 | `npm run render:scene -- S05` | renders one scene composition (video only) |
-| `node scripts/mix-audio.mjs --voice=yunyang --video=out/learnrise-promo-video.mp4 --output=out/learnrise-promo.mp4` | muxes narration + bed onto the rendered video (no pixel re-render) |
+| `node scripts/mix-audio.mjs --voice=yunyang --video=out/film.mp4 --output=out/learnrise-promo.mp4` | muxes narration + bed onto the rendered video (no pixel re-render) |
 | `npm run render` | renders the master `Film` to `out/film.mp4` (video-only) |
 
 Validation (no dependencies, safe before every render):

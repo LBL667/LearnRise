@@ -6,7 +6,7 @@
 |---|---|---|
 | `video/` | Remotion 3 分钟宣传片源码（`src/**`、`public/**`、配置、`storyboard.json`、`narration.json`、`EDITING.md`） | `remotion-video-pipeline/projects/learnrise-promo-3min`（不含 `node_modules/`、`*.mp4`、`*.wav`、`.env.json`） |
 | `mockups/` | 16 页 Penpot mockup（`*@2x.png` 2880×1800 + `*.svg` 1440×900 + `contact-sheet.png`）、`pages.json`/`cast.json`/`tokens.json`、`EDITING.md` | `华为ICT-evidence/learnrise-penpot/out/mockups/` + `specs/` |
-| `materials/` | 两份讲义 PDF（微观经济学 第3章 弹性与消费者行为 12p、固定收益证券 第2章 债券定价与久期 11p）+ `src/*.md` + `template.tex` + `build.sh` | `华为ICT-evidence/learnrise-promo/materials/`（不含 63 页课程章节 PDF） |
+| `materials/` | 两份讲义 PDF（微观经济学 第3章 弹性与消费者行为 12p、固定收益证券 第2章 债券定价与久期 11p）+ 源 markdown（`micro-ch3.md`、`fixed-income-ch2.md`）+ `template.tex` + `build.sh` | `华为ICT-evidence/learnrise-promo/materials/`（不含 63 页课程章节 PDF） |
 
 最终视频不入分支。Release `promo-v1` 尚未创建（缺少 GitHub Token）。成片位于沙箱
 `out/learnrise-promo.mp4`（约 385 MB，sha256 见下），可手动上传：
@@ -20,8 +20,10 @@ sha256 5438eac62040584c97a140671728212f68fa78bdbe1dfc47a1f08e8b328dd9ab
 （同画面的 xiaoxiao 配音版：`out/learnrise-promo-xiaoxiao.mp4`，384,361,704 bytes，sha256
 `968408f43ca5feb124fa2274881dc3a9575bec4c5b8605c7485ffa21e62f11a9`。）
 
-`out/learnrise-promo-video.mp4` 是无声视频流，`out/learnrise-promo-xiaoxiao.mp4` 是同一画面的
-另一条配音（xiaoxiao）；两条成片都由 `scripts/mix-audio.mjs` 从同一视频流混音得到。
+`out/film.mp4` 是无声视频流（`npm run render` 输出，未入库；历史上曾命名
+`out/learnrise-promo-video.mp4`），`out/learnrise-promo-xiaoxiao.mp4` 是同一画面的
+另一条配音（xiaoxiao）；两条成片都由 `scripts/mix-audio.mjs` 从同一视频流混音得到
+（`mix-audio.mjs` 的 `--video` 默认值即 `out/film.mp4`）。
 
 ## 复现命令
 
@@ -30,7 +32,8 @@ sha256 5438eac62040584c97a140671728212f68fa78bdbe1dfc47a1f08e8b328dd9ab
 cd promo/video
 npm ci
 npm run render            # 渲染无声视频流 out/film.mp4
-node scripts/mix-audio.mjs # 混入配音，得到 out/learnrise-promo.mp4（*.wav / *.mp3 未入库）
+node scripts/mix-audio.mjs --voice=yunyang --video=out/film.mp4 --output=out/learnrise-promo.mp4
+                          # 混入配音，得到 out/learnrise-promo.mp4（默认 --video=out/film.mp4 即 render 输出；*.wav / *.mp3 未入库）
 npm run storyboard:build  # 重建 storyboard.json 契约
 npm run lint-content      # 中文文案 guard（场景文件内 >12 字符中文串报错）
 
