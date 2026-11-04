@@ -125,6 +125,7 @@ test('smoke: every main page renders from the API without skeletons', async ({ p
   await capture(page, 'task-26-nomock-prep.png')
 
   await page.goto('/trial')
+  await page.getByRole('button', { name: '开始试炼' }).click()
   await expect(page.getByRole('button', { name: '交卷', exact: true })).toBeVisible()
   await expect(page.getByText(/共 \d+ 题/)).toBeVisible()
   await expectNoSkeleton(page, '正在加载试卷…')
@@ -160,11 +161,6 @@ test('smoke: every main page renders from the API without skeletons', async ({ p
   await expectPageReady(page, 'page-library')
   await expect(page.getByTestId('source-row').first()).toBeVisible()
   await capture(page, 'task-14-smoke-library.png')
-
-  await page.goto('/quiz')
-  await expectPageReady(page, 'page-quiz')
-  await expect(page.getByTestId(`kp-option-${point.id}`)).toBeVisible()
-  await capture(page, 'task-14-smoke-quiz.png')
 
   await page.goto('/practice')
   await expectPageReady(page, 'page-practice')

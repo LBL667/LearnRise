@@ -198,7 +198,7 @@ export function ForgettingCurveChart({ items }: ForgettingCurveChartProps) {
   )
 
   return (
-    <div>
+    <div className="w-full">
       <svg
         viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="xMidYMid meet"
@@ -219,7 +219,7 @@ export function ForgettingCurveChart({ items }: ForgettingCurveChartProps) {
                 stroke="var(--color-line)"
                 strokeWidth={1}
               />
-              <text x={padLeft - 10} y={y + 3.5} textAnchor="end" fontSize={11} fill="var(--color-ink-mute)">
+              <text x={padLeft - 10} y={y + 4} textAnchor="end" fontSize={14} fill="var(--color-ink-mute)">
                 {Math.round(tick * 100)}%
               </text>
             </g>
@@ -231,7 +231,7 @@ export function ForgettingCurveChart({ items }: ForgettingCurveChartProps) {
           points={toPoints(linePoints)}
           fill="none"
           stroke="var(--color-primary)"
-          strokeWidth={2.4}
+          strokeWidth={3}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -242,7 +242,7 @@ export function ForgettingCurveChart({ items }: ForgettingCurveChartProps) {
             data-testid="curve-point"
             cx={point.x}
             cy={point.y}
-            r={2.6}
+            r={3.3}
             fill="var(--color-surface)"
             stroke="var(--color-primary)"
             strokeWidth={1.8}
@@ -258,7 +258,7 @@ export function ForgettingCurveChart({ items }: ForgettingCurveChartProps) {
               x={xFor(index)}
               y={height - 12}
               textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
-              fontSize={11.5}
+              fontSize={14}
               fill="var(--color-ink-mute)"
             >
               第 {point.days} 天
@@ -291,7 +291,7 @@ interface MasteryRadarChartProps {
 export function MasteryRadarChart({ items }: MasteryRadarChartProps) {
   if (items.length < 3) {
     return (
-      <div data-testid="radar-empty">
+      <div data-testid="radar-empty" className="w-full">
         <EmptyView
           className="h-[190px] py-0"
           title="暂无掌握度数据"

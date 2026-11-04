@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Loader2, Trash2, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { ApiError, parseApiDetail } from '@/api/client'
-import { listSources } from '@/api/sources'
+import { api, ApiError, parseApiDetail } from '@/api/client'
+import { deleteSource, listSources } from '@/api/sources'
 import type { SourceOut } from '@/api/types/sources'
 import { DataTable } from '@/components/ui/DataTable'
 import type { Column } from '@/components/ui/DataTable'
 import { EmptyView, ErrorView, LoadingView } from '@/components/ui/StateViews'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { useToast } from '@/components/ui/Toast'
 
 const COLUMNS: Column<SourceOut>[] = [
   {
@@ -72,6 +74,11 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
+  const [uploading, setUploading] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<SourceOut | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const { showToast } = useToast()
 
   useEffect(() => {
     let cancelled = false
@@ -97,14 +104,57 @@ export default function LibraryPage() {
     setReloadKey((key) => key + 1)
   }, [])
 
+  useEffect(() => {
+    if (!sources.some((source) => ['pending', 'parsing', 'embedding'].includes(source.status))) return
+    const timer = window.setTimeout(retry, 3000)
+    return () => window.clearTimeout(timer)
+  }, [sources, retry])
+
+  const upload = async (file: File | undefined) => {
+    if (!file || uploading) return
+    setUploading(true)
+    try {
+      await api.uploadDocument(file)
+      showToast('资料已上传，正在后台处理', 'success')
+      retry()
+    } catch (caught) {
+      showToast(describeError(caught), 'error')
+    } finally {
+      setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleting) return
+    setDeleting(true)
+    try {
+      await deleteSource(deleteTarget.id)
+      setSources((current) => current.filter((source) => source.id !== deleteTarget.id))
+      setDeleteTarget(null)
+      showToast('资料已删除', 'success')
+    } catch (caught) {
+      showToast(describeError(caught), 'error')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const columns: Column<SourceOut>[] = [...COLUMNS, {
+    key: 'actions', header: '操作',
+    render: (row) => <button type="button" aria-label={`删除资料：${row.title}`} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[#c24545] hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40" disabled={['pending', 'parsing', 'embedding'].includes(row.status)} title={['pending', 'parsing', 'embedding'].includes(row.status) ? '资料正在处理，请稍后删除' : '删除资料'} onClick={(event) => { event.stopPropagation(); setDeleteTarget(row) }}><Trash2 size={14} />删除</button>,
+  }]
+
   return (
     <div className="mx-auto w-full max-w-[1100px] px-6 py-6" data-testid="page-library">
-      <h1 className="text-[20px] font-bold text-ink">资料库</h1>
-      <p className="mt-1 text-[13px] text-ink-soft">
-        上传的资料、解析状态与知识点树将在这里管理。
-      </p>
-
-      <div className="mt-5">
+      <div className="mb-4 flex justify-end">
+        <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg" className="sr-only" aria-label="选择要上传的资料" data-testid="library-upload-input" onChange={(event) => void upload(event.target.files?.[0])} />
+        <button type="button" className="btn-primary h-10 px-5" disabled={uploading} onClick={() => fileRef.current?.click()} data-testid="library-upload">
+          {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+          {uploading ? '上传中…' : '上传资料'}
+        </button>
+      </div>
+      <div>
         {loading ? (
           <LoadingView />
         ) : error ? (
@@ -112,7 +162,7 @@ export default function LibraryPage() {
         ) : sources.length === 0 ? (
           <EmptyView
             title="暂无资料"
-            description="还没有上传任何资料。上传资料请从建赛向导进入。"
+            description="支持 PDF、Word、文本和图片，上传后将自动处理。"
           />
         ) : (
           <>
@@ -120,7 +170,7 @@ export default function LibraryPage() {
               共 {sources.length} 条
             </div>
             <DataTable
-              columns={COLUMNS}
+              columns={columns}
               rows={sources}
               rowKey={(row) => row.id}
               testIdPrefix="source"
@@ -129,6 +179,18 @@ export default function LibraryPage() {
           </>
         )}
       </div>
+      {deleteTarget && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[rgba(31,39,51,0.42)] p-4" onClick={() => { if (!deleting) setDeleteTarget(null) }}>
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-source-title" className="w-full max-w-[420px] rounded-2xl bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+          <h2 id="delete-source-title" className="text-lg font-bold text-ink">删除这份资料？</h2>
+          <p className="mt-3 break-words text-sm font-semibold text-ink">{deleteTarget.title}</p>
+          <p className="mt-2 text-[13px] leading-6 text-ink-soft">删除后，原文件以及由此资料生成的知识点、题目和相关作答记录将一并删除，无法恢复。</p>
+          <div className="mt-5 flex justify-end gap-3">
+            <button type="button" className="btn-gray h-9 px-4" disabled={deleting} onClick={() => setDeleteTarget(null)}>取消</button>
+            <button type="button" className="btn-base h-9 bg-[#d45151] px-4 text-white hover:bg-[#ba3535]" disabled={deleting} onClick={() => void confirmDelete()}>{deleting ? '删除中…' : '确认删除'}</button>
+          </div>
+        </div>
+      </div>}
+
     </div>
   )
 }

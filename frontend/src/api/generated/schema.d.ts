@@ -743,16 +743,16 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/profile/preferences/ui": {
+    "/api/profile/promotion-progress": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        /** Update Ui Prefs */
-        put: operations["update_ui_prefs_api_profile_preferences_ui_put"];
+        /** Get Promotion Progress */
+        get: operations["get_promotion_progress_api_profile_promotion_progress_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -769,23 +769,6 @@ export interface paths {
         };
         /** Get Profile Stats */
         get: operations["get_profile_stats_api_profile_stats_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/profile/study-progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Study Progress */
-        get: operations["get_study_progress_api_profile_study_progress_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -959,7 +942,8 @@ export interface paths {
         get: operations["read_source_api_sources__source_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Source */
+        delete: operations["delete_source_api_sources__source_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1949,7 +1933,6 @@ export interface components {
             learning: components["schemas"]["LearningPrefsOut"];
             notifications: components["schemas"]["NotificationPrefsOut"];
             privacy: components["schemas"]["PrivacyPrefsOut"];
-            ui: components["schemas"]["UiPrefsOut"];
         };
         /** PrivacyPrefsOut */
         PrivacyPrefsOut: {
@@ -2033,6 +2016,15 @@ export interface components {
             correct: number;
             /** Total */
             total: number;
+        };
+        /** PromotionProgressOut */
+        PromotionProgressOut: {
+            /** Prep Done */
+            prep_done: boolean;
+            /** Trial Done */
+            trial_done: number;
+            /** Trial Total */
+            trial_total: number;
         };
         /** QuizGenerateRequest */
         QuizGenerateRequest: {
@@ -2401,17 +2393,6 @@ export interface components {
             /** Title */
             title: string;
         };
-        /** StudyProgressOut */
-        StudyProgressOut: {
-            /** Label */
-            label: string;
-            /** Percent */
-            percent: number;
-            /** Total */
-            total: number;
-            /** Value */
-            value: number;
-        };
         /** SubmitRequest */
         SubmitRequest: {
             /** Answers */
@@ -2470,27 +2451,6 @@ export interface components {
             /** Page */
             page?: number | null;
         };
-        /** UiPrefsOut */
-        UiPrefsOut: {
-            /** Compact Tables */
-            compact_tables: boolean;
-            /** Sidebar Collapsed */
-            sidebar_collapsed: boolean;
-            /**
-             * Theme
-             * @enum {string}
-             */
-            theme: "light" | "dark" | "system";
-        };
-        /** UiPrefsUpdate */
-        UiPrefsUpdate: {
-            /** Compact Tables */
-            compact_tables?: boolean | null;
-            /** Sidebar Collapsed */
-            sidebar_collapsed?: boolean | null;
-            /** Theme */
-            theme?: ("light" | "dark" | "system") | null;
-        };
         /** UploadAccepted */
         UploadAccepted: {
             /** Job Id */
@@ -2505,6 +2465,8 @@ export interface components {
         };
         /** UserOut */
         UserOut: {
+            /** Avatar Url */
+            avatar_url?: string | null;
             /** Display Name */
             display_name: string;
             /** Email */
@@ -4250,18 +4212,14 @@ export interface operations {
             };
         };
     };
-    update_ui_prefs_api_profile_preferences_ui_put: {
+    get_promotion_progress_api_profile_promotion_progress_get: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UiPrefsUpdate"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -4269,16 +4227,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PreferencesOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["PromotionProgressOut"];
                 };
             };
         };
@@ -4299,26 +4248,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileStatOut"][];
-                };
-            };
-        };
-    };
-    get_study_progress_api_profile_study_progress_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StudyProgressOut"][];
                 };
             };
         };
@@ -4646,6 +4575,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SourceDetail"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_source_api_sources__source_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

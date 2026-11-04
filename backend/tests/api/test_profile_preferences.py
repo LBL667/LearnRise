@@ -22,7 +22,6 @@ DEFAULT_PREFERENCES = {
         "default_question_types": ["choice"],
         "default_quiz_num": 5,
     },
-    "ui": {"theme": "light", "sidebar_collapsed": False, "compact_tables": False},
     "privacy": {"leaderboard_anonymous": False, "name_visibility": "public"},
 }
 
@@ -116,25 +115,10 @@ def test_learning_merge_only_changes_provided_field(
     }
 
 
-def test_ui_merge_accumulates_changes(
-    client: TestClient, make_user: Callable[..., User]
-) -> None:
+def test_ui_settings_endpoint_removed(client: TestClient, make_user: Callable[..., User]) -> None:
     user = make_user()
-    first = _put(client, user, "ui", {"theme": "dark"})
-    assert first.status_code == 200, first.text
-    assert first.json()["ui"] == {
-        "theme": "dark",
-        "sidebar_collapsed": False,
-        "compact_tables": False,
-    }
-
-    second = _put(client, user, "ui", {"sidebar_collapsed": True})
-    assert second.status_code == 200, second.text
-    assert second.json()["ui"] == {
-        "theme": "dark",
-        "sidebar_collapsed": True,
-        "compact_tables": False,
-    }
+    response = _put(client, user, "ui", {"theme": "dark"})
+    assert response.status_code in (404, 405)
 
 
 def test_privacy_merge_accumulates_changes(
@@ -157,7 +141,6 @@ def test_invalid_enums_return_422(
     user = make_user()
     for group, body in (
         ("learning", {"default_difficulty": "insane"}),
-        ("ui", {"theme": "neon"}),
         ("privacy", {"name_visibility": "everyone"}),
     ):
         response = _put(client, user, group, body)
@@ -186,6 +169,6 @@ def test_quiz_num_out_of_range_returns_422(
 
 def test_preferences_require_auth(client: TestClient) -> None:
     assert client.get("/api/profile/preferences").status_code == 401
-    for group in ("notifications", "learning", "ui", "privacy"):
+    for group in ("notifications", "learning", "privacy"):
         response = client.put(f"/api/profile/preferences/{group}", json={})
         assert response.status_code == 401, group

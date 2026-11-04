@@ -8,7 +8,6 @@ import type {
   Preferences,
   PrivacyPreferences,
   ProfileInfoUpdate,
-  UiPreferencesPayload,
 } from './types/profile'
 
 function buildHeaders(extra?: HeadersInit): Headers {
@@ -66,15 +65,6 @@ export function updateLearningPreferences(
   payload: Partial<LearningPreferences>,
 ): Promise<Preferences> {
   return request<Preferences>('/profile/preferences/learning', {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
-}
-
-export function updateUiPreferences(
-  payload: Partial<UiPreferencesPayload>,
-): Promise<Preferences> {
-  return request<Preferences>('/profile/preferences/ui', {
     method: 'PUT',
     body: JSON.stringify(payload),
   })

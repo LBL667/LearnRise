@@ -533,3 +533,59 @@ def test_integration_real_vector_store(
         assert _chunk_count(db_session, uploaded.json()["source_id"]) >= 4
     finally:
         store.close()
+
+
+def test_delete_source_owner_only_cascades_and_removes_file(
+    client: TestClient, db_session: Session, make_user: Callable[..., User],
+    _isolated_storage: LocalStorage, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import app.api.sources as source_api
+    from app.models import KnowledgePoint, QuizQuestion
+
+    monkeypatch.setattr(source_api, "build_storage", lambda: _isolated_storage)
+    owner, other = make_user("资料拥有者"), make_user("其他用户")
+    uploaded = _upload(client, owner, b"test document", filename="test.txt", content_type="text/plain").json()
+    source = db_session.get(KnowledgeSource, uploaded["source_id"])
+    job = db_session.get(IngestionJob, uploaded["job_id"])
+    assert source is not None and job is not None
+    storage_key = source.storage_key
+    assert client.delete(f"/api/sources/{source.id}", headers=_headers(other)).status_code == 404
+    assert client.delete(f"/api/sources/{source.id}", headers=_headers(owner)).status_code == 409
+    source.status = "ready"
+    job.status = "ready"
+    point = KnowledgePoint(user_id=owner.id, source_id=source.id, title="测试", content="测试")
+    db_session.add(point)
+    db_session.flush()
+    question = QuizQuestion(user_id=owner.id, knowledge_point_id=point.id, type="choice", question="测试题", options=["a", "b"], answer="A", explanation="", difficulty="easy")
+    db_session.add(question)
+    db_session.commit()
+    point_id, question_id, source_id = point.id, question.id, source.id
+    result = client.delete(f"/api/sources/{source_id}", headers=_headers(owner))
+    assert result.status_code == 204, result.text
+    db_session.expire_all()
+    assert db_session.get(KnowledgeSource, source_id) is None
+    assert db_session.get(KnowledgePoint, point_id) is None
+    assert db_session.get(QuizQuestion, question_id) is None
+    assert _isolated_storage.delete(storage_key) is False
+    assert client.get(f"/api/sources/{source_id}", headers=_headers(owner)).status_code == 404
+
+
+def test_delete_source_keeps_database_when_storage_fails(
+    client: TestClient, db_session: Session, make_user: Callable[..., User], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import app.api.sources as source_api
+    user = make_user("删除失败")
+    uploaded = _upload(client, user, b"test document", filename="failure.txt", content_type="text/plain").json()
+    source = db_session.get(KnowledgeSource, uploaded["source_id"])
+    job = db_session.get(IngestionJob, uploaded["job_id"])
+    assert source is not None and job is not None
+    source.status = "ready"
+    job.status = "ready"
+    db_session.commit()
+    class FailingStorage:
+        def delete(self, key: str) -> bool:
+            raise OSError("storage failure")
+    monkeypatch.setattr(source_api, "build_storage", lambda: FailingStorage())
+    response = client.delete(f"/api/sources/{source.id}", headers=_headers(user))
+    assert response.status_code == 500
+    assert client.get(f"/api/sources/{source.id}", headers=_headers(user)).status_code == 200

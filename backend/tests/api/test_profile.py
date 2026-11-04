@@ -299,26 +299,31 @@ def test_competition_records_only_list_own_memberships(
     assert record["status"] in {"即将开始", "进行中", "已结束"}
 
 
-def test_study_progress_has_percentages(
+def test_promotion_progress_and_removed_study_endpoint(
     client: TestClient, db_session: Session, make_user: Callable[..., User]
 ) -> None:
     user = make_user("进度用户")
     competition = _create_competition(client, user, "进度竞赛")
     source = _seed_source(db_session, user, competition["id"])
-    point = _seed_point(db_session, user, source, mastery=0.9)
-    _seed_review(db_session, user, point)
-
-    response = client.get("/api/profile/study-progress", headers=_headers(user))
+    _seed_point(db_session, user, source, mastery=0.9)
+    response = client.get("/api/profile/promotion-progress", headers=_headers(user))
     assert response.status_code == 200, response.text
-    progress = response.json()
-    assert progress
-    labels = {item["label"] for item in progress}
-    assert labels == {"知识点掌握", "复习卡片", "今日复习", "试炼完成"}
-    for item in progress:
-        assert item["total"] >= item["value"] >= 0
-        assert 0 <= item["percent"] <= 100
-    mastered = next(item for item in progress if item["label"] == "知识点掌握")
-    assert mastered["value"] == 1
+    assert response.json() == {"prep_done": True, "trial_done": 0, "trial_total": 0}
+    assert client.get("/api/profile/study-progress", headers=_headers(user)).status_code == 404
+
+
+def test_competition_records_are_limited_to_ten_latest(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    user = make_user("竞赛记录用户")
+    for i in range(11):
+        _create_competition(client, user, f"竞赛{i}")
+    response = client.get("/api/profile/competition-records", headers=_headers(user))
+    assert response.status_code == 200, response.text
+    records = response.json()
+    assert len(records) == 10
+    assert records[0]["title"] == "竞赛10"
+    assert all(record["title"] != "竞赛0" for record in records)
 
 
 def test_settings_endpoint_was_removed(
@@ -391,7 +396,7 @@ def test_profile_endpoints_require_auth(client: TestClient) -> None:
         "/api/profile/info",
         "/api/profile/stats",
         "/api/profile/competition-records",
-        "/api/profile/study-progress",
+        "/api/profile/promotion-progress",
         "/api/profile/preferences",
     ):
         response = client.get(path)

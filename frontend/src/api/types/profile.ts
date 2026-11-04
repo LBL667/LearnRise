@@ -2,7 +2,6 @@
 
 export type PrefDifficulty = 'easy' | 'medium' | 'hard'
 export type PrefQuestionType = 'choice' | 'judge' | 'short_answer'
-export type PrefTheme = 'light' | 'dark' | 'system'
 export type NameVisibility = 'public' | 'members' | 'private'
 
 export interface NotificationPreferences {
@@ -15,12 +14,6 @@ export interface LearningPreferences {
   default_quiz_num: number
 }
 
-export interface UiPreferencesPayload {
-  theme: PrefTheme
-  sidebar_collapsed: boolean
-  compact_tables: boolean
-}
-
 export interface PrivacyPreferences {
   leaderboard_anonymous: boolean
   name_visibility: NameVisibility
@@ -30,7 +23,6 @@ export interface PrivacyPreferences {
 export interface Preferences {
   notifications: NotificationPreferences
   learning: LearningPreferences
-  ui: UiPreferencesPayload
   privacy: PrivacyPreferences
 }
 

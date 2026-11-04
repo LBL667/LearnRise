@@ -44,8 +44,8 @@ function LockIllustration({ unlocked }: { unlocked: boolean }) {
         alt=""
         className="pointer-events-none absolute bottom-2 left-0 w-full select-none opacity-70"
         style={{
-          maskImage: 'linear-gradient(to bottom, transparent 0%, black 55%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 55%)',
+          maskImage: 'radial-gradient(ellipse 68% 64% at 50% 65%, black 42%, transparent 100%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 68% 64% at 50% 65%, black 42%, transparent 100%)',
         }}
       />
       {/* 漂浮装饰小卡 */}
@@ -93,7 +93,7 @@ export default function PromotionPage() {
 
   const ratio = (done: number, total: number) => (total > 0 ? (done / total) * 100 : 0)
   const values = {
-    prep: { done: progress.prepDone, text: '已完成', progress: undefined as undefined },
+    prep: { done: progress.prepDone, text: progress.prepDone ? '已完成' : '未完成', progress: progress.prepDone ? 100 : 0 },
     trial: {
       done: progress.trialTotal > 0 && progress.trialDone >= progress.trialTotal,
       text: `${progress.trialDone} / ${progress.trialTotal}`,
@@ -142,21 +142,12 @@ export default function PromotionPage() {
                   <div className="text-[14px] font-semibold text-ink">{c.title}</div>
                   <div className="mt-0.5 text-[12.5px] text-ink-mute">{c.desc}</div>
                 </div>
-                {v.done ? (
-                  <span className="shrink-0 rounded-full bg-[#e5f6ec] px-3 py-1 text-[12px] font-medium text-[#188c5e]">
-                    已完成
-                  </span>
-                ) : (
-                  <div className="w-28 shrink-0">
-                    <div className="text-right text-[13px] font-semibold text-ink">{v.text}</div>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-page">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${Math.min(100, v.progress ?? 0)}%` }}
-                      />
-                    </div>
+                <div className="w-28 shrink-0">
+                  <div className="text-right text-[13px] font-semibold text-ink">{v.done ? '已完成' : v.text}</div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-page">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${v.done ? 100 : Math.min(100, v.progress ?? 0)}%` }} />
                   </div>
-                )}
+                </div>
               </div>
             )
           })}

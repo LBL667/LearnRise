@@ -405,13 +405,6 @@ export interface CompetitionRecord {
   status: string
 }
 
-export interface StudyProgressItem {
-  label: string
-  value: number
-  total: number
-  percent: number
-}
-
 /* ========== 排行榜 ========== */
 
 export interface LeaderboardEntry {
@@ -474,6 +467,5 @@ export interface LearnRiseApi {
   getProfileInfo(): Promise<ProfileInfo>
   getProfileStats(): Promise<ProfileStat[]>
   getCompetitionRecords(): Promise<CompetitionRecord[]>
-  getStudyProgress(): Promise<StudyProgressItem[]>
   getLeaderboard(competitionId: string): Promise<LeaderboardEntry[]>
 }

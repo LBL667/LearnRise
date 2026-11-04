@@ -462,11 +462,7 @@ export default function AgentsPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1100px] px-6 py-6" data-testid="page-agents">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-bold text-ink">Agent 设置</h1>
-          <p className="mt-1 text-[13px] text-ink-soft">管理自定义 Agent 的模型、密钥与系统提示词。</p>
-        </div>
+      <div className="flex flex-wrap items-start justify-end gap-3">
         <button type="button" className="btn-primary" onClick={openCreate} data-testid="agent-create">
           <Plus size={16} />
           新建 Agent

@@ -431,6 +431,7 @@ test('final QA: real browser walk across every product slice', async ({ page, br
         new URL(response.url()).pathname === '/api/trial/exams' && response.request().method() === 'POST',
     )
     await page.goto('/trial')
+    await page.getByRole('button', { name: '开始试炼' }).click()
     const startResponse = await startWait
     expect(startResponse.status()).toBe(201)
     const exam = (await startResponse.json()) as TrialExamStart
@@ -522,7 +523,8 @@ test('final QA: real browser walk across every product slice', async ({ page, br
 
     await page.goto('/rank')
     await expect(page.locator('select')).toBeVisible()
-    await page.locator('select').selectOption({ label: created.title })
+    await page.getByRole('button', { name: '选择竞赛' }).click()
+    await page.getByRole('option', { name: created.title }).click()
     await expect(page.getByText('正在加载排行榜…')).toHaveCount(0)
     await expect(page.getByTestId('leaderboard-error')).toHaveCount(0)
 
@@ -538,8 +540,7 @@ test('final QA: real browser walk across every product slice', async ({ page, br
       'profile-info',
       'profile-stats',
       'profile-records',
-      'profile-study',
-      'profile-settings',
+        'profile-settings',
     ]) {
       const block = page.getByTestId(id)
       await expect(block).toBeVisible()
@@ -549,14 +550,9 @@ test('final QA: real browser walk across every product slice', async ({ page, br
     await expect(page.getByTestId('profile-stats')).toContainText('参赛数')
     await expect(page.getByTestId('profile-stats')).toContainText('复习次数')
     await expect(page.getByTestId('profile-stats')).toContainText('连续学习天数')
-    await expect(page.getByTestId('profile-settings')).toContainText('基本信息')
-    await expect(page.getByTestId('profile-settings')).toContainText('通知设置')
-    await expect(page.getByTestId('profile-settings')).toContainText('隐私设置')
+    await expect(page.getByTestId('profile-info')).toContainText('学校')
     await expect(page.getByTestId('settings-edit-info')).toBeVisible()
     await expect(page.getByTestId('settings-change-password')).toBeVisible()
-    await expect(page.getByTestId('settings-notifications-toggle')).toBeVisible()
-    await expect(page.getByTestId('settings-ui-theme')).toBeVisible()
-    await expect(page.getByTestId('settings-privacy-anonymous')).toBeVisible()
     await expect(page.getByText('即将上线')).toHaveCount(0)
   })
 

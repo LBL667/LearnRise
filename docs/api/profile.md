@@ -3,7 +3,7 @@
 # profile profile
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：12。
+> 端点数量：11。
 
 ## 端点总览
 
@@ -18,9 +18,8 @@
 | `PUT` | `/api/profile/preferences/learning` | Update Learning Prefs |
 | `PUT` | `/api/profile/preferences/notifications` | Update Notification Prefs |
 | `PUT` | `/api/profile/preferences/privacy` | Update Privacy Prefs |
-| `PUT` | `/api/profile/preferences/ui` | Update Ui Prefs |
+| `GET` | `/api/profile/promotion-progress` | Get Promotion Progress |
 | `GET` | `/api/profile/stats` | Get Profile Stats |
-| `GET` | `/api/profile/study-progress` | Get Study Progress |
 
 ## 端点详情
 
@@ -202,10 +201,6 @@ curl -X PUT 'http://localhost:8000/api/profile/password' \
 | `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
 | `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
 | `learning.default_quiz_num` | `integer` | 是 |
-| `ui` | `UiPrefsOut` | 是 |
-| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
-| `ui.sidebar_collapsed` | `boolean` | 是 |
-| `ui.compact_tables` | `boolean` | 是 |
 | `privacy` | `PrivacyPrefsOut` | 是 |
 | `privacy.leaderboard_anonymous` | `boolean` | 是 |
 | `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
@@ -245,10 +240,6 @@ curl -X GET 'http://localhost:8000/api/profile/preferences' \
 | `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
 | `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
 | `learning.default_quiz_num` | `integer` | 是 |
-| `ui` | `UiPrefsOut` | 是 |
-| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
-| `ui.sidebar_collapsed` | `boolean` | 是 |
-| `ui.compact_tables` | `boolean` | 是 |
 | `privacy` | `PrivacyPrefsOut` | 是 |
 | `privacy.leaderboard_anonymous` | `boolean` | 是 |
 | `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
@@ -288,10 +279,6 @@ curl -X PUT 'http://localhost:8000/api/profile/preferences/learning' \
 | `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
 | `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
 | `learning.default_quiz_num` | `integer` | 是 |
-| `ui` | `UiPrefsOut` | 是 |
-| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
-| `ui.sidebar_collapsed` | `boolean` | 是 |
-| `ui.compact_tables` | `boolean` | 是 |
 | `privacy` | `PrivacyPrefsOut` | 是 |
 | `privacy.leaderboard_anonymous` | `boolean` | 是 |
 | `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
@@ -332,10 +319,6 @@ curl -X PUT 'http://localhost:8000/api/profile/preferences/notifications' \
 | `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
 | `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
 | `learning.default_quiz_num` | `integer` | 是 |
-| `ui` | `UiPrefsOut` | 是 |
-| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
-| `ui.sidebar_collapsed` | `boolean` | 是 |
-| `ui.compact_tables` | `boolean` | 是 |
 | `privacy` | `PrivacyPrefsOut` | 是 |
 | `privacy.leaderboard_anonymous` | `boolean` | 是 |
 | `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
@@ -353,49 +336,29 @@ curl -X PUT 'http://localhost:8000/api/profile/preferences/privacy' \
   -d '{"leaderboard_anonymous": false, "name_visibility": "public"}'
 ```
 
-### `PUT /api/profile/preferences/ui`
+### `GET /api/profile/promotion-progress`
 
 - **标签**: `profile`
-- **摘要**: Update Ui Prefs
+- **摘要**: Get Promotion Progress
 - **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
-
-#### 请求体字段（`application/json`）
-
-| 字段 | 类型 | 必填 | 默认值 |
-|---|---|---|---|
-| `theme` | `enum["light", "dark", "system"] \| null` | 否 | — |
-| `sidebar_collapsed` | `boolean \| null` | 否 | — |
-| `compact_tables` | `boolean \| null` | 否 | — |
 
 #### 响应字段（200）
 
 | 字段 | 类型 | 必填 |
 |---|---|---|
-| `notifications` | `NotificationPrefsOut` | 是 |
-| `notifications.email_reminders_enabled` | `boolean` | 是 |
-| `learning` | `LearningPrefsOut` | 是 |
-| `learning.default_difficulty` | `enum["easy", "medium", "hard"]` | 是 |
-| `learning.default_question_types` | `array<enum["choice", "judge", "short_answer"]>` | 是 |
-| `learning.default_quiz_num` | `integer` | 是 |
-| `ui` | `UiPrefsOut` | 是 |
-| `ui.theme` | `enum["light", "dark", "system"]` | 是 |
-| `ui.sidebar_collapsed` | `boolean` | 是 |
-| `ui.compact_tables` | `boolean` | 是 |
-| `privacy` | `PrivacyPrefsOut` | 是 |
-| `privacy.leaderboard_anonymous` | `boolean` | 是 |
-| `privacy.name_visibility` | `enum["public", "members", "private"]` | 是 |
+| `prep_done` | `boolean` | 是 |
+| `trial_done` | `integer` | 是 |
+| `trial_total` | `integer` | 是 |
 
 #### 错误状态码
 
-`401`（未认证或凭证无效）、`422`（请求体/参数校验失败）。
+`401`（未认证或凭证无效）。
 
 #### curl 示例
 
 ```bash
-curl -X PUT 'http://localhost:8000/api/profile/preferences/ui' \
-  -H 'Authorization: Bearer $TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{"compact_tables": false, "sidebar_collapsed": false, "theme": "light"}'
+curl -X GET 'http://localhost:8000/api/profile/promotion-progress' \
+  -H 'Authorization: Bearer $TOKEN'
 ```
 
 ### `GET /api/profile/stats`
@@ -422,32 +385,6 @@ curl -X PUT 'http://localhost:8000/api/profile/preferences/ui' \
 
 ```bash
 curl -X GET 'http://localhost:8000/api/profile/stats' \
-  -H 'Authorization: Bearer $TOKEN'
-```
-
-### `GET /api/profile/study-progress`
-
-- **标签**: `profile`
-- **摘要**: Get Study Progress
-- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
-
-#### 响应字段（200）
-
-| 字段 | 类型 | 必填 |
-|---|---|---|
-| `label` | `string` | 是 |
-| `value` | `integer` | 是 |
-| `total` | `integer` | 是 |
-| `percent` | `integer` | 是 |
-
-#### 错误状态码
-
-`401`（未认证或凭证无效）。
-
-#### curl 示例
-
-```bash
-curl -X GET 'http://localhost:8000/api/profile/study-progress' \
   -H 'Authorization: Bearer $TOKEN'
 ```
 

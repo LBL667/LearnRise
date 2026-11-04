@@ -14,7 +14,6 @@ import type {
   RemediationPlan,
   ReviewStats,
   ReviewSubmitResult,
-  StudyProgressItem,
   StartTrialExamPayload,
   TrialExam,
   TrialExamState,
@@ -447,17 +446,15 @@ const realApi: LearnRiseApi = {
     })),
   getUserProgress: async () => {
     const [study, stats] = await Promise.all([
-      request<StudyProgressItem[]>('/profile/study-progress'),
+      request<{ prep_done: boolean; trial_done: number; trial_total: number }>('/profile/promotion-progress'),
       request<ProfileStat[]>('/profile/stats'),
     ])
-    const pointProgress = study.find((item) => item.label === '知识点掌握')
-    const trialProgress = study.find((item) => item.label === '试炼完成')
     const reviewItem = stats.find((item) => item.key === 'reviews')
     const reviews = Number(reviewItem?.value ?? 0) || 0
     return {
-      prepDone: (pointProgress?.percent ?? 0) >= 80,
-      trialDone: trialProgress?.value ?? 0,
-      trialTotal: trialProgress?.total ?? 0,
+      prepDone: study.prep_done,
+      trialDone: study.trial_done,
+      trialTotal: study.trial_total,
       points: reviews * 4,
       pointsTarget: 100,
     }
@@ -465,7 +462,6 @@ const realApi: LearnRiseApi = {
   getProfileInfo: () => request<ProfileInfo>('/profile/info'),
   getProfileStats: () => request<ProfileStat[]>('/profile/stats'),
   getCompetitionRecords: () => request<CompetitionRecord[]>('/profile/competition-records'),
-  getStudyProgress: () => request<StudyProgressItem[]>('/profile/study-progress'),
   getLeaderboard: (competitionId) =>
     request<LeaderboardEntry[]>(`/leaderboard/${encodeURIComponent(competitionId)}`),
 }

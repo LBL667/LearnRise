@@ -27,12 +27,13 @@ export function TopBar() {
           <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#f26d6d]" />
         </button>
         <div className="flex items-center gap-2 rounded-lg px-1.5 py-1">
-          <span
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, hsl(212 85% 68%), hsl(232 78% 55%))' }}
-          >
-            {initial}
-          </span>
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt="" data-testid="header-avatar" className="h-8 w-8 rounded-full object-cover" />
+          ) : (
+            <span className="flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-white" style={{ background: 'linear-gradient(135deg, hsl(212 85% 68%), hsl(232 78% 55%))' }}>
+              {initial}
+            </span>
+          )}
           <span className="text-sm font-medium text-ink">{name}</span>
           <ChevronDown size={14} className="text-ink-mute" />
         </div>

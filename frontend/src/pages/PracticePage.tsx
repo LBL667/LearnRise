@@ -589,7 +589,7 @@ export default function PracticePage() {
     setSearchParams({}, { replace: true })
   }
 
-  const rootClass = 'mx-auto w-full max-w-[1100px] px-6 py-6'
+  const rootClass = 'mx-auto w-full max-w-[1100px] px-6 pb-6 pt-4'
 
   if (phase === 'loading') {
     return (
@@ -684,16 +684,7 @@ export default function PracticePage() {
   if (phase === 'session') {
     return (
       <div className={rootClass} data-testid="page-practice">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-[20px] font-bold text-ink">陪练</h1>
-            <p className="mt-1 text-[13px] text-ink-soft">
-              服务端自适应出题：连续答对 2 题升难度，连续答错 2 题降难度。
-            </p>
-          </div>
-        </div>
-
-        <section className="card mt-5 flex flex-wrap items-center gap-4 p-4">
+        <section className="card flex flex-wrap items-center gap-4 p-4">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-soft text-primary">
@@ -860,23 +851,9 @@ export default function PracticePage() {
   }
 
   return (
-    <div className={rootClass} data-testid="page-practice">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-bold text-ink">陪练</h1>
-          <p className="mt-1 text-[13px] text-ink-soft">
-            选择知识点开始自适应练习，答完即时讲解；刷新页面也能接着做。
-          </p>
-        </div>
-        {selectedIds.length > 0 && (
-          <span className="rounded-full bg-primary-soft px-3 py-1 text-[11.5px] text-primary">
-            已选 {selectedIds.length} 个知识点
-          </span>
-        )}
-      </div>
-
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <aside className="card h-fit p-5">
+    <div className={`${rootClass} h-full`} data-testid="page-practice">
+      <div className="grid gap-5 lg:h-full lg:min-h-[460px] lg:grid-cols-[minmax(0,1fr)_320px]">
+        <aside className="card flex min-h-0 flex-col p-4">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-[14px] font-bold text-ink">
               <span className="h-3.5 w-[3px] rounded-full bg-primary" />
@@ -884,7 +861,7 @@ export default function PracticePage() {
             </h2>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-3 flex min-h-0 flex-1 flex-col">
             <div className="flex items-center justify-between">
               <label className="text-[12.5px] font-semibold text-ink" htmlFor="practice-kp-search">
                 知识点（可多选）
@@ -906,7 +883,7 @@ export default function PracticePage() {
               </div>
             )}
 
-            <div className="mt-2">
+            <div className="mt-2 min-h-0 flex-1">
               {pointsLoading && <LoadingView className="py-6" />}
               {!pointsLoading && pointsError && (
                 <div className="rounded-lg border border-[#f5c2c2] bg-[#fdecec] px-3 py-2 text-[12.5px] text-[#c24545]">
@@ -934,7 +911,7 @@ export default function PracticePage() {
                       没有匹配的知识点
                     </p>
                   ) : (
-                    <div className="max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
+                    <div className="h-full max-h-[min(145px,22vh)] space-y-1.5 overflow-y-auto pr-1 lg:max-h-none">
                       {filteredPoints.map((point) => {
                         const checked = selectedIds.includes(point.id)
                         return (
@@ -971,7 +948,7 @@ export default function PracticePage() {
             </div>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-3">
             <label className="text-[12.5px] font-semibold text-ink">起始难度</label>
             <div className="mt-2 grid grid-cols-3 gap-2">
               {DIFFICULTIES.map((item) => {
@@ -1002,7 +979,7 @@ export default function PracticePage() {
             </p>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-3">
             <label className="text-[12.5px] font-semibold text-ink" htmlFor="practice-count-input">
               题目数量（可选，1-50）
             </label>
@@ -1026,7 +1003,7 @@ export default function PracticePage() {
           <button
             type="button"
             data-testid="practice-start"
-            className="btn-primary mt-5 w-full"
+            className="btn-primary mt-3 w-full"
             disabled={starting || points.length === 0 || !prefsReady || selectedIds.length === 0}
             onClick={() => void startPractice()}
           >
@@ -1046,13 +1023,13 @@ export default function PracticePage() {
           )}
         </aside>
 
-        <section className="h-fit space-y-4">
-          <div className="card p-5">
+        <section className="flex flex-col gap-3">
+          <div className="card flex flex-1 flex-col justify-center p-4">
             <h2 className="flex items-center gap-2 text-[14px] font-bold text-ink">
               <Sparkles size={16} className="text-primary" />
               怎么练
             </h2>
-            <ol className="mt-3 space-y-2.5 text-[12.5px] leading-5 text-ink-soft">
+            <ol className="mt-2 space-y-1.5 text-[12.5px] leading-5 text-ink-soft">
               <li className="flex gap-2">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[11px] font-bold text-primary">
                   1
@@ -1080,7 +1057,7 @@ export default function PracticePage() {
             </ol>
           </div>
 
-          <div className="card p-5">
+          <div className="card flex flex-1 flex-col justify-center p-4">
             <h2 className="flex items-center gap-2 text-[14px] font-bold text-ink">
               <Target size={16} className="text-[#2bb673]" />
               学习偏好
@@ -1102,7 +1079,7 @@ export default function PracticePage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-line bg-primary-soft-2 px-4 py-3 text-[11.5px] leading-5 text-ink-soft">
+          <div className="flex flex-1 flex-col justify-center rounded-xl border border-line bg-primary-soft-2 px-4 py-3 text-[11.5px] leading-5 text-ink-soft">
             <span className="inline-flex items-center gap-1 font-semibold text-primary">
               <ArrowRight size={13} />
               续做提示
