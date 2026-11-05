@@ -87,10 +87,19 @@ fi
 #   fixtures/lec01.pdf       -> 47588 bytes   (NOT >1MB; listed for reference only)
 #   fixtures/board.png       -> 12647 bytes   (NOT >1MB; listed for reference only)
 #   frontend/package-lock.json -> NOT tracked in this repo (absent at commit time)
-# At the time this gate was written, NO tracked file exceeds 1 MB, so the
-# allowlist is intentionally empty. If a >1MB fixture is ever added, it must
-# be added here with a comment before the file is committed.
-ALLOWED_OVERRSIZE=""
+# These original PNGs are used by the leaderboard, shared sidebar and avatar
+# picker. Keep exact paths rather than exempting entire directories so newly
+# added oversized files still require review.
+ALLOWED_OVERRSIZE="frontend/rank_number/1.png
+frontend/rank_number/2.png
+frontend/rank_number/3.png
+frontend/snowhill.png
+frontend/src/assets/avatars/boy.png
+frontend/src/assets/avatars/cap.png
+frontend/src/assets/avatars/cat.png
+frontend/src/assets/avatars/girl.png
+frontend/src/assets/avatars/glasses.png
+frontend/src/assets/avatars/panda.png"
 oversize="$(git ls-files -z | xargs -0 -I{} sh -c 'test $(stat -c%s "{}") -gt 1048576 && echo "{}"' || true)"
 if [[ -n "$oversize" ]]; then
   # Strip entries that are explicitly allowed (newline-separated exact matches).
