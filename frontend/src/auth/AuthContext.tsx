@@ -6,6 +6,7 @@ export interface AuthUser {
   id: string
   email: string
   display_name: string
+  avatar_url: string | null
 }
 
 interface TokenPayload {
@@ -20,6 +21,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, displayName: string, password: string) => Promise<void>
   logout: () => void
+  updateUser: (changes: Partial<AuthUser>) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -85,14 +87,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [adopt],
   )
 
+  const updateUser = useCallback((changes: Partial<AuthUser>) => {
+    setUser((current) => current ? { ...current, ...changes } : current)
+  }, [])
+
   const logout = useCallback(() => {
     clearToken()
     setUser(null)
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
-    [user, loading, login, register, logout],
+    () => ({ user, loading, login, register, logout, updateUser }),
+    [user, loading, login, register, logout, updateUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { CalendarClock, CheckCircle2, Flame, Layers, Link2, Loader2, Plus, RotateCw } from 'lucide-react'
+import { CalendarClock, CheckCircle2, ChevronDown, Flame, Layers, Link2, Loader2, Plus, RotateCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { api, ApiError, parseApiDetail } from '@/api/client'
 import { listKnowledgePoints } from '@/api/knowledge'
@@ -119,6 +119,8 @@ export default function ReviewPage() {
   const [cardsError, setCardsError] = useState('')
   const [cardsReloadKey, setCardsReloadKey] = useState(0)
   const [stateFilter, setStateFilter] = useState('')
+  const [stateMenuOpen, setStateMenuOpen] = useState(false)
+  const stateMenuRef = useRef<HTMLDivElement>(null)
 
   const [formOpen, setFormOpen] = useState(false)
   const [question, setQuestion] = useState('')
@@ -130,6 +132,25 @@ export default function ReviewPage() {
 
   const [points, setPoints] = useState<KnowledgePointOut[]>([])
   const [pointsError, setPointsError] = useState('')
+
+  useEffect(() => {
+    if (!stateMenuOpen) return
+    const closeOutside = (event: PointerEvent) => {
+      if (!stateMenuRef.current?.contains(event.target as Node)) setStateMenuOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setStateMenuOpen(false)
+        stateMenuRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+      }
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [stateMenuOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -282,21 +303,8 @@ export default function ReviewPage() {
   const predicted = current ? predictedEntries(current) : []
 
   return (
-    <div className="mx-auto w-full max-w-[980px] px-6 py-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[20px] font-bold text-ink">间隔复习</h1>
-          <p className="mt-1 text-[13px] text-ink-soft">
-            按 DSR 调度复习到期卡片，评分会决定下次出现的时间。
-          </p>
-        </div>
-        <span className="flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-[12px] font-medium text-primary">
-          <CalendarClock size={14} />
-          今日待复习 {stats?.due_count ?? due.length} 张
-        </span>
-      </div>
-
-      <div className="mt-5 grid grid-cols-4 gap-3">
+    <div className="mx-auto w-full max-w-[980px] px-6 pb-6 pt-4">
+      <div className="grid grid-cols-4 gap-3">
         <StatCard icon={<CalendarClock size={17} />} label="待复习" value={stats?.due_count ?? 0} />
         <StatCard icon={<CheckCircle2 size={17} />} label="今日已复习" value={stats?.reviewed_today ?? 0} />
         <StatCard icon={<Flame size={17} />} label="连续天数" value={stats?.streak_days ?? 0} />
@@ -450,22 +458,22 @@ export default function ReviewPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-[12.5px] text-ink-mute">
-              状态
-              <select
-                className="field-input h-9 w-[130px]"
-                data-testid="review-cards-state-filter"
-                value={stateFilter}
-                onChange={(event) => setStateFilter(event.target.value)}
-              >
-                <option value="">全部状态</option>
-                {CARD_STATE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="flex items-center gap-2 text-[12.5px] text-ink-mute">
+              <span>状态</span>
+              <div ref={stateMenuRef} className="relative z-[1]">
+                <button type="button" aria-label="筛选复习卡片状态" aria-haspopup="listbox" aria-expanded={stateMenuOpen} data-testid="review-cards-state-filter" onClick={() => setStateMenuOpen((open) => !open)} className="rank-glass-trigger flex h-11 w-[140px] items-center justify-between gap-2 px-4 text-left text-[13px] text-ink">
+                  <span>{stateFilter === '' ? '全部状态' : cardStateLabel(Number(stateFilter))}</span>
+                  <ChevronDown size={15} className={`shrink-0 text-ink-mute transition-transform ${stateMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {stateMenuOpen && <div role="listbox" aria-label="复习卡片状态" className="rank-glass-menu absolute right-0 top-full mt-2 w-[140px] p-2">
+                  {[{ value: '', label: '全部状态' }, ...CARD_STATE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label }))].map((option) => (
+                    <button key={option.value} type="button" role="option" aria-selected={stateFilter === option.value} onClick={() => { setStateFilter(option.value); setStateMenuOpen(false); stateMenuRef.current?.querySelector<HTMLButtonElement>('button')?.focus() }} className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] transition ${stateFilter === option.value ? 'bg-primary/10 font-semibold text-primary' : 'text-ink-soft hover:bg-white/70 hover:text-primary'}`}>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>}
+              </div>
+            </div>
             <button
               type="button"
               className="btn-primary"

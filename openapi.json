@@ -2111,15 +2111,11 @@
           },
           "privacy": {
             "$ref": "#/components/schemas/PrivacyPrefsOut"
-          },
-          "ui": {
-            "$ref": "#/components/schemas/UiPrefsOut"
           }
         },
         "required": [
           "notifications",
           "learning",
-          "ui",
           "privacy"
         ],
         "title": "PreferencesOut",
@@ -2367,6 +2363,29 @@
           "total"
         ],
         "title": "ProgressOut",
+        "type": "object"
+      },
+      "PromotionProgressOut": {
+        "properties": {
+          "prep_done": {
+            "title": "Prep Done",
+            "type": "boolean"
+          },
+          "trial_done": {
+            "title": "Trial Done",
+            "type": "integer"
+          },
+          "trial_total": {
+            "title": "Trial Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prep_done",
+          "trial_done",
+          "trial_total"
+        ],
+        "title": "PromotionProgressOut",
         "type": "object"
       },
       "QuizGenerateRequest": {
@@ -3441,34 +3460,6 @@
         "title": "SourceOut",
         "type": "object"
       },
-      "StudyProgressOut": {
-        "properties": {
-          "label": {
-            "title": "Label",
-            "type": "string"
-          },
-          "percent": {
-            "title": "Percent",
-            "type": "integer"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          },
-          "value": {
-            "title": "Value",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "label",
-          "value",
-          "total",
-          "percent"
-        ],
-        "title": "StudyProgressOut",
-        "type": "object"
-      },
       "SubmitRequest": {
         "properties": {
           "answers": {
@@ -3616,78 +3607,6 @@
         "title": "TrialSourceChunkOut",
         "type": "object"
       },
-      "UiPrefsOut": {
-        "properties": {
-          "compact_tables": {
-            "title": "Compact Tables",
-            "type": "boolean"
-          },
-          "sidebar_collapsed": {
-            "title": "Sidebar Collapsed",
-            "type": "boolean"
-          },
-          "theme": {
-            "enum": [
-              "light",
-              "dark",
-              "system"
-            ],
-            "title": "Theme",
-            "type": "string"
-          }
-        },
-        "required": [
-          "theme",
-          "sidebar_collapsed",
-          "compact_tables"
-        ],
-        "title": "UiPrefsOut",
-        "type": "object"
-      },
-      "UiPrefsUpdate": {
-        "properties": {
-          "compact_tables": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Compact Tables"
-          },
-          "sidebar_collapsed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sidebar Collapsed"
-          },
-          "theme": {
-            "anyOf": [
-              {
-                "enum": [
-                  "light",
-                  "dark",
-                  "system"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Theme"
-          }
-        },
-        "title": "UiPrefsUpdate",
-        "type": "object"
-      },
       "UploadAccepted": {
         "properties": {
           "job_id": {
@@ -3713,6 +3632,17 @@
       },
       "UserOut": {
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "display_name": {
             "title": "Display Name",
             "type": "string"
@@ -6605,39 +6535,19 @@
         ]
       }
     },
-    "/api/profile/preferences/ui": {
-      "put": {
-        "operationId": "update_ui_prefs_api_profile_preferences_ui_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UiPrefsUpdate"
-              }
-            }
-          },
-          "required": true
-        },
+    "/api/profile/promotion-progress": {
+      "get": {
+        "operationId": "get_promotion_progress_api_profile_promotion_progress_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PreferencesOut"
+                  "$ref": "#/components/schemas/PromotionProgressOut"
                 }
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
         "security": [
@@ -6645,7 +6555,7 @@
             "OAuth2PasswordBearer": []
           }
         ],
-        "summary": "Update Ui Prefs",
+        "summary": "Get Promotion Progress",
         "tags": [
           "profile"
         ]
@@ -6676,36 +6586,6 @@
           }
         ],
         "summary": "Get Profile Stats",
-        "tags": [
-          "profile"
-        ]
-      }
-    },
-    "/api/profile/study-progress": {
-      "get": {
-        "operationId": "get_study_progress_api_profile_study_progress_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/StudyProgressOut"
-                  },
-                  "title": "Response Get Study Progress Api Profile Study Progress Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "summary": "Get Study Progress",
         "tags": [
           "profile"
         ]
@@ -7205,6 +7085,44 @@
       }
     },
     "/api/sources/{source_id}": {
+      "delete": {
+        "operationId": "delete_source_api_sources__source_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete Source",
+        "tags": [
+          "sources"
+        ]
+      },
       "get": {
         "operationId": "read_source_api_sources__source_id__get",
         "parameters": [

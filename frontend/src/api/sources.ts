@@ -38,3 +38,7 @@ export function createSourceNotes(
     { timeoutMs: options.timeoutMs ?? TIMEOUTS.notes },
   )
 }
+
+export function deleteSource(sourceId: string): Promise<void> {
+  return request<void>(`/sources/${encodeURIComponent(sourceId)}`, { method: 'DELETE' })
+}

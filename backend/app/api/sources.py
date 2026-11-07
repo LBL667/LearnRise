@@ -17,6 +17,7 @@ from fastapi import (
     BackgroundTasks,
     File,
     HTTPException,
+    Response,
     UploadFile,
 )
 from fastapi import status as http_status
@@ -24,6 +25,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.adapters.storage.factory import build_storage
 from app.config import settings
 from app.deps import CurrentUser, DbSession
 from app.models import Chunk, IngestionJob, KnowledgeSource, User, new_uuid
@@ -225,6 +227,29 @@ def read_source(source_id: str, db: DbSession, user: CurrentUser) -> SourceDetai
     return SourceDetail.model_validate(_load_source(db, source_id, user))
 
 
+@router.delete("/sources/{source_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+def delete_source(source_id: str, db: DbSession, user: CurrentUser) -> Response:
+    try:
+        UUID(source_id)
+    except ValueError:
+        raise _not_found() from None
+    source = db.scalar(select(KnowledgeSource).where(KnowledgeSource.id == source_id).with_for_update())
+    if source is None or source.user_id != user.id:
+        raise _not_found()
+    active_job = db.scalar(select(IngestionJob.id).where(
+        IngestionJob.source_id == source.id, IngestionJob.status.in_(("queued", "parsing", "embedding"))
+    ).limit(1))
+    if source.status in ("pending", "parsing", "embedding") or active_job:
+        raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail="资料正在处理，请稍后再删除")
+    try:
+        build_storage().delete(source.storage_key)
+    except Exception:
+        raise HTTPException(status_code=500, detail="文件删除失败，请稍后重试") from None
+    db.delete(source)
+    db.commit()
+    return Response(status_code=http_status.HTTP_204_NO_CONTENT)
+
+
 @router.get("/jobs/{job_id}", response_model=JobOut)
 def read_job(job_id: str, db: DbSession, user: CurrentUser) -> JobOut:
     return JobOut.model_validate(_load_job(db, job_id, user))
@@ -242,6 +267,9 @@ def reprocess_source(
     background_tasks: BackgroundTasks,
 ) -> UploadAccepted:
     source = _load_source(db, source_id, user, write=True)
+    source = db.scalar(select(KnowledgeSource).where(KnowledgeSource.id == source.id).with_for_update())
+    if source is None:
+        raise _not_found()
 
     # The chunks table is the vector store's own persistence, so deleting the
     # rows removes the old embeddings before the new job re-writes them.

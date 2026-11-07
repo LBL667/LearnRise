@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from app.adapters.storage.factory import build_storage
 from app.api.errors import CodedHTTPException
 from app.config import settings
 from app.deps import CurrentUser, DbSession
@@ -41,6 +42,14 @@ class UserOut(BaseModel):
     id: str
     email: str
     display_name: str
+    avatar_url: str | None = None
+
+
+def _user_out(user: User) -> UserOut:
+    return UserOut(
+        id=user.id, email=user.email, display_name=user.display_name,
+        avatar_url=build_storage().sign(user.avatar_key) if user.avatar_key else None,
+    )
 
 
 class TokenResponse(BaseModel):
@@ -83,13 +92,13 @@ def login(payload: LoginRequest, db: DbSession) -> TokenResponse:
 
     return TokenResponse(
         access_token=create_access_token(user.id),
-        user=UserOut.model_validate(user),
+        user=_user_out(user),
     )
 
 
 @router.get("/me", response_model=UserOut)
 def read_current_user(user: CurrentUser) -> UserOut:
-    return UserOut.model_validate(user)
+    return _user_out(user)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -129,5 +138,5 @@ def register(payload: RegisterRequest, db: DbSession) -> TokenResponse:
 
     return TokenResponse(
         access_token=create_access_token(user.id),
-        user=UserOut.model_validate(user),
+        user=_user_out(user),
     )

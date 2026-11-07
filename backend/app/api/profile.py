@@ -12,7 +12,7 @@ Profile aggregates are computed with SQL counts/means (no fixture constants):
 * ``stats`` -- competition count, review count, mean knowledge-point mastery
   and the current review streak;
 * ``competition-records`` -- memberships joined to competitions;
-* ``study-progress`` -- knowledge-point / review-card / trial completion;
+* ``promotion-progress`` -- progress needed for promotion eligibility;
 * ``preferences`` -- the four preference groups (notifications / learning /
   ui / privacy), merged from the user row and its JSONB columns;
 * ``leaderboard`` -- members ordered by ``10 * correct answers + 4 * reviews``
@@ -58,7 +58,6 @@ leaderboard_router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
 TONE = Literal["primary", "success", "warning", "violet"]
 DIFFICULTY = Literal["easy", "medium", "hard"]
 QUESTION_TYPE = Literal["choice", "judge", "short_answer"]
-THEME = Literal["light", "dark", "system"]
 NAME_VISIBILITY = Literal["public", "members", "private"]
 
 PREFERENCE_DEFAULTS: dict[str, dict[str, Any]] = {
@@ -67,7 +66,6 @@ PREFERENCE_DEFAULTS: dict[str, dict[str, Any]] = {
         "default_question_types": ["choice"],
         "default_quiz_num": 5,
     },
-    "ui": {"theme": "light", "sidebar_collapsed": False, "compact_tables": False},
     "privacy": {"leaderboard_anonymous": False, "name_visibility": "public"},
 }
 
@@ -165,11 +163,10 @@ class CompetitionRecordOut(BaseModel):
     status: str
 
 
-class StudyProgressOut(BaseModel):
-    label: str
-    value: int
-    total: int
-    percent: int
+class PromotionProgressOut(BaseModel):
+    prep_done: bool
+    trial_done: int
+    trial_total: int
 
 
 class NotificationPrefsUpdate(BaseModel):
@@ -180,12 +177,6 @@ class LearningPrefsUpdate(BaseModel):
     default_difficulty: DIFFICULTY | None = None
     default_question_types: list[QUESTION_TYPE] | None = Field(default=None, min_length=1)
     default_quiz_num: int | None = Field(default=None, ge=1, le=20)
-
-
-class UiPrefsUpdate(BaseModel):
-    theme: THEME | None = None
-    sidebar_collapsed: bool | None = None
-    compact_tables: bool | None = None
 
 
 class PrivacyPrefsUpdate(BaseModel):
@@ -203,12 +194,6 @@ class LearningPrefsOut(BaseModel):
     default_quiz_num: int
 
 
-class UiPrefsOut(BaseModel):
-    theme: THEME
-    sidebar_collapsed: bool
-    compact_tables: bool
-
-
 class PrivacyPrefsOut(BaseModel):
     leaderboard_anonymous: bool
     name_visibility: NAME_VISIBILITY
@@ -217,7 +202,6 @@ class PrivacyPrefsOut(BaseModel):
 class PreferencesOut(BaseModel):
     notifications: NotificationPrefsOut
     learning: LearningPrefsOut
-    ui: UiPrefsOut
     privacy: PrivacyPrefsOut
 
 
@@ -293,14 +277,12 @@ def _merged_jsonb(stored: dict | None, changes: dict[str, Any]) -> dict:
 
 def _preferences_payload(db: Session, user: User) -> PreferencesOut:
     learning = {**PREFERENCE_DEFAULTS["learning"], **(user.learning_prefs or {})}
-    ui = {**PREFERENCE_DEFAULTS["ui"], **(user.ui_prefs or {})}
     privacy = {**PREFERENCE_DEFAULTS["privacy"], **(user.privacy_prefs or {})}
     return PreferencesOut(
         notifications=NotificationPrefsOut(
             email_reminders_enabled=user.email_reminders_enabled
         ),
         learning=LearningPrefsOut(**learning),
-        ui=UiPrefsOut(**ui),
         privacy=PrivacyPrefsOut(**privacy),
     )
 
@@ -558,7 +540,8 @@ def get_competition_records(
         select(CompetitionMember.role, CompetitionMember.created_at, Competition)
         .join(Competition, Competition.id == CompetitionMember.competition_id)
         .where(CompetitionMember.user_id == user.id)
-        .order_by(CompetitionMember.created_at.desc())
+        .order_by(CompetitionMember.created_at.desc(), CompetitionMember.competition_id.desc())
+        .limit(10)
     ).all()
 
     now = datetime.now(ZoneInfo(settings.timezone))
@@ -585,87 +568,17 @@ def get_competition_records(
     return records
 
 
-@profile_router.get("/study-progress", response_model=list[StudyProgressOut])
-def get_study_progress(db: DbSession, user: CurrentUser) -> list[StudyProgressOut]:
-    def _scalar(statement: Any) -> int:
-        return int(db.scalar(statement) or 0)
-
-    kp_total = _scalar(
-        select(func.count()).select_from(KnowledgePoint).where(
-            KnowledgePoint.user_id == user.id
-        )
+@profile_router.get("/promotion-progress", response_model=PromotionProgressOut)
+def get_promotion_progress(db: DbSession, user: CurrentUser) -> PromotionProgressOut:
+    kp_total = int(db.scalar(select(func.count()).select_from(KnowledgePoint).where(KnowledgePoint.user_id == user.id)) or 0)
+    kp_mastered = int(db.scalar(select(func.count()).select_from(KnowledgePoint).where(KnowledgePoint.user_id == user.id, KnowledgePoint.mastery_score >= 0.8)) or 0)
+    exams_total = int(db.scalar(select(func.count()).select_from(TrialExam).where(TrialExam.user_id == user.id)) or 0)
+    exams_done = int(db.scalar(select(func.count()).select_from(TrialExam).where(TrialExam.user_id == user.id, TrialExam.status == "submitted")) or 0)
+    return PromotionProgressOut(
+        prep_done=kp_total > 0 and round(kp_mastered * 100 / kp_total) >= 80,
+        trial_done=exams_done,
+        trial_total=exams_total,
     )
-    kp_mastered = _scalar(
-        select(func.count())
-        .select_from(KnowledgePoint)
-        .where(KnowledgePoint.user_id == user.id, KnowledgePoint.mastery_score >= 0.8)
-    )
-
-    cards_total = _scalar(
-        select(func.count()).select_from(ReviewCard).where(ReviewCard.user_id == user.id)
-    )
-    cards_reviewed = _scalar(
-        select(func.count())
-        .select_from(ReviewCard)
-        .where(ReviewCard.user_id == user.id, ReviewCard.reps > 0)
-    )
-
-    today = _today_local()
-    reviewed_today = _scalar(
-        select(func.count())
-        .select_from(ReviewLog)
-        .where(ReviewLog.user_id == user.id, ReviewLog.review_date == today)
-    )
-    due_today = _scalar(
-        select(func.count())
-        .select_from(ReviewCard)
-        .where(
-            ReviewCard.user_id == user.id,
-            ReviewCard.due_date.is_not(None),
-            ReviewCard.due_date <= today,
-        )
-    )
-
-    exams_total = _scalar(
-        select(func.count()).select_from(TrialExam).where(TrialExam.user_id == user.id)
-    )
-    exams_done = _scalar(
-        select(func.count())
-        .select_from(TrialExam)
-        .where(TrialExam.user_id == user.id, TrialExam.status == "submitted")
-    )
-
-    def _percent(value: int, total: int) -> int:
-        if total <= 0:
-            return 0
-        return min(100, round(value * 100 / total))
-
-    return [
-        StudyProgressOut(
-            label="知识点掌握",
-            value=kp_mastered,
-            total=kp_total,
-            percent=_percent(kp_mastered, kp_total),
-        ),
-        StudyProgressOut(
-            label="复习卡片",
-            value=cards_reviewed,
-            total=cards_total,
-            percent=_percent(cards_reviewed, cards_total),
-        ),
-        StudyProgressOut(
-            label="今日复习",
-            value=reviewed_today,
-            total=reviewed_today + due_today,
-            percent=_percent(reviewed_today, reviewed_today + due_today),
-        ),
-        StudyProgressOut(
-            label="试炼完成",
-            value=exams_done,
-            total=exams_total,
-            percent=_percent(exams_done, exams_total),
-        ),
-    ]
 
 
 @profile_router.get("/preferences", response_model=PreferencesOut)
@@ -692,18 +605,6 @@ def update_learning_prefs(
     changes = payload.model_dump(exclude_unset=True, exclude_none=True)
     if changes:
         user.learning_prefs = _merged_jsonb(user.learning_prefs, changes)
-        db.commit()
-        db.refresh(user)
-    return _preferences_payload(db, user)
-
-
-@profile_router.put("/preferences/ui", response_model=PreferencesOut)
-def update_ui_prefs(
-    payload: UiPrefsUpdate, db: DbSession, user: CurrentUser
-) -> PreferencesOut:
-    changes = payload.model_dump(exclude_unset=True, exclude_none=True)
-    if changes:
-        user.ui_prefs = _merged_jsonb(user.ui_prefs, changes)
         db.commit()
         db.refresh(user)
     return _preferences_payload(db, user)

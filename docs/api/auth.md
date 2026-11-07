@@ -38,6 +38,7 @@
 | `user.id` | `string` | 是 |
 | `user.email` | `string` | 是 |
 | `user.display_name` | `string` | 是 |
+| `user.avatar_url` | `string \| null` | 否 |
 
 #### 错误状态码
 
@@ -64,6 +65,7 @@ curl -X POST 'http://localhost:8000/api/auth/login' \
 | `id` | `string` | 是 |
 | `email` | `string` | 是 |
 | `display_name` | `string` | 是 |
+| `avatar_url` | `string \| null` | 否 |
 
 #### 错误状态码
 
@@ -100,6 +102,7 @@ curl -X GET 'http://localhost:8000/api/auth/me' \
 | `user.id` | `string` | 是 |
 | `user.email` | `string` | 是 |
 | `user.display_name` | `string` | 是 |
+| `user.avatar_url` | `string \| null` | 否 |
 
 #### 错误状态码
 

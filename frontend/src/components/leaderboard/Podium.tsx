@@ -13,21 +13,23 @@ export function Podium({
     <>
       {champion && (
         <section
-          className="relative mt-5 overflow-hidden rounded-[16px] border border-[#f0e0b8] bg-gradient-to-r from-[#fbf1d3] via-[#fdf8e9] to-[#f4f9ff]"
+          className="champion-card relative mt-5 overflow-hidden rounded-[16px] border border-[#f0e0b8] bg-gradient-to-r from-[#fbf1d3] via-[#fdf8e9] to-[#f4f9ff]"
           data-user-id={champion.userId}
         >
           <img
             src="/misty-mountains.jpg"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 right-0 h-[82%] w-[58%] select-none object-cover object-bottom opacity-85"
+            className="pointer-events-none absolute bottom-0 right-0 h-full w-[58%] select-none object-cover object-bottom opacity-80"
             style={{
-              maskImage: 'linear-gradient(to left, black 60%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to left, black 60%, transparent 100%)',
+              maskImage: 'linear-gradient(to left, black 45%, transparent 100%), linear-gradient(to bottom, transparent, black 35%)',
+              maskComposite: 'intersect',
+              WebkitMaskImage: 'linear-gradient(to left, black 45%, transparent 100%), linear-gradient(to bottom, transparent, black 35%)',
+              WebkitMaskComposite: 'source-in',
             }}
             draggable={false}
           />
-          <div className="relative z-10 flex items-center gap-8 px-10 py-7">
+          <div className="relative z-10 flex items-center gap-8 px-10 py-4">
             <LaurelNumber rank={champion.rank} size={104} />
             <LaurelAvatar
               name={champion.name}
@@ -62,7 +64,7 @@ export function Podium({
               data-testid="leaderboard-runner"
               data-user-id={entry.userId}
             >
-              <LaurelNumber rank={entry.rank} size={64} />
+              <LaurelNumber rank={entry.rank} size={76} />
               <LaurelAvatar
                 name={entry.name}
                 hue={entry.avatarHue}

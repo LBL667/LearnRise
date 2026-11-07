@@ -3,7 +3,7 @@
 # sources 资料
 
 > 本文件由 `scripts/gen_api_docs.py` 生成，请勿手工修改。
-> 端点数量：5。
+> 端点数量：6。
 
 ## 端点总览
 
@@ -13,6 +13,7 @@
 | `GET` | `/api/sources` | List Sources |
 | `POST` | `/api/sources/upload` | Upload Source |
 | `GET` | `/api/sources/{source_id}` | Read Source |
+| `DELETE` | `/api/sources/{source_id}` | Delete Source |
 | `POST` | `/api/sources/{source_id}/reprocess` | Reprocess Source |
 
 ## 端点详情
@@ -150,6 +151,33 @@ curl -X POST 'http://localhost:8000/api/sources/upload' \
 
 ```bash
 curl -X GET 'http://localhost:8000/api/sources/{source_id}' \
+  -H 'Authorization: Bearer $TOKEN'
+```
+
+### `DELETE /api/sources/{source_id}`
+
+- **标签**: `sources`
+- **摘要**: Delete Source
+- **鉴权**: 需要认证：`Authorization: Bearer <JWT>`（`OAuth2PasswordBearer`，`tokenUrl=/api/auth/login`）
+
+#### 路径 / 查询 / 请求头参数
+
+| 名称 | 位置 | 类型 | 必填 | 默认值 |
+|---|---|---|---|---|
+| `source_id` | `path` | `string` | 是 | — |
+
+#### 响应字段（204）
+
+无响应体。
+
+#### 错误状态码
+
+`401`（未认证或凭证无效）、`404`（资源不存在或不可见（非成员/跨租户一律 404））、`422`（请求体/参数校验失败）。
+
+#### curl 示例
+
+```bash
+curl -X DELETE 'http://localhost:8000/api/sources/{source_id}' \
   -H 'Authorization: Bearer $TOKEN'
 ```
 

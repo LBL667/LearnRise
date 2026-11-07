@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Clock, ListChecks, Lock, Star } from 'lucide-react'
+import { ArrowRight, BookOpen, CheckCircle2, ClipboardList, Clock, FileText, ListChecks, Lock, ScrollText, Star } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { ApiError, api } from '@/api/client'
 import type { TrialAnswerResult, TrialExam, TrialExamQuestion, TrialSubmission } from '@/api/types'
 import { CoverArt } from '@/components/competition/CoverArt'
@@ -230,7 +231,7 @@ export default function TrialPage() {
   const [submission, setSubmission] = useState<TrialSubmission | null>(null)
   const [expired, setExpired] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const { showToast } = useToast()
@@ -238,25 +239,26 @@ export default function TrialPage() {
   const startedRef = useRef(false)
   const submittedRef = useRef(false)
 
-  useEffect(() => {
+  const startTrial = async () => {
     if (startedRef.current) return
     startedRef.current = true
-    void (async () => {
-      try {
-        const data = await api.startTrialExam({ count: QUESTION_COUNT })
-        setExam(data)
-        setSecondsLeft(secondsUntil(data.expiresAt))
-      } catch (caught) {
-        if (caught instanceof ApiError && caught.code === 'NO_QUESTIONS') {
-          setError('当前没有可用的题目，请先在备赛区完成练习。')
-        } else {
-          setError(caught instanceof ApiError ? caught.detail : '试卷加载失败，请稍后重试')
-        }
-      } finally {
-        setLoading(false)
+    setError('')
+    setLoading(true)
+    try {
+      const data = await api.startTrialExam({ count: QUESTION_COUNT })
+      setExam(data)
+      setSecondsLeft(secondsUntil(data.expiresAt))
+    } catch (caught) {
+      startedRef.current = false
+      if (caught instanceof ApiError && caught.code === 'NO_QUESTIONS') {
+        setError('当前没有可用的题目，请先在备赛区完成练习。')
+      } else {
+        setError(caught instanceof ApiError ? caught.detail : '试卷加载失败，请稍后重试')
       }
-    })()
-  }, [])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const updateAnswer = useCallback((questionId: string, value: string) => {
     setAnswers((prev) => {
@@ -324,19 +326,35 @@ export default function TrialPage() {
     [exam, answers],
   )
 
-  if (loading) {
+  if (!exam) {
     return (
-      <div className="w-full px-6 py-6">
-        <div className="card p-10 text-center text-sm text-ink-mute">正在加载试卷…</div>
-      </div>
-    )
-  }
-
-  if (error || !exam) {
-    return (
-      <div className="w-full px-6 py-6">
-        <div className="card p-10 text-center">
-          <p className="text-sm text-ink-soft">{error || '试卷加载失败'}</p>
+      <div className="flex w-full justify-center px-6 py-10" data-testid="trial-cover">
+        <div className="w-full max-w-[640px]">
+          <div className="relative mx-auto flex h-[190px] w-[320px] max-w-full items-center justify-center" aria-hidden="true">
+            <img src="/misty-mountains.jpg" alt="" className="pointer-events-none absolute bottom-2 left-0 w-full select-none opacity-70" style={{ maskImage: 'radial-gradient(ellipse 68% 64% at 50% 65%, black 42%, transparent 100%)', WebkitMaskImage: 'radial-gradient(ellipse 68% 64% at 50% 65%, black 42%, transparent 100%)' }} />
+            <div className="absolute left-14 top-6 h-10 w-10 -rotate-12 rounded-lg bg-white/80 shadow-sm backdrop-blur"><FileText size={18} className="m-auto mt-2.5 text-primary/60" /></div>
+            <div className="absolute right-14 top-10 h-10 w-10 rotate-12 rounded-lg bg-white/80 shadow-sm backdrop-blur"><ScrollText size={18} className="m-auto mt-2.5 text-primary/50" /></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="flex h-[104px] w-[128px] items-center justify-center rounded-2xl bg-gradient-to-b from-[#6ea8ff] to-[#3f7ef0] shadow-[0_10px_30px_rgba(46,124,246,0.25)]"><ClipboardList size={50} className="text-white" strokeWidth={2} /></div>
+              <div className="mt-1.5 h-4 w-[150px] rounded-lg bg-gradient-to-b from-[#c9def8] to-[#eef5fd]" />
+            </div>
+          </div>
+          <div className="mt-6 text-center">
+            <h1 className="text-[22px] font-bold text-ink">赛题试炼</h1>
+            <p className="mx-auto mt-2 max-w-[440px] text-[13.5px] leading-6 text-ink-soft">准备好检验学习成果了吗？开始后系统将从已有题库中抽取题目，完成一场限时练习。</p>
+          </div>
+          <section className="card mt-7 divide-y divide-line px-2" aria-label="试炼说明">
+            {[
+              { icon: ListChecks, title: '试卷题量', desc: '最多 10 道题，实际数量以题库为准。' },
+              { icon: Clock, title: '限时作答', desc: '开始后计时 30 分钟，到期自动交卷。' },
+              { icon: CheckCircle2, title: '交卷后查看解析', desc: '提交后查看作答结果、正确答案和解析。' },
+            ].map(({ icon: Icon, title, desc }) => <div key={title} className="flex items-center gap-3.5 px-3 py-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"><Icon size={19} /></span><div className="min-w-0"><div className="text-[14px] font-semibold text-ink">{title}</div><div className="mt-0.5 text-[12.5px] text-ink-mute">{desc}</div></div></div>)}
+          </section>
+          {error && <p role="alert" className="mt-4 text-center text-[13px] text-[#c24545]">{error}</p>}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <button type="button" className="btn-primary h-10 px-6" disabled={loading} onClick={() => void startTrial()}>{loading ? '正在创建试卷…' : '开始试炼'}<ArrowRight size={15} /></button>
+            <Link to="/prep" className="btn-base h-10 rounded-lg border border-line bg-white px-5 text-ink hover:text-primary"><BookOpen size={15} />去备赛区</Link>
+          </div>
         </div>
       </div>
     )

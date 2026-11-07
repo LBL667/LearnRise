@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronDown, Crown, RefreshCw } from 'lucide-react'
+import { ChevronDown, RefreshCw } from 'lucide-react'
 import { api, ApiError, fetchLeaderboardPage } from '@/api/client'
 import type { Competition, LeaderboardEntry } from '@/api/types'
 import { EmptyView, ErrorView, LoadingView } from '@/components/ui/StateViews'
@@ -39,6 +39,8 @@ export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [competitionId, setCompetitionId] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
@@ -164,6 +166,25 @@ export default function LeaderboardPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!menuOpen) return
+    const closeOutside = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+        menuRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+      }
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [menuOpen])
+
   const sorted = [...entries].sort((a, b) => a.rank - b.rank)
   const champion = sorted.find((entry) => entry.rank === 1)
   const runnersUp = sorted.filter((entry) => entry.rank === 2 || entry.rank === 3)
@@ -186,34 +207,34 @@ export default function LeaderboardPage() {
       />
 
       <div className="relative z-10">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-2">
-            <Crown size={26} className="fill-primary text-primary" />
-            <h1 className="text-xl font-bold text-ink">排行榜</h1>
-            <span className="ml-1 text-[13px] text-ink-mute">见证每一位探索者的成长与绽放</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <select
-                className="field-input h-9 w-56 appearance-none pr-8"
-                value={competitionId}
-                onChange={(e) => setCompetitionId(e.target.value)}
+            <div ref={menuRef} className="relative z-40">
+              <button
+                type="button"
+                aria-label="选择竞赛"
+                aria-haspopup="listbox"
+                aria-expanded={menuOpen}
                 disabled={competitions.length === 0}
+                onClick={() => setMenuOpen((open) => !open)}
+                className="rank-glass-trigger flex h-11 w-56 items-center justify-between gap-3 px-4 text-left text-[13px] text-ink disabled:opacity-50"
               >
-                {competitions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={14}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-mute"
-              />
+                <span className="min-w-0 truncate">{competitions.find((c) => c.id === competitionId)?.title ?? '暂无竞赛'}</span>
+                <ChevronDown size={15} className={`shrink-0 text-ink-mute transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {menuOpen && (
+                <div role="listbox" aria-label="竞赛列表" className="rank-glass-menu absolute right-0 top-full mt-2 max-h-64 w-56 overflow-y-auto p-2">
+                  {competitions.map((c) => (
+                    <button key={c.id} type="button" role="option" aria-selected={c.id === competitionId} onClick={() => { setCompetitionId(c.id); setMenuOpen(false) }} className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] transition ${c.id === competitionId ? 'bg-primary/10 font-semibold text-primary' : 'text-ink-soft hover:bg-white/70 hover:text-primary'}`}>
+                      {c.title}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="button"
-              className="btn-ghost h-9 px-3"
+              className="btn-ghost flex h-11 w-11 items-center justify-center rounded-full p-0"
               onClick={() => void loadFirstPage(competitionId)}
               disabled={loading || !competitionId}
               aria-label="刷新排行榜"

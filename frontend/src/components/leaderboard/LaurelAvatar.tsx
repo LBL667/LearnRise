@@ -1,50 +1,9 @@
-import { Crown } from 'lucide-react'
-
-type LaurelColor = { main: string; light: string; crown?: string }
-
-const LAUREL_COLOR: Record<number, LaurelColor> = {
-  1: { main: '#d9a53f', light: '#f0c96b', crown: '#f2b93c' },
-  2: { main: '#9fb0c6', light: '#c2cfe0' },
-  3: { main: '#c98d52', light: '#e3ad75' },
-}
-
-function colorFor(rank: number): LaurelColor {
-  return LAUREL_COLOR[rank] ?? LAUREL_COLOR[2]
-}
-
-function LaurelLeaves({
-  side,
-  color,
-  r = 52,
-}: {
-  side: 'left' | 'right'
-  color: LaurelColor
-  r?: number
-}) {
-  const leaves = []
-  for (let i = 0; i < 10; i++) {
-    const t = i / 9
-    const deg = side === 'left' ? 210 - t * 105 : -30 + t * 105
-    const rad = (deg * Math.PI) / 180
-    const cx = 60 + r * Math.cos(rad)
-    const cy = 62 - r * Math.sin(rad) * 0.96
-    const rot = side === 'left' ? deg - 90 : deg + 90
-    const big = 1 - Math.abs(t - 0.5) * 0.4
-    leaves.push(
-      <ellipse
-        key={i}
-        cx={cx}
-        cy={cy}
-        rx={9 * big}
-        ry={3.6 * big}
-        fill={i % 2 === 0 ? color.main : color.light}
-        opacity={0.94}
-        transform={`rotate(${rot} ${cx} ${cy})`}
-      />,
-    )
-  }
-  return <>{leaves}</>
-}
+import goldNumber from '../../../rank_number/1.png'
+import silverNumber from '../../../rank_number/2.png'
+import bronzeNumber from '../../../rank_number/3.png'
+import goldFrame from '../../../rank_number/avatar_border_gold_transparent.png'
+import silverFrame from '../../../rank_number/avatar_border_silver_transparent.png'
+import bronzeFrame from '../../../rank_number/avatar_border_bronze_transparent.png'
 
 function InitialAvatar({ name, hue, size }: { name: string; hue: number; size: number }) {
   return (
@@ -90,74 +49,29 @@ export function AvatarImage({
   return <InitialAvatar name={name} hue={hue} size={size} />
 }
 
-export function LaurelAvatar({
-  name,
-  hue,
-  rank,
-  size = 108,
-  avatarUrl,
-}: {
-  name: string
-  hue: number
-  rank: number
-  size?: number
-  avatarUrl?: string | null
-}) {
-  const color = colorFor(rank)
-  const avatarSize = size * 0.58
+const frames: Record<number, { src: string; x: number; y: number; scale: number }> = {
+  1: { src: goldFrame, x: .495, y: .542, scale: .63 },
+  2: { src: silverFrame, x: .502, y: .506, scale: .65 },
+  3: { src: bronzeFrame, x: .503, y: .488, scale: .67 },
+}
+const numbers: Record<number, string> = { 1: goldNumber, 2: silverNumber, 3: bronzeNumber }
+
+export function LaurelAvatar({ name, hue, rank, size = 108, avatarUrl }: { name: string; hue: number; rank: number; size?: number; avatarUrl?: string | null }) {
+  const frame = frames[rank]
+  if (!frame) return <AvatarImage name={name} hue={hue} size={size} avatarUrl={avatarUrl} />
   return (
-    <span className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 120 120" width={size} height={size} className="absolute inset-0" aria-hidden="true">
-        <LaurelLeaves side="left" color={color} />
-        <LaurelLeaves side="right" color={color} />
-      </svg>
-      <span
-        className="absolute overflow-hidden rounded-full"
-        style={{
-          width: avatarSize,
-          height: avatarSize,
-          left: (size - avatarSize) / 2,
-          top: (size - avatarSize) / 2 + size * 0.02,
-          boxShadow: `0 0 0 3px #fff, 0 0 0 4px ${color.main}66`,
-        }}
-      >
-        <AvatarImage name={name} hue={hue} size={avatarSize} avatarUrl={avatarUrl} />
+    <span className="relative inline-flex shrink-0" style={{ width: size, height: size }}>
+      <span className="absolute -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full" style={{ left: `${frame.x * 100}%`, top: `${frame.y * 100}%` }}>
+        <AvatarImage name={name} hue={hue} size={size * frame.scale} avatarUrl={avatarUrl} />
       </span>
-      {rank === 1 && (
-        <span
-          className="absolute left-1/2 -translate-x-1/2"
-          style={{ top: -size * 0.1, color: color.crown }}
-          aria-hidden="true"
-        >
-          <Crown size={size * 0.3} fill="currentColor" strokeWidth={1.2} />
-        </span>
-      )}
+      <img src={frame.src} alt="" aria-hidden="true" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain" />
     </span>
   )
 }
 
 export function LaurelNumber({ rank, size = 96 }: { rank: number; size?: number }) {
-  const color = colorFor(rank)
-  return (
-    <span className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 120 120" width={size} height={size} className="absolute inset-0">
-        <LaurelLeaves side="left" color={color} r={46} />
-        <LaurelLeaves side="right" color={color} r={46} />
-      </svg>
-      <span
-        data-testid="rank-label"
-        className="absolute inset-0 flex items-center justify-center font-black leading-none"
-        aria-label={`第 ${rank} 名`}
-        style={{
-          fontSize: size * 0.5,
-          background: `linear-gradient(to bottom, ${color.light}, ${color.main})`,
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-        }}
-      >
-        {rank}
-      </span>
-    </span>
-  )
+  return <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
+    <img src={numbers[rank]} alt="" aria-hidden="true" width={size} height={size} className="h-full w-full select-none object-contain" draggable={false} />
+    <span className="sr-only" data-testid="rank-label" aria-label={`第 ${rank} 名`}>{rank}</span>
+  </span>
 }

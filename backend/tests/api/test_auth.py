@@ -106,6 +106,7 @@ def test_login_returns_token_and_user(client: TestClient, make_user: Callable[..
         "id": user.id,
         "email": user.email,
         "display_name": user.display_name,
+        "avatar_url": None,
     }
     assert "password_hash" not in response.text
     assert PASSWORD not in response.text
@@ -174,9 +175,23 @@ def test_me_returns_current_user(client: TestClient, make_user: Callable[..., Us
         "id": user.id,
         "email": user.email,
         "display_name": user.display_name,
+        "avatar_url": None,
     }
     assert "password_hash" not in response.text
     assert PASSWORD not in response.text
+
+
+def test_login_and_me_include_saved_avatar(
+    client: TestClient, db_session: Session, make_user: Callable[..., User]
+) -> None:
+    user = make_user()
+    user.avatar_key = f"avatars/{user.id}/avatar.png"
+    db_session.commit()
+    login = _login(client, user)
+    assert login.status_code == 200
+    assert login.json()["user"]["avatar_url"].endswith(user.avatar_key)
+    me = client.get("/api/auth/me", headers=_auth_header(login.json()["access_token"]))
+    assert me.json()["avatar_url"].endswith(user.avatar_key)
 
 
 def test_me_without_token_is_401(client: TestClient) -> None:

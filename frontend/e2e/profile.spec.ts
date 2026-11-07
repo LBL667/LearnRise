@@ -105,31 +105,10 @@ async function waitForPut(page: Page, pathFragment: string) {
   )
 }
 
-async function setToggle(page: Page, testId: string, desired: boolean): Promise<void> {
-  const toggle = page.getByTestId(testId)
-  await expect(toggle).toBeVisible()
-  const current = (await toggle.getAttribute('aria-checked')) === 'true'
-  if (current === desired) return
-  const response = waitForPut(page, '/api/profile/preferences/')
-  await toggle.click()
-  expect((await response).ok()).toBeTruthy()
-  await expect(toggle).toHaveAttribute('aria-checked', desired ? 'true' : 'false')
-}
-
-async function setTheme(page: Page, label: '浅色' | '深色' | '跟随系统'): Promise<void> {
-  const response = waitForPut(page, '/api/profile/preferences/ui')
-  await page.getByTestId('settings-ui-theme').getByRole('button', { name: label }).click()
-  expect((await response).ok()).toBeTruthy()
-}
-
 async function restoreDemoProfile(token: string, name: string): Promise<void> {
   await apiFetch('/api/profile/info', token, {
     method: 'PUT',
     body: JSON.stringify({ display_name: name }),
-  })
-  await apiFetch('/api/profile/preferences/ui', token, {
-    method: 'PUT',
-    body: JSON.stringify({ theme: 'light', sidebar_collapsed: false, compact_tables: false }),
   })
   await apiFetch('/api/profile/preferences/notifications', token, {
     method: 'PUT',
@@ -151,7 +130,6 @@ test('profile page renders all five blocks with real data', async ({ page }) => 
     'profile-info',
     'profile-stats',
     'profile-records',
-    'profile-study',
     'profile-settings',
   ]) {
     const block = page.getByTestId(id)
@@ -162,15 +140,9 @@ test('profile page renders all five blocks with real data', async ({ page }) => 
   await expect(page.getByText('正在加载个人中心…')).toHaveCount(0)
   await expect(page.getByTestId('profile-stats')).toContainText('参赛数')
   await expect(page.getByTestId('profile-stats')).toContainText('连续学习天数')
-  await expect(page.getByTestId('profile-settings')).toContainText('基本信息')
-  await expect(page.getByTestId('profile-settings')).toContainText('通知设置')
-  await expect(page.getByTestId('profile-settings')).toContainText('隐私设置')
+  await expect(page.getByTestId('profile-info')).toContainText('学校')
   await expect(page.getByTestId('settings-edit-info')).toBeVisible()
   await expect(page.getByTestId('settings-change-password')).toBeVisible()
-  await expect(page.getByTestId('settings-notifications-toggle')).toBeVisible()
-  await expect(page.getByTestId('settings-learning-save')).toBeVisible()
-  await expect(page.getByTestId('settings-ui-theme')).toBeVisible()
-  await expect(page.getByTestId('settings-privacy-anonymous')).toBeVisible()
   await expect(page.getByText('即将上线')).toHaveCount(0)
 
   await capture(page, 'task-21-profile.png')
@@ -194,27 +166,6 @@ test('profile settings persist real edits', async ({ page }) => {
     await page.reload()
     await expect(page.getByTestId('profile-info')).toContainText('QA-昵称')
 
-    await setTheme(page, '深色')
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-    await setTheme(page, '浅色')
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
-
-    await setToggle(page, 'settings-notifications-toggle', true)
-    await setToggle(page, 'settings-notifications-toggle', false)
-    await page.reload()
-    await expect(page.getByTestId('settings-notifications-toggle')).toHaveAttribute(
-      'aria-checked',
-      'false',
-    )
-    await setToggle(page, 'settings-notifications-toggle', true)
-
-    const competition = await seedCompetition(token)
-    await setToggle(page, 'settings-privacy-anonymous', true)
-    await page.goto('/rank')
-    await page.locator('select').selectOption({ label: competition.title })
-    await expect(page.getByTestId('rank-label').first()).toBeVisible()
-    await expect(page.getByText('匿名用户').first()).toBeVisible()
-
     await capture(page, 'task-20-profile-settings.png')
   } finally {
     await restoreDemoProfile(token, original.name)
@@ -227,18 +178,32 @@ test('profile avatar uploads and renders through the files proxy', async ({ page
 
   await page.goto('/profile')
 
+  await page.getByTestId('profile-avatar-button').click()
+  const dialog = page.getByRole('dialog', { name: '更换头像' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '预设头像 1' }).click()
+  await expect(dialog.getByRole('button', { name: '预设头像 1' })).toHaveAttribute('aria-pressed', 'true')
+  await dialog.getByRole('button', { name: '取消' }).click()
+  await expect(dialog).toBeHidden()
+  await page.getByTestId('profile-avatar-button').click()
   const upload = page.waitForResponse(
     (response) =>
       response.url().includes('/api/profile/avatar') && response.request().method() === 'POST',
   )
   await page.getByTestId('profile-avatar-input').setInputFiles(AVATAR_FIXTURE)
+  await expect(dialog.getByRole('button', { name: '已选择自定义头像' })).toHaveAttribute('aria-pressed', 'true')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
   expect((await upload).ok()).toBeTruthy()
 
   const avatar = page.getByTestId('profile-avatar')
   await expect(avatar).toHaveAttribute('src', /\/files\/avatars\//)
+  await expect(page.getByTestId('header-avatar')).toHaveAttribute('src', /\/files\/avatars\//)
   await expect
     .poll(async () => avatar.evaluate((element) => (element as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0)
+  await page.reload()
+  await expect(page.getByTestId('profile-avatar')).toHaveAttribute('src', /\/files\/avatars\//)
+  await expect(page.getByTestId('header-avatar')).toHaveAttribute('src', /\/files\/avatars\//)
 
   await capture(page, 'task-20-profile-avatar.png')
 })
@@ -259,7 +224,8 @@ test('leaderboard shows a contiguous server rank for the top three', async ({ pa
   await page.addInitScript((value) => window.localStorage.setItem('learnrise.token', value), token)
   await page.goto('/rank')
 
-  await page.locator('select').selectOption({ label: competition.title })
+  await page.getByRole('button', { name: '选择竞赛' }).click()
+  await page.getByRole('option', { name: competition.title }).click()
 
   const ranks = page.getByTestId('rank-label')
   await expect(ranks.nth(0)).toHaveText('1')

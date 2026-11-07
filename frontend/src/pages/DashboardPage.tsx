@@ -54,27 +54,13 @@ export default function DashboardPage() {
   const { data, loading, error, reload } = useAsync(load, [])
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-6 py-6" data-testid="page-dashboard">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="relative w-fit text-[20px] font-bold text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-[3px] after:w-8 after:rounded-full after:bg-primary">
-            学习看板
-          </h1>
-          <p className="mt-2 text-[13px] text-ink-soft">到期复习、记忆曲线与掌握度的一站式汇总。</p>
-        </div>
-        <button
-          type="button"
-          className="flex items-center gap-1 text-[12.5px] text-ink-mute transition hover:text-primary"
-          onClick={reload}
-          aria-label="刷新学习看板"
-          data-testid="dashboard-refresh"
-        >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          刷新
+    <div className="mx-auto w-full max-w-[1100px] px-6 pb-6 pt-4" data-testid="page-dashboard">
+      <div className="sticky top-3 z-30 flex h-0 justify-end pr-2">
+        <button type="button" onClick={reload} aria-label="刷新学习看板" title="刷新学习看板" data-testid="dashboard-refresh" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/85 text-primary shadow-lg backdrop-blur-md transition hover:bg-white hover:shadow-xl focus-visible:outline-2 focus-visible:outline-primary">
+          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
-
-      <div className="mt-5">
+      <div>
         {loading && !data ? (
           <LoadingView />
         ) : error && !data ? (
@@ -119,14 +105,16 @@ function DashboardContent({ summary }: { summary: DashboardSummaryOut }) {
           icon={Flame}
           tone="bg-gold/15 text-gold"
         />
-        <KpiCard
-          testId="dashboard-kpi-mastery"
-          label="平均掌握度"
-          value={mastery}
-          unit={mastery === '—' ? undefined : '%'}
-          icon={Target}
-          tone="bg-primary-soft text-primary"
-        />
+        <div className="relative">
+          <KpiCard
+            testId="dashboard-kpi-mastery"
+            label="平均掌握度"
+            value={mastery}
+            unit={mastery === '—' ? undefined : '%'}
+            icon={Target}
+            tone="bg-primary-soft text-primary"
+          />
+        </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
