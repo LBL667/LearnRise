@@ -1,0 +1,195 @@
+{
+  "generatedFor": "learnrise-promo-newui-dynamic",
+  "generatedAt": "2026-11-07",
+  "sourceUiCommit": "9309670",
+  "sourceOfTruth": "LearnRise/backend/var/promo_manifest.json (untracked seed manifest, generated 2026-11-02T15:10:15Z)",
+  "mainCompetition": {
+    "id": "e298b09b-de28-432c-9e37-7376a5f31623",
+    "title": "2026 春季 · 财务会计班级联赛",
+    "invite_code": "LR-2026",
+    "source_id": "0bc37940-7e92-4040-b507-06711fc92140"
+  },
+  "source": {
+    "id": "0bc37940-7e92-4040-b507-06711fc92140",
+    "competition_id": "e298b09b-de28-432c-9e37-7376a5f31623",
+    "title": "第3章 应收款项及预防账款",
+    "filename": "第3章 应收款项及预防账款.pdf",
+    "status": "ready"
+  },
+  "users": [
+    {
+      "email": "xiaohong@example.com",
+      "display_name": "小红",
+      "role": "student"
+    },
+    {
+      "email": "xiaoming@example.com",
+      "display_name": "小明",
+      "role": "student"
+    },
+    {
+      "email": "zhangsan@example.com",
+      "display_name": "张三",
+      "role": "student"
+    },
+    {
+      "email": "lisi@example.com",
+      "display_name": "李四",
+      "role": "student"
+    },
+    {
+      "email": "wang@example.com",
+      "display_name": "王老师",
+      "role": "teacher"
+    },
+    {
+      "email": "zhou@example.com",
+      "display_name": "周老师",
+      "role": "teacher"
+    }
+  ],
+  "competitions": [
+    {
+      "id": "e298b09b-de28-432c-9e37-7376a5f31623",
+      "title": "2026 春季 · 财务会计班级联赛",
+      "invite_code": "LR-2026",
+      "owner_email": "wang@example.com",
+      "is_main": true
+    },
+    {
+      "id": "3212ebd8-5e96-4bd8-998e-6881f93ca576",
+      "title": "一班 · 财务会计冲刺",
+      "invite_code": "LR-2026-C1",
+      "owner_email": "wang@example.com",
+      "is_main": false
+    },
+    {
+      "id": "aa6b3760-bf1e-4210-93b3-97cfda1090c0",
+      "title": "二班 · 微观经济学期中",
+      "invite_code": "LR-2026-C2",
+      "owner_email": "zhou@example.com",
+      "is_main": false
+    }
+  ],
+  "leaderboard": [
+    {
+      "rank": 1,
+      "name": "小红",
+      "email": "xiaohong@example.com",
+      "points": 1000,
+      "cards": 5,
+      "correct": 98
+    },
+    {
+      "rank": 2,
+      "name": "小明",
+      "email": "xiaoming@example.com",
+      "points": 960,
+      "cards": 5,
+      "correct": 94
+    },
+    {
+      "rank": 3,
+      "name": "张三",
+      "email": "zhangsan@example.com",
+      "points": 916,
+      "cards": 4,
+      "correct": 90
+    },
+    {
+      "rank": 4,
+      "name": "李四",
+      "email": "lisi@example.com",
+      "points": 876,
+      "cards": 4,
+      "correct": 86
+    }
+  ],
+  "assertionsForS09": [
+    "Leaderboard order must be: 小红 1000 > 小明 960 > 张三 916 > 李四 876",
+    "Main competition invite code is LR-2026",
+    "Main competition title is 2026 春季 · 财务会计班级联赛",
+    "Source title is 第3章 应收款项及预防账款 and status is ready"
+  ],
+  "demoCredentials": {
+    "note": "local demo only; value sourced from LearnRise/.env.demo at run time, never printed into evidence",
+    "emailVar": "DEMO_EMAIL",
+    "passwordVar": "DEMO_PASSWORD"
+  },
+  "invariants": {
+    "factsJson": {
+      "knowledgePoints": 67,
+      "chunks": 77,
+      "apiOperations": 498,
+      "testsCollected": 490,
+      "scoreA": 8,
+      "scoreB": 6
+    },
+    "note": "facts.ts numbers are locked; this block is documentation only — do NOT edit src/content/facts.ts"
+  },
+  "verifiedLive": {
+    "verifiedAt": "2026-11-07T09:02:54+00:00",
+    "api": "GET /api/leaderboard/e298b09b-de28-432c-9e37-7376a5f31623",
+    "entries": [
+      {
+        "rank": 1,
+        "name": "小红",
+        "points": 1000,
+        "tier": "卓越",
+        "division": "IV",
+        "avatarHue": 300
+      },
+      {
+        "rank": 2,
+        "name": "小明",
+        "points": 960,
+        "tier": "贯通",
+        "division": "I",
+        "avatarHue": 259
+      },
+      {
+        "rank": 3,
+        "name": "张三",
+        "points": 916,
+        "tier": "贯通",
+        "division": "I",
+        "avatarHue": 264
+      },
+      {
+        "rank": 4,
+        "name": "李四",
+        "points": 876,
+        "tier": "贯通",
+        "division": "I",
+        "avatarHue": 309
+      }
+    ],
+    "seedCounts": {
+      "knowledgePointsForSource": 24,
+      "questionsForSource": 100,
+      "attemptsRebuilt": 402,
+      "reviewCardsRebuilt": 18,
+      "reviewLogsRebuilt": 18
+    },
+    "dbTotals": {
+      "User": 35,
+      "Competition": 32,
+      "KnowledgeSource": 16,
+      "KnowledgePoint": 310,
+      "QuizQuestion": 130,
+      "ReviewCard": 32,
+      "ReviewLog": 24,
+      "QuizAttempt": 443
+    },
+    "seedIdempotent": true,
+    "uiServingCheck": {
+      "PrepPage": "text/javascript (real)",
+      "QuizPage": "text/html (SPA fallback => file absent)",
+      "AppTsxRefs": {
+        "LeaderboardPage": 3,
+        "PrepPage": 6,
+        "ProfilePage": 3
+      }
+    }
+  }
+}

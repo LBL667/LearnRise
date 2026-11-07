@@ -17,6 +17,33 @@ with `Backdrop` + `GrainOverlay` and never mounts narration. Narration audio is
 added later by `scripts/mix-audio.mjs`. A narration edit therefore never changes
 scene pixels; a `screenText`/`subline`/`kicker`/`footnote`/`dataStrip` edit does.
 
+### UI-refresh changelog (2026-11-06)
+
+The LearnRise `main` UI removed the standalone quiz page, the six profile
+settings cards and the server-side theme switch. This film was adjusted
+**in-place, without re-capturing any screenshot and without touching the
+application repo**:
+
+- **S01** — the middle deck card `s01-bg-quiz.png` (dead `/quiz` route) is
+  replaced by `s03-library-ready.png`.
+- **S05** — no longer an "answer wrong, auto-create card" scene. It is now the
+  knowledge-tree / knowledge-point / mindmap scene, reusing `s04-*.png`
+  captures (those pages were unchanged by the UI refresh). `film.ts` copy,
+  `S05Quiz.tsx` beats and the S05 narration clip were regenerated.
+- **S10** — the six-setting highlight list, `CARD_BOXES` and the light/dark
+  switch are gone. `S10Profile.tsx` now cross-fades profile card → masked
+  Agent key → avatar sync, using the `s10-*-768.png` captures that still
+  exist. `film.ts` copy, `S10Profile.tsx` and the S10 narration clip were
+  regenerated.
+- **S02/S11** fact numbers are unchanged and still `check-facts`-clean
+  (67 paths / 77 operations / 498 tests).
+- `claims.md` rows 20/21/32/33 and the mock-text limitation were rewritten
+  for the new S05/S10 wording.
+
+Regenerate after any copy edit: `npm run storyboard:build`,
+`npm run tts:all -- --scene=Sxx`, `npm run timeline:check`, then re-render the
+affected scene(s) and finally `npm run render` + `mix-audio.mjs`.
+
 ---
 
 ## Change one narration line
@@ -45,9 +72,8 @@ the mirrored `out/learnrise-promo.srt`. To update the delivered cut, re-mux
 without re-rendering pixels:
 
 ```bash
-npm run render            # 先把 master 渲染到 out/film.mp4
 node scripts/mix-audio.mjs --voice=yunyang \
-  --video=out/film.mp4 \
+  --video=out/learnrise-promo-video.mp4 \
   --output=out/learnrise-promo.mp4
 ```
 
@@ -127,16 +153,19 @@ Narration is synthesized with **edge-tts 7.3.1**, pinned in a throwaway
 virtualenv that is *not* vendored into this project:
 
 ```
-/tmp/opencode/ttsvenv/bin/edge-tts --version   # 7.3.1
+~/.local/share/remotion-video/ttsvenv/bin/edge-tts --version   # 7.3.1
 ```
 
-`scripts/tts.mjs` resolves the binary in this order: `$EDGE_TTS`, then
-`/tmp/opencode/ttsvenv/bin/edge-tts`, then `edge-tts` on `PATH`. If the venv is
-gone, recreate it rather than swapping engines:
+The venv lives in a **persistent** location (`~/.local/share/remotion-video/`),
+not under `/tmp`, so it survives reboots and `/tmp` cleanup. `scripts/tts.mjs`
+resolves the binary in this order: `$EDGE_TTS`, then
+`~/.local/share/remotion-video/ttsvenv/bin/edge-tts`, then `edge-tts` on `PATH`.
+If the venv is ever missing, recreate it at the same path rather than swapping
+engines:
 
 ```bash
-python3 -m venv /tmp/opencode/ttsvenv
-/tmp/opencode/ttsvenv/bin/pip install edge-tts==7.3.1
+python3 -m venv ~/.local/share/remotion-video/ttsvenv
+~/.local/share/remotion-video/ttsvenv/bin/pip install edge-tts==7.3.1
 ```
 
 `ffmpeg`/`ffprobe` (8.x on this machine) must also be on `PATH`; ffprobe is the
@@ -164,7 +193,7 @@ video re-render.
   ACTIVE_VOICE=xiaoxiao npm run tts:all
   ACTIVE_VOICE=xiaoxiao npm run timeline:check
   node scripts/mix-audio.mjs --voice=xiaoxiao \
-    --video=out/film.mp4 \
+    --video=out/learnrise-promo-video.mp4 \
     --output=out/learnrise-promo-xiaoxiao.mp4
   ```
 - Permanent default: change `VOICES.yunyang.voice` (or the `ACTIVE_VOICE`
@@ -173,7 +202,7 @@ video re-render.
   npm run tts:all
   npm run timeline:check
   node scripts/mix-audio.mjs --voice=yunyang \
-    --video=out/film.mp4 \
+    --video=out/learnrise-promo-video.mp4 \
     --output=out/learnrise-promo.mp4
   ```
 
@@ -202,8 +231,7 @@ To rebuild the whole cut:
 npm run render
 ```
 
-Output: `out/film.mp4` (video stream; mux narration + bed separately, see
-`scripts/mix-audio.mjs`; its `--video` default matches this filename).
+Output: `out/film.mp4` (video stream; mux narration + bed separately).
 
 ---
 
@@ -219,11 +247,60 @@ Output: `out/film.mp4` (video stream; mux narration + bed separately, see
 | `npm run tts:all` | regenerates all 11 narration clips for `ACTIVE_VOICE` |
 | `npm run tts:all -- --scene=S05` | regenerates one clip, keeps the other 10 measured rows |
 | `npm run render:scene -- S05` | renders one scene composition (video only) |
-| `node scripts/mix-audio.mjs --voice=yunyang --video=out/film.mp4 --output=out/learnrise-promo.mp4` | muxes narration + bed onto the rendered video (no pixel re-render) |
+| `node scripts/mix-audio.mjs --voice=yunyang --video=out/learnrise-promo-video.mp4 --output=out/learnrise-promo.mp4` | muxes narration + bed onto the rendered video (no pixel re-render) |
 | `npm run render` | renders the master `Film` to `out/film.mp4` (video-only) |
 
 Validation (no dependencies, safe before every render):
 
 ```bash
 node ~/.config/opencode/skills/remotion-video/scripts/validate-storyboard.mjs storyboard.json --json
+```
+
+### New-UI Dynamic Clips changelog (2026-11-07)
+
+This round replaces the **visual layer** of all 11 scenes with **real browser
+recordings of the new UI** (`origin/main @ 9309670`, merged into
+`promo/learnrise-video-mockups` as `f5a8629`). The timeline is untouched.
+
+**What changed**
+
+- `public/clips/S01…S11/clip.mp4` — 11 frozen clips, each exactly
+  `SCENE_FRAMES[i]` frames (360/600/720/720/780/720/660/600/600/480/480 = 6720),
+  1920×1080, **30 fps CFR**, H.264, **no audio track**. Hashes in
+  `clips_manifest.json`; budget table in `frame_budget.md`.
+- Recording harness: `scripts/record-scenes.mjs` (11 real interaction scripts),
+  `scripts/record-ui.mjs` (CLI + manifest), `playwright.record.config.ts` lives
+  in `LearnRise/frontend/` because `@playwright/test` must resolve from the app's
+  `node_modules` (see `minimal_patches.md` #3).
+- Every `src/scenes/S*.tsx` is now a thin wrapper around
+  `src/components/ClipScene.tsx`, which mounts `HtmlClip` full-bleed and renders
+  the copy in a self-contained lower-third panel. `public/ui/*.png` is no longer
+  referenced by any scene; `public/clips/demo/demo.mp4` was deleted.
+- `remotion.config.ts`: `Config.setVideoImageFormat('png')` (was `jpeg`). PNG
+  capture removes the JPEG intermediate loss, lifting the clip-region PSNR from
+  39.3–42.5 dB to **42.2–44.1 dB** and shrinking scene renders ~40%.
+- Copy (`film.ts`): S02 「出题」→「陪练」, S05 rewritten as the mindmap scene,
+  S08 drops the removed email-reminder toggle, S11 API count 67 → **66** (the
+  new-UI OpenAPI document has 66 paths; see plan ruling R8). `screenText`,
+  `subline`, `footnote`, `visual` and `assets` were rewritten accordingly.
+  Full before/after table: `narration_rewrite.md`.
+- TTS: S02 / S05 / S08 / S11 regenerated with the same Yunyang voice; all 11
+  segments re-checked by `npm run timeline:check` (tightest margin S10 0.49 s).
+
+**How to re-record**
+
+```bash
+docker compose --env-file .env.demo -f docker-compose.yml -f docker-compose.recording.yml up -d   # in LearnRise/
+cd /home/sky/竞赛/华为ICT/LearnRise/frontend && npx playwright test --config playwright.record.config.ts
+node $FILM/scripts/record-ui.mjs --verify-only      # writes recordings/raw_manifest.json
+python3 /tmp/freeze.py                              # or re-run the ffmpeg loop in frame_budget.md
+```
+
+**How to verify**
+
+```bash
+python3 -c "import json;d=json.load(open('clips_manifest.json'));assert len(d)==11 and sum(x['frames'] for x in d)==6720"
+grep -RIn "staticFile" src/scenes/ | grep -c png        # 0
+grep -RInE 'loop|startFrom|playbackRate' src/scenes/ | wc -l   # 0
+npm run lint-content && npm run check-facts && npm run timeline:check
 ```

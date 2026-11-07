@@ -27,7 +27,7 @@ if (chromePath) {
   Config.setBrowserExecutable(chromePath);
 }
 
-Config.setVideoImageFormat('jpeg');
+Config.setVideoImageFormat('png');
 Config.setPixelFormat('yuv420p');
 Config.setColorSpace('bt709');
 Config.setOverwriteOutput(true);

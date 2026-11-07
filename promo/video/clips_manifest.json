@@ -1,0 +1,233 @@
+[
+  {
+    "scene": "S01",
+    "route": "/",
+    "actions": "recordings/raw/S01.webm",
+    "frames": 360,
+    "fps": 30,
+    "durationSeconds": 12.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "8e3d77bb3606408228c7a133d7893aaa2d13a7c6ab4167b513f119da846b96f4",
+    "capturedAt": "2026-11-07T17:41:49+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 318123,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 43.285208,
+      "fullFrameAverageDb": 10.564793,
+      "renderedFrames": 360
+    }
+  },
+  {
+    "scene": "S02",
+    "route": "/prep",
+    "actions": "recordings/raw/S02.webm",
+    "frames": 600,
+    "fps": 30,
+    "durationSeconds": 20.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "70128c76a4269d15ac2c0cc2ea38074cb1b8ee0b729c089ace0e729d8f01bcee",
+    "capturedAt": "2026-11-07T17:42:13+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 2052414,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 42.785119,
+      "fullFrameAverageDb": 10.572505,
+      "renderedFrames": 600
+    }
+  },
+  {
+    "scene": "S03",
+    "route": "/library",
+    "actions": "recordings/raw/S03.webm",
+    "frames": 720,
+    "fps": 30,
+    "durationSeconds": 24.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "7ad8fae5d54ef68bbdbf3ccf140e56839541c168bdbf254344fec3f0fff28936",
+    "capturedAt": "2026-11-07T17:42:42+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 256393,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 44.124477,
+      "fullFrameAverageDb": 10.621155,
+      "renderedFrames": 720
+    }
+  },
+  {
+    "scene": "S04",
+    "route": "/library/:id",
+    "actions": "recordings/raw/S04.webm",
+    "frames": 720,
+    "fps": 30,
+    "durationSeconds": 24.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "3f76c410dbfb7105bff6c9faa64953597e70f29c373ebd0f25d50c1626dda92a",
+    "capturedAt": "2026-11-07T17:43:11+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 618653,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 43.418878,
+      "fullFrameAverageDb": 10.462122,
+      "renderedFrames": 720
+    }
+  },
+  {
+    "scene": "S05",
+    "route": "/prep?tab=mindmap",
+    "actions": "recordings/raw/S05.webm",
+    "frames": 780,
+    "fps": 30,
+    "durationSeconds": 26.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "1a263083915cb5c51cc5de71ed2a3cef4e059026132f535df62ab2fe22fac696",
+    "capturedAt": "2026-11-07T17:43:44+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 927901,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 42.51267,
+      "fullFrameAverageDb": 10.372489,
+      "renderedFrames": 780
+    }
+  },
+  {
+    "scene": "S06",
+    "route": "/kp/:id",
+    "actions": "recordings/raw/S06.webm",
+    "frames": 720,
+    "fps": 30,
+    "durationSeconds": 24.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "73ed5c844fd8491631ec4a12dbdb5b11c486c1b52ecf7ea0e1b52837476c7dbb",
+    "capturedAt": "2026-11-07T18:16:30+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 327661,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 43.421524,
+      "fullFrameAverageDb": 10.646181,
+      "renderedFrames": 720
+    }
+  },
+  {
+    "scene": "S07",
+    "route": "/practice",
+    "actions": "recordings/raw/S07.webm",
+    "frames": 660,
+    "fps": 30,
+    "durationSeconds": 22.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "6e6f566f7fbe0e2c836b25c5cb4c3a72543e106f21dba28d7c4c7dfe2d1ab1d7",
+    "capturedAt": "2026-11-07T18:27:40+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 679471,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 43.450144,
+      "fullFrameAverageDb": 10.549934,
+      "renderedFrames": 660
+    }
+  },
+  {
+    "scene": "S08",
+    "route": "/review",
+    "actions": "recordings/raw/S08.webm",
+    "frames": 600,
+    "fps": 30,
+    "durationSeconds": 20.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "91782d1e4d6433ae6ebcc5cb35be3763207639a81297c08a1e1fea99873a342d",
+    "capturedAt": "2026-11-07T17:49:33+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 580187,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 43.641402,
+      "fullFrameAverageDb": 10.575949,
+      "renderedFrames": 600
+    }
+  },
+  {
+    "scene": "S09",
+    "route": "/rank",
+    "actions": "recordings/raw/S09.webm",
+    "frames": 600,
+    "fps": 30,
+    "durationSeconds": 20.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "c75fc60935d91be8e1570244a766331f36d12ba836d94b511178057d79a06fb4",
+    "capturedAt": "2026-11-07T19:55:07+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 464207,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 42.167917,
+      "fullFrameAverageDb": 11.226016,
+      "renderedFrames": 600
+    }
+  },
+  {
+    "scene": "S10",
+    "route": "/profile",
+    "actions": "recordings/raw/S10.webm",
+    "frames": 480,
+    "fps": 30,
+    "durationSeconds": 16.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "61fd2fddd4dce660513322b897330429ec4c22a7e9042c0d1ab4b083b9091e1d",
+    "capturedAt": "2026-11-07T17:50:22+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 252017,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 43.970708,
+      "fullFrameAverageDb": 10.914976,
+      "renderedFrames": 480
+    }
+  },
+  {
+    "scene": "S11",
+    "route": "/dashboard",
+    "actions": "recordings/raw/S11.webm",
+    "frames": 480,
+    "fps": 30,
+    "durationSeconds": 16.0,
+    "width": 1920,
+    "height": 1080,
+    "sha256": "4391d1f68dcdd9dce341a187a5dc99e16202a7b5dd8060d647a5c1a7ff18c5b8",
+    "capturedAt": "2026-11-07T18:17:29+08:00",
+    "sourceUiCommit": "9309670",
+    "recordScriptVersion": "record-scenes.mjs@task4",
+    "bytes": 370544,
+    "psnr": {
+      "roi": "1920x700+0+0",
+      "roiAverageDb": 43.274675,
+      "fullFrameAverageDb": 10.587674,
+      "renderedFrames": 480
+    }
+  }
+]

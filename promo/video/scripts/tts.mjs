@@ -81,7 +81,8 @@ if (scenes.length === 0) {
 
 const EDGE_TTS_CANDIDATES = [
   process.env.EDGE_TTS,
-  '/tmp/opencode/ttsvenv/bin/edge-tts',
+  // Persistent venv under ~/.local/share; /tmp was cleared on reboot.
+  '/home/sky/.local/share/remotion-video/ttsvenv/bin/edge-tts',
   'edge-tts',
 ].filter(Boolean);
 
@@ -102,7 +103,7 @@ const findExecutable = (candidates) => {
 const edgeTts = findExecutable(EDGE_TTS_CANDIDATES);
 if (!edgeTts) {
   process.stderr.write(
-    'tts: edge-tts not found. Install 7.3.1 in /tmp/opencode/ttsvenv or set EDGE_TTS.\n',
+    'tts: edge-tts not found. Install 7.3.1 in ~/.local/share/remotion-video/ttsvenv or set EDGE_TTS.\n',
   );
   process.exit(2);
 }

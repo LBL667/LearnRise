@@ -120,7 +120,7 @@ export const Film: React.FC<{
           <CutFlash key={window.id} at={window.from} theme={theme} />
         ))}
 
-        <GrainOverlay />
+        <GrainOverlay firstOpacity={0.035} secondOpacity={0.02} />
 
         <Bed scenes={BED_SCENES} gain={BED_GAIN} />
 

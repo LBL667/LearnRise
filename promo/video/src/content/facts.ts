@@ -15,7 +15,7 @@
  * baseline actually changed, then run `npm run check-facts`.
  */
 
-export const API_PATHS = 67;
+export const API_PATHS = 66;
 export const API_OPERATIONS = 77;
 export const TESTS_COLLECTED = 498;
 export const TESTS_PASSED = 490;

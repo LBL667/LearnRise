@@ -2,8 +2,8 @@
  * HtmlClip — a HyperFrames pre-rendered clip as flat footage.
  *
  * Contract (see `references/hyperframes.md`):
- * - WHOLE-CLIP PLAYBACK ONLY. The file is a finished mp4; this component never
- *   seeks into it, never drives `hf-seek`, and never mounts a second timeline.
+ * - WHOLE-CLIP PLAYBACK ONLY. The file is a finished mp4; this component treats
+ *   it as immutable flat footage and never mounts a second timeline.
  *   Remotion's composition frame is the only clock. `OffthreadVideo` has no
  *   `loop` here: the host must keep the clip mounted for at most the clip's
  *   own frame count, because there is no correct frame past its end.
