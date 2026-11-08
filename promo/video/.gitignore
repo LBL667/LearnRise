@@ -4,3 +4,6 @@ out/
 *.wav
 .env.json
 .hyperframes/
+
+# Deliverable clips are committed (6.6 MB, 11 x 30fps CFR)
+!public/clips/**/*.mp4

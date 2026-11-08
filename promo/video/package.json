@@ -5,7 +5,7 @@
   "description": "LearnRise 224s / 6720-frame promo film (11 scenes, 1920x1080, 30fps).",
   "scripts": {
     "studio": "remotion studio",
-    "render": "node ../../skill/remotion-video/scripts/render.mjs --project=. --composition=Film --output=out/film.mp4 --concurrency=2",
+    "render": "node scripts/vendor/render.mjs --project=. --composition=Film --output=out/film.mp4 --concurrency=2",
     "render:scene": "node --import tsx scripts/render-scene.mjs",
     "still": "remotion still",
     "tts:all": "node --import tsx scripts/tts.mjs --all",
@@ -14,7 +14,8 @@
     "lint-content": "node scripts/lint-content.mjs",
     "sync-cast": "node scripts/sync-cast.mjs",
     "storyboard:build": "node --import tsx scripts/build-storyboard.mjs",
-    "fonts:check": "node ../../skill/remotion-video/scripts/font-check.mjs"
+    "fonts:check": "node scripts/vendor/font-check.mjs",
+    "mix": "node scripts/mix-audio.mjs --voice=yunyang --video=out/film.mp4 --output=out/learnrise-promo.mp4"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.539",

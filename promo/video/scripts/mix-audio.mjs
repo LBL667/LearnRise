@@ -21,6 +21,9 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+/** Python launcher: override with PYTHON; `python3` on POSIX, `python` on Windows. */
+const PYTHON =
+  process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const ROOT = path.resolve(SCRIPT_DIR, '..');
 
 const FPS = 30;
@@ -129,7 +132,7 @@ const main = () => {
   }
 
   if (!fs.existsSync(bed) || has('rebuild-bed')) {
-    run('python3', [path.join(SCRIPT_DIR, 'make-bed.py')], 'make-bed', { quiet: false });
+    run(PYTHON, [path.join(SCRIPT_DIR, 'make-bed.py')], 'make-bed', { quiet: false });
   }
 
   const narration = JSON.parse(fs.readFileSync(narrationPath, 'utf8'));

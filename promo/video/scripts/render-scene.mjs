@@ -16,11 +16,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(SCRIPT_DIR, '..');
+const VENDOR_RENDER = path.join(PROJECT_ROOT, 'scripts', 'vendor', 'render.mjs');
 const SKILL_ROOT = path.resolve(
   PROJECT_ROOT,
   '../../skill/remotion-video',
 );
-const RENDER_SCRIPT = path.join(SKILL_ROOT, 'scripts', 'render.mjs');
+const RENDER_SCRIPT = fs.existsSync(VENDOR_RENDER)
+  ? VENDOR_RENDER
+  : path.join(SKILL_ROOT, 'scripts', 'render.mjs');
 
 const film = await import(
   pathToFileURL(path.join(PROJECT_ROOT, 'src', 'content', 'film.ts')).href
