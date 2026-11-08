@@ -7,3 +7,6 @@ out/
 
 # Deliverable clips are committed (6.6 MB, 11 x 30fps CFR)
 !public/clips/**/*.mp4
+
+# The film composition plays this bed; a clean clone must render without Python
+!public/audio/bed.wav
