@@ -12,7 +12,7 @@
 | npm | ≥ 10 | |
 | ffmpeg | ≥ 6（推荐 8.1.3） | 必须在 `PATH` 里，`ffmpeg -version` |
 | Chromium / Chrome | 任意近期版本 | Remotion 渲染用。二选一：设置 `REMOTION_CHROME=<可执行文件路径>`，或让 Remotion 自动下载 |
-| Python | ≥ 3.10 | 仅 `npm run mix` 需要（生成低频 bed） |
+| Python | ≥ 3.10 + `numpy` `scipy` | **仅 `npm run mix`** 需要（合成 224s 低频 bed）；只渲染画面不需要 |
 | edge-tts | 7.3.1 | **仅重新合成旁白时需要**；只渲染画面不需要 |
 
 Windows 说明：
@@ -84,12 +84,15 @@ npm run render       # out/film.mp4（无音轨，224.000000s / 6720 帧）
 
 ```bash
 # 仅当 film.ts 文案改动过才需要重跑（文本哈希决定是否复用缓存）
-pip install edge-tts==7.3.1
+pip install edge-tts==7.3.1 numpy scipy
 set EDGE_TTS=edge-tts          # 或 edge-tts 可执行文件的绝对路径
 npm run tts:all                # out/audio/yunyang/s01..s11.mp3 + narration.json/srt
 
 npm run mix                    # out/learnrise-promo.mp4（aac 48k 2ch，-14 LUFS）
 ```
+
+> **只想看画面、不想装 Python？**
+> 跳过第 6 步，直接播放 `out/film.mp4`（无音轨）。成片带旁白需要 edge-tts + numpy/scipy。
 
 ## 7. 验收（与 CI 同一套阈值）
 
